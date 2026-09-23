@@ -1,0 +1,109 @@
+{% extends "base_app.html" %}
+
+{% block title %}Central de Privacidade | Minha Rotina{% endblock %}
+
+{% block app_content %}
+<div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Central de Privacidade</h1>
+        <p class="text-muted mb-0">
+            Controle os dados vinculados à {{ familia.nome }}.
+        </p>
+    </div>
+    <a href="{% url 'privacidade_politica' %}" class="btn btn-outline-primary">
+        <i class="bi bi-file-earmark-text"></i>
+        Política de Privacidade
+    </a>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="app-brand-icon app-brand-icon-small">
+                        <i class="bi bi-download"></i>
+                    </div>
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">Exportar dados</h2>
+                        <p class="text-muted small mb-0">Baixe uma cópia estruturada em JSON.</p>
+                    </div>
+                </div>
+                <a href="{% url 'privacidade_exportar' %}" class="btn btn-primary">
+                    Exportar dados da família
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="app-brand-icon app-brand-icon-small">
+                        <i class="bi bi-camera"></i>
+                    </div>
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">Evidências fotográficas</h2>
+                        <p class="text-muted small mb-0">
+                            Retenção configurada: {{ retencao_dias }} dias para evidências finalizadas.
+                        </p>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'privacidade_apagar_evidencias' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger"
+                            onclick="return confirm('Remover todas as fotografias da família? O histórico das tarefas será preservado.');">
+                        Apagar todas as fotografias
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card border-danger-subtle">
+            <div class="card-body p-4">
+                <h2 class="h5 fw-bold text-danger">Excluir minha conta</h2>
+                <p class="text-muted small">
+                    Se você for o único Tutor, os dados da família e os perfis infantis serão removidos.
+                    Se houver outro Tutor, sua conta será removida da família e anonimizada quando o
+                    histórico precisar ser preservado.
+                </p>
+
+                <form method="post" action="{% url 'privacidade_excluir_conta' %}" class="row g-2 align-items-end">
+                    {% csrf_token %}
+                    <div class="col-12 col-md-6">
+                        <label for="id_confirmacao" class="form-label fw-semibold">
+                            Digite EXCLUIR para confirmar
+                        </label>
+                        <input
+                            type="text"
+                            name="confirmacao"
+                            id="id_confirmacao"
+                            class="form-control"
+                            autocomplete="off"
+                            required
+                        >
+                    </div>
+                    <div class="col-12 col-md-auto">
+                        <button type="submit" class="btn btn-danger">
+                            Excluir minha conta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="small text-muted mt-4">
+    Política aceita:
+    {% if request.user.privacidade_aceita_em %}
+        {{ request.user.privacidade_aceita_em|date:"d/m/Y H:i" }}
+        · versão {{ request.user.privacidade_versao }}
+    {% else %}
+        não registrada
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,470 @@
+{% extends "base_app.html" %}
+
+{% block title %}Habilidades de {{ perfil.nome_exibicao }} | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="skills-page">
+
+    <div class="page-heading">
+
+        <div>
+
+            {% if request.user.tipo == "TUTOR" %}
+                <a
+                    href="{% url 'criancas_listar' %}"
+                    class="back-link mb-2"
+                >
+                    <i class="bi bi-arrow-left"></i>
+                    Crianças
+                </a>
+            {% endif %}
+
+            <span class="hero-eyebrow">
+                Mapa de habilidades
+            </span>
+
+            <h1 class="h3 fw-bold mb-1">
+                {% if request.user.tipo == "CRIANCA" %}
+                    Minhas habilidades
+                {% else %}
+                    Habilidades de {{ perfil.nome_exibicao }}
+                {% endif %}
+            </h1>
+
+            <p class="text-muted mb-0">
+                Indicadores baseados nas tarefas aprovadas
+                relacionadas a cada habilidade.
+            </p>
+
+        </div>
+
+
+        {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+
+    </div>
+
+
+    <div class="skill-disclaimer mb-4">
+        <i class="bi bi-info-circle"></i>
+
+        <span>
+            Estes níveis representam a frequência de prática
+            registrada no aplicativo. Eles não são uma avaliação
+            psicológica, pedagógica ou clínica da criança.
+        </span>
+    </div>
+
+
+    <div class="skills-overview-grid mb-4">
+
+        <section class="content-card skill-radar-card">
+
+            <div class="mb-3">
+                <span class="hero-eyebrow">
+                    Evolução histórica
+                </span>
+
+                <h2 class="h5 fw-bold mb-1">
+                    Visão geral
+                </h2>
+
+                <p class="text-muted small mb-0">
+                    Quanto mais atividades aprovadas ligadas
+                    a uma habilidade, maior o preenchimento.
+                </p>
+            </div>
+
+
+            <div class="skill-radar-wrap">
+                <svg
+                    id="skills-radar"
+                    viewBox="0 0 420 420"
+                    role="img"
+                    aria-label="Gráfico radar de habilidades"
+                ></svg>
+            </div>
+
+            {{ radar|json_script:"skills-radar-data" }}
+
+        </section>
+
+
+        <section class="content-card recent-practice-card">
+
+            <div class="mb-3">
+                <span class="hero-eyebrow">
+                    Últimos 30 dias
+                </span>
+
+                <h2 class="h5 fw-bold mb-1">
+                    Prática recente
+                </h2>
+
+                <p class="text-muted small mb-0">
+                    Ajuda a perceber quais tipos de atividade
+                    têm aparecido mais na rotina atual.
+                </p>
+            </div>
+
+
+            <div class="recent-practice-list">
+
+                {% for item in habilidades %}
+
+                    <div class="recent-practice-row">
+
+                        <span class="recent-practice-icon">
+                            {{ item.skill.icone }}
+                        </span>
+
+                        <div class="flex-grow-1 min-w-0">
+
+                            <div class="d-flex justify-content-between gap-2">
+                                <strong class="small">
+                                    {{ item.skill.nome }}
+                                </strong>
+
+                                <span class="small text-muted">
+                                    +{{ item.xp_30_dias }} XP
+                                </span>
+                            </div>
+
+                            <div class="recent-practice-track mt-1">
+                                <div
+                                    class="recent-practice-fill"
+                                    style="width: {% widthratio item.xp_30_dias 40 100 %}%"
+                                ></div>
+                            </div>
+
+                            <small class="text-muted">
+                                {{ item.pratica_recente }}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <div class="skills-cards-grid">
+
+        {% for item in habilidades %}
+
+            <article class="skill-progress-card">
+
+                <div class="skill-progress-top">
+
+                    <div class="skill-progress-icon">
+                        {{ item.skill.icone }}
+                    </div>
+
+                    <div class="flex-grow-1 min-w-0">
+
+                        <div class="d-flex justify-content-between gap-2">
+
+                            <div>
+                                <h2 class="h6 fw-bold mb-0">
+                                    {{ item.skill.nome }}
+                                </h2>
+
+                                <span class="skill-level-label">
+                                    Nível {{ item.nivel }}
+                                    · {{ item.titulo_nivel }}
+                                </span>
+                            </div>
+
+                            <strong class="skill-xp-total">
+                                {{ item.xp_total }} XP
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <p class="skill-description">
+                    {{ item.skill.descricao }}
+                </p>
+
+
+                <div class="skill-progress-track">
+                    <div
+                        class="skill-progress-fill"
+                        style="width: {{ item.percentual }}%;"
+                    ></div>
+                </div>
+
+
+                <div class="skill-progress-footer">
+
+                    {% if item.nivel < 5 %}
+                        <span>
+                            Faltam {{ item.faltam }} XP
+                            para o próximo nível
+                        </span>
+                    {% else %}
+                        <span>
+                            Nível máximo alcançado
+                        </span>
+                    {% endif %}
+
+                    <span>
+                        +{{ item.xp_30_dias }} XP em 30 dias
+                    </span>
+
+                </div>
+
+            </article>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+{{ block.super }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const svg = document.getElementById("skills-radar");
+    const dataNode = document.getElementById("skills-radar-data");
+
+    if (!svg || !dataNode) {
+        return;
+    }
+
+    const data = JSON.parse(
+        dataNode.textContent || "[]"
+    );
+
+    if (!data.length) {
+        return;
+    }
+
+    const NS = "http://www.w3.org/2000/svg";
+    const cx = 210;
+    const cy = 210;
+    const maxRadius = 128;
+    const labelRadius = 170;
+    const count = data.length;
+
+    function point(index, radius) {
+        const angle = (
+            -Math.PI / 2
+            + (
+                index
+                * 2
+                * Math.PI
+                / count
+            )
+        );
+
+        return {
+            x: (
+                cx
+                + Math.cos(angle)
+                * radius
+            ),
+            y: (
+                cy
+                + Math.sin(angle)
+                * radius
+            )
+        };
+    }
+
+    function polygonPoints(radiusFactor) {
+        return data
+            .map(function (_, index) {
+                const p = point(
+                    index,
+                    maxRadius * radiusFactor
+                );
+
+                return p.x + "," + p.y;
+            })
+            .join(" ");
+    }
+
+    for (
+        let level = 1;
+        level <= 5;
+        level += 1
+    ) {
+        const grid = document.createElementNS(
+            NS,
+            "polygon"
+        );
+
+        grid.setAttribute(
+            "points",
+            polygonPoints(level / 5)
+        );
+
+        grid.setAttribute(
+            "class",
+            "skill-radar-grid"
+        );
+
+        svg.appendChild(grid);
+    }
+
+    data.forEach(function (_, index) {
+        const p = point(
+            index,
+            maxRadius
+        );
+
+        const line = document.createElementNS(
+            NS,
+            "line"
+        );
+
+        line.setAttribute("x1", cx);
+        line.setAttribute("y1", cy);
+        line.setAttribute("x2", p.x);
+        line.setAttribute("y2", p.y);
+        line.setAttribute(
+            "class",
+            "skill-radar-axis"
+        );
+
+        svg.appendChild(line);
+    });
+
+    const valuePoints = data
+        .map(function (item, index) {
+            const value = Math.max(
+                0,
+                Math.min(
+                    5,
+                    Number(item.valor) || 0
+                )
+            );
+
+            const p = point(
+                index,
+                maxRadius * (value / 5)
+            );
+
+            return p.x + "," + p.y;
+        })
+        .join(" ");
+
+    const area = document.createElementNS(
+        NS,
+        "polygon"
+    );
+
+    area.setAttribute(
+        "points",
+        valuePoints
+    );
+
+    area.setAttribute(
+        "class",
+        "skill-radar-area"
+    );
+
+    svg.appendChild(area);
+
+    data.forEach(function (item, index) {
+        const value = Math.max(
+            0,
+            Math.min(
+                5,
+                Number(item.valor) || 0
+            )
+        );
+
+        const dotPoint = point(
+            index,
+            maxRadius * (value / 5)
+        );
+
+        const dot = document.createElementNS(
+            NS,
+            "circle"
+        );
+
+        dot.setAttribute(
+            "cx",
+            dotPoint.x
+        );
+
+        dot.setAttribute(
+            "cy",
+            dotPoint.y
+        );
+
+        dot.setAttribute("r", 5);
+
+        dot.setAttribute(
+            "class",
+            "skill-radar-dot"
+        );
+
+        svg.appendChild(dot);
+
+        const labelPoint = point(
+            index,
+            labelRadius
+        );
+
+        const label = document.createElementNS(
+            NS,
+            "text"
+        );
+
+        label.setAttribute(
+            "x",
+            labelPoint.x
+        );
+
+        label.setAttribute(
+            "y",
+            labelPoint.y
+        );
+
+        label.setAttribute(
+            "class",
+            "skill-radar-label"
+        );
+
+        label.setAttribute(
+            "text-anchor",
+            labelPoint.x < cx - 8
+                ? "end"
+                : (
+                    labelPoint.x > cx + 8
+                    ? "start"
+                    : "middle"
+                )
+        );
+
+        label.textContent = (
+            item.icone
+            + " "
+            + item.nome
+        );
+
+        svg.appendChild(label);
+    });
+});
+</script>
+
+{% endblock %}

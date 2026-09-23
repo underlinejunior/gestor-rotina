@@ -1,0 +1,302 @@
+{% extends "base_app.html" %}
+
+{% block title %}Histórico de {{ perfil.nome_exibicao }} | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="history-hero mb-4">
+
+    <div class="d-flex align-items-center gap-3">
+
+        {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+
+        <div>
+            <span class="hero-eyebrow">
+                Histórico
+            </span>
+
+            <h1 class="h3 fw-bold mb-1">
+                {{ perfil.nome_exibicao }}
+            </h1>
+
+            <div class="text-muted">
+                {{ perfil.saldo_pontos }} pontos
+                · {{ perfil.avatar_titulo_nivel }}
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="history-periods">
+        <a
+            href="?periodo=7"
+            class="{% if periodo == 7 %}active{% endif %}"
+        >
+            7 dias
+        </a>
+
+        <a
+            href="?periodo=30"
+            class="{% if periodo == 30 %}active{% endif %}"
+        >
+            30 dias
+        </a>
+
+        <a
+            href="?periodo=90"
+            class="{% if periodo == 90 %}active{% endif %}"
+        >
+            90 dias
+        </a>
+    </div>
+
+</div>
+
+
+<div class="history-metrics mb-4">
+
+    <div class="history-metric highlight">
+        <span>Conclusão</span>
+        <strong>
+            {{ indicadores.taxa_conclusao }}%
+        </strong>
+    </div>
+
+    <div class="history-metric">
+        <span>Aprovadas</span>
+        <strong>
+            {{ indicadores.aprovadas }}
+        </strong>
+    </div>
+
+    <div class="history-metric">
+        <span>Não realizadas</span>
+        <strong>
+            {{ indicadores.nao_realizadas }}
+        </strong>
+    </div>
+
+    <div class="history-metric">
+        <span>Com atraso</span>
+        <strong>
+            {{ indicadores.atrasadas }}
+        </strong>
+    </div>
+
+    <div class="history-metric">
+        <span>Pontos no período</span>
+        <strong>
+            {% if pontos_periodo >= 0 %}+{% endif %}{{ pontos_periodo }}
+        </strong>
+    </div>
+
+</div>
+
+
+<div class="history-layout">
+
+    <section class="content-card">
+
+        <div class="mb-4">
+            <h2 class="h5 fw-bold mb-1">
+                Tarefas
+            </h2>
+
+            <p class="text-muted small mb-0">
+                Registro das atividades do período selecionado.
+            </p>
+        </div>
+
+
+        {% if tarefas %}
+
+            {% regroup tarefas by data_referencia as tarefas_por_data %}
+
+            <div class="history-days">
+
+                {% for grupo in tarefas_por_data %}
+
+                    <section class="history-day">
+
+                        <div class="history-day-title">
+                            {{ grupo.grouper|date:"d/m/Y" }}
+                        </div>
+
+
+                        <div class="history-task-list">
+
+                            {% for tarefa in grupo.list %}
+
+                                <div class="history-task-row">
+
+                                    <div class="history-status-icon history-{{ tarefa.status|lower }}">
+                                        {% if tarefa.status == "APROVADA" %}
+                                            <i class="bi bi-check-lg"></i>
+                                        {% elif tarefa.status == "NAO_REALIZADA" %}
+                                            <i class="bi bi-dash-lg"></i>
+                                        {% elif tarefa.status == "REVISAO" %}
+                                            <i class="bi bi-camera"></i>
+                                        {% elif tarefa.status == "REJEITADA" %}
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        {% else %}
+                                            <i class="bi bi-hourglass-split"></i>
+                                        {% endif %}
+                                    </div>
+
+
+                                    <div class="flex-grow-1 min-w-0">
+
+                                        <div class="fw-semibold text-truncate">
+                                            {{ tarefa.titulo }}
+                                        </div>
+
+                                        <div class="task-meta mt-1">
+                                            <span>
+                                                {{ tarefa.get_status_display }}
+                                            </span>
+
+                                            {% if tarefa.origem == "BONUS" %}
+                                                <span class="bonus-pill">
+                                                    Bônus
+                                                </span>
+                                            {% endif %}
+
+                                            {% if tarefa.procrastinou %}
+                                                <span class="late-pill">
+                                                    Após 8h
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if tarefa.skills_snapshot.all %}
+                                            <div class="task-skill-pills task-skill-pills-compact mt-2">
+                                                {% for skill in tarefa.skills_snapshot.all %}
+                                                    <span class="task-skill-pill">
+                                                        {{ skill.icone_snapshot }}
+                                                        {{ skill.nome_snapshot }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+
+                                    </div>
+
+
+                                    <div class="history-points">
+                                        {% if tarefa.status == "APROVADA" %}
+                                            +{{ tarefa.pontos_concedidos|default:0 }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </div>
+
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    </section>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+
+                <h3 class="h5 fw-bold">
+                    Ainda não há histórico
+                </h3>
+
+                <p class="text-muted mb-0">
+                    As tarefas aparecerão aqui conforme forem sendo registradas.
+                </p>
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <aside class="content-card movement-card">
+
+        <div class="mb-4">
+            <h2 class="h5 fw-bold mb-1">
+                Pontos
+            </h2>
+
+            <p class="text-muted small mb-0">
+                De onde veio o saldo.
+            </p>
+        </div>
+
+
+        {% if movimentos %}
+
+            <div class="movement-list">
+
+                {% for movimento in movimentos %}
+
+                    <div class="movement-row">
+
+                        <div class="movement-icon {% if movimento.houve_evolucao %}movement-level-up{% endif %}">
+                            {% if movimento.houve_evolucao %}
+                                <i class="bi bi-stars"></i>
+                            {% else %}
+                                <i class="bi bi-star-fill"></i>
+                            {% endif %}
+                        </div>
+
+
+                        <div class="flex-grow-1 min-w-0">
+
+                            <div class="fw-semibold text-truncate">
+                                {% if movimento.tarefa %}
+                                    {{ movimento.tarefa.titulo }}
+                                {% else %}
+                                    {{ movimento.get_tipo_display }}
+                                {% endif %}
+                            </div>
+
+                            <div class="small text-muted">
+                                {{ movimento.criado_em|date:"d/m/Y H:i" }}
+                            </div>
+
+                            {% if movimento.houve_evolucao %}
+                                <div class="level-up-label">
+                                    Evoluiu para o nível {{ movimento.nivel_depois }}
+                                </div>
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="movement-points">
+                            {% if movimento.pontos >= 0 %}+{% endif %}{{ movimento.pontos }}
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <p class="text-muted small">
+                Nenhum movimento de pontos neste período.
+            </p>
+
+        {% endif %}
+
+    </aside>
+
+</div>
+
+{% endblock %}

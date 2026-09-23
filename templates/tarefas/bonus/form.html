@@ -1,0 +1,63 @@
+{% extends "base_app.html" %}
+
+{% block title %}Tarefa bônus | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="form-page">
+    <div class="mb-4">
+        <a href="{% url 'inicio' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Início
+        </a>
+    </div>
+
+    <div class="content-card form-card">
+        <div class="bonus-heading mb-4">
+            <div class="bonus-heading-icon">
+                <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+
+            <div>
+                <h1 class="h4 fw-bold mb-1">Tarefa bônus</h1>
+                <p class="text-muted mb-0">
+                    Lance uma atividade para hoje sem criar uma rotina permanente.
+                </p>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% for field in form %}
+                <div class="mb-3">
+                    <label
+                        class="form-label fw-semibold"
+                        for="{{ field.id_for_label }}"
+                    >
+                        {{ field.label }}
+                    </label>
+
+                    {{ field }}
+
+                    {% for error in field.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="form-actions mt-4">
+                <a href="{% url 'inicio' %}" class="btn btn-light">
+                    Cancelar
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-lightning-charge"></i>
+                    Lançar tarefa
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

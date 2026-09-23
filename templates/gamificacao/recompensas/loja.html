@@ -1,0 +1,264 @@
+{% extends "base_app.html" %}
+
+{% block title %}Recompensas | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<section class="reward-hero mb-4">
+    <div>
+        <span class="hero-eyebrow">
+            {% if modo_tutor %}
+                Loja da família
+            {% else %}
+                Minha loja
+            {% endif %}
+        </span>
+
+        <h1 class="h3 fw-bold mb-1">
+            Recompensas
+        </h1>
+
+        <p class="text-muted mb-0">
+            {% if modo_tutor %}
+                Crie recompensas significativas e acompanhe os resgates.
+            {% else %}
+                Use os pontos conquistados sem perder o nível do seu avatar.
+            {% endif %}
+        </p>
+    </div>
+
+    {% if modo_tutor %}
+        <div class="d-flex gap-2 flex-wrap">
+            <a
+                href="{% url 'resgates_recompensas' %}"
+                class="btn btn-light"
+            >
+                <i class="bi bi-bag-check"></i>
+                Resgates
+            </a>
+
+            <a
+                href="{% url 'recompensa_criar' %}"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-plus-lg"></i>
+                Nova recompensa
+            </a>
+        </div>
+    {% else %}
+        <div class="reward-balance">
+            <span>Saldo</span>
+            <strong>
+                ⭐ {{ perfil.saldo_pontos }}
+            </strong>
+        </div>
+    {% endif %}
+</section>
+
+
+{% if modo_tutor and destaque_pendente %}
+<section class="reward-spotlight mb-4">
+    <div class="reward-spotlight-badge">
+        <i class="bi bi-stars"></i>
+        Pedido em destaque
+    </div>
+
+    <div class="reward-spotlight-body">
+        <div class="reward-spotlight-icon">
+            {{ destaque_pendente.icone_snapshot }}
+        </div>
+
+        <div class="flex-grow-1">
+            <h2 class="h4 fw-bold mb-1">
+                {{ destaque_pendente.crianca.nome_exibicao }} pediu
+                {{ destaque_pendente.titulo_snapshot }}
+            </h2>
+
+            <p class="text-muted mb-2">
+                Solicitação feita em {{ destaque_pendente.solicitado_em|date:"d/m/Y H:i" }}
+                · custo de ⭐ {{ destaque_pendente.custo_snapshot }}
+            </p>
+
+            <div class="reward-spotlight-tags">
+                <span class="badge text-bg-light">Aguardando confirmação</span>
+                <span class="badge text-bg-warning">Momento especial em família</span>
+            </div>
+        </div>
+
+        <a
+            href="{% url 'resgates_recompensas' %}"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-bag-check"></i>
+            Ver resgates
+        </a>
+    </div>
+</section>
+{% endif %}
+
+
+
+{% if modo_tutor and pendentes %}
+<div class="content-card reward-pending-card mb-4">
+    <div class="d-flex justify-content-between align-items-center gap-3">
+        <div>
+            <span class="hero-eyebrow">
+                Aguardando você
+            </span>
+            <h2 class="h5 fw-bold mb-0">
+                {{ pendentes|length }} resgate{{ pendentes|length|pluralize }}
+            </h2>
+        </div>
+
+        <a
+            href="{% url 'resgates_recompensas' %}"
+            class="btn btn-light btn-sm"
+        >
+            Ver todos
+        </a>
+    </div>
+</div>
+{% endif %}
+
+
+<div class="reward-grid">
+
+    {% for recompensa in recompensas %}
+
+        <article class="reward-card {% if modo_tutor and not recompensa.ativa %}is-disabled{% endif %}">
+
+            <div class="reward-card-icon">
+                {{ recompensa.icone }}
+            </div>
+
+            <div class="reward-card-category">
+                {{ recompensa.get_categoria_display }}
+            </div>
+
+            <h2 class="h5 fw-bold mb-1">
+                {{ recompensa.titulo }}
+            </h2>
+
+            {% if recompensa.descricao %}
+                <p class="text-muted small reward-card-copy">
+                    {{ recompensa.descricao }}
+                </p>
+            {% endif %}
+
+            <div class="reward-card-bottom">
+                <strong class="reward-price">
+                    ⭐ {{ recompensa.custo_pontos }}
+                </strong>
+
+                {% if modo_tutor %}
+                    <div class="d-flex gap-1">
+                        <a
+                            href="{% url 'recompensa_editar' recompensa.id %}"
+                            class="btn btn-light btn-sm"
+                            title="Editar"
+                        >
+                            <i class="bi bi-pencil"></i>
+                        </a>
+
+                        <form
+                            method="post"
+                            action="{% url 'recompensa_alternar' recompensa.id %}"
+                        >
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="btn btn-light btn-sm"
+                                title="{% if recompensa.ativa %}Ocultar{% else %}Disponibilizar{% endif %}"
+                            >
+                                <i class="bi {% if recompensa.ativa %}bi-eye-slash{% else %}bi-eye{% endif %}"></i>
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <form
+                        method="post"
+                        action="{% url 'recompensa_resgatar' recompensa.id %}"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary btn-sm"
+                            {% if perfil.saldo_pontos < recompensa.custo_pontos %}disabled{% endif %}
+                        >
+                            {% if perfil.saldo_pontos >= recompensa.custo_pontos %}
+                                Resgatar
+                            {% else %}
+                                Juntar mais
+                            {% endif %}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+
+        </article>
+
+    {% empty %}
+
+        <div class="content-card empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-gift"></i>
+            </div>
+
+            <h2 class="h5 fw-bold">
+                Nenhuma recompensa cadastrada
+            </h2>
+
+            {% if modo_tutor %}
+                <p class="text-muted">
+                    Crie a primeira recompensa para a família.
+                </p>
+
+                <a
+                    href="{% url 'recompensa_criar' %}"
+                    class="btn btn-primary"
+                >
+                    Nova recompensa
+                </a>
+            {% endif %}
+        </div>
+
+    {% endfor %}
+
+</div>
+
+
+{% if not modo_tutor and resgates %}
+<section class="content-card mt-4">
+    <span class="hero-eyebrow">
+        Meus resgates
+    </span>
+
+    <div class="reward-history mt-2">
+        {% for resgate in resgates %}
+            <div class="reward-history-row">
+                <span class="reward-history-icon">
+                    {{ resgate.icone_snapshot }}
+                </span>
+
+                <div class="flex-grow-1">
+                    <strong>
+                        {{ resgate.titulo_snapshot }}
+                    </strong>
+
+                    <small>
+                        {{ resgate.solicitado_em|date:"d/m H:i" }}
+                    </small>
+                </div>
+
+                <span class="badge text-bg-light">
+                    {{ resgate.get_status_display }}
+                </span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

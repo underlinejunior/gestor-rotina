@@ -1,0 +1,160 @@
+{% extends "base_app.html" %}
+
+{% block title %}Conquistas | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="page-heading mb-4">
+    <div>
+        {% if request.user.tipo == "TUTOR" %}
+            <a
+                href="{% url 'criancas_listar' %}"
+                class="back-link mb-2"
+            >
+                <i class="bi bi-arrow-left"></i>
+                Crianças
+            </a>
+        {% endif %}
+
+        <span class="hero-eyebrow">
+            Gamificação
+        </span>
+
+        <h1 class="h3 fw-bold mb-1">
+            {% if request.user.tipo == "CRIANCA" %}
+                Minhas conquistas
+            {% else %}
+                Conquistas de {{ perfil.nome_exibicao }}
+            {% endif %}
+        </h1>
+
+        <p class="text-muted mb-0">
+            Marcos conquistados pela participação nas rotinas.
+        </p>
+    </div>
+
+    {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+</div>
+
+
+{% if conquista_destaque %}
+<section class="achievement-spotlight mb-4">
+    <div class="achievement-spotlight-pill">
+        <i class="bi bi-stars"></i>
+        Conquista em destaque
+    </div>
+
+    <div class="achievement-spotlight-body">
+        <div class="achievement-spotlight-icon">
+            {{ conquista_destaque.conquista.icone }}
+        </div>
+
+        <div class="flex-grow-1">
+            <h2 class="h4 fw-bold mb-1">
+                {{ conquista_destaque.conquista.nome }}
+            </h2>
+
+            <p class="text-muted mb-2">
+                {{ conquista_destaque.conquista.descricao }}
+            </p>
+
+            {% if conquista_destaque.desbloqueada_em %}
+                <div class="reward-spotlight-tags">
+                    <span class="badge text-bg-light">
+                        Desbloqueada em {{ conquista_destaque.desbloqueada_em|date:"d/m/Y H:i" }}
+                    </span>
+                    <span class="badge text-bg-warning">
+                        Continue a rotina para ganhar mais medalhas
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+
+<div class="streak-grid mb-4">
+    <div class="streak-card streak-current">
+        <span class="streak-icon">
+            🔥
+        </span>
+
+        <div>
+            <small>Sequência atual</small>
+            <strong>
+                {{ sequencia_atual }}
+                dia{{ sequencia_atual|pluralize }}
+            </strong>
+        </div>
+    </div>
+
+    <div class="streak-card">
+        <span class="streak-icon">
+            🏆
+        </span>
+
+        <div>
+            <small>Melhor sequência</small>
+            <strong>
+                {{ melhor_sequencia }}
+                dia{{ melhor_sequencia|pluralize }}
+            </strong>
+        </div>
+    </div>
+
+    <div class="streak-card">
+        <span class="streak-icon">
+            🏅
+        </span>
+
+        <div>
+            <small>Desbloqueadas</small>
+            <strong>
+                {{ total_desbloqueadas }}
+            </strong>
+        </div>
+    </div>
+</div>
+
+
+<div class="achievement-grid">
+    {% for item in itens %}
+        <article
+            class="achievement-card {% if item.desbloqueada %}unlocked{% else %}locked{% endif %}"
+        >
+            <div class="achievement-icon">
+                {{ item.conquista.icone }}
+            </div>
+
+            <div class="flex-grow-1">
+                <div class="achievement-state">
+                    {% if item.desbloqueada %}
+                        <i class="bi bi-check-circle-fill"></i>
+                        Desbloqueada
+                    {% else %}
+                        <i class="bi bi-lock"></i>
+                        Ainda bloqueada
+                    {% endif %}
+                </div>
+
+                <h2 class="h6 fw-bold mb-1">
+                    {{ item.conquista.nome }}
+                </h2>
+
+                <p class="text-muted small mb-0">
+                    {{ item.conquista.descricao }}
+                </p>
+
+                {% if item.desbloqueada_em %}
+                    <small class="achievement-date">
+                        {{ item.desbloqueada_em|date:"d/m/Y" }}
+                    </small>
+                {% endif %}
+            </div>
+        </article>
+    {% endfor %}
+</div>
+
+{% endblock %}

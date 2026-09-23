@@ -1,0 +1,15 @@
+<div
+    class="evolving-avatar avatar-level-{{ perfil.avatar_nivel }}"
+    title="{{ perfil.get_avatar_tipo_display }} — {{ perfil.avatar_titulo_nivel }}"
+>
+    <span class="avatar-spark avatar-spark-one">✦</span>
+    <span class="avatar-spark avatar-spark-two">✧</span>
+
+    <div class="avatar-face">
+        {{ perfil.avatar_emoji }}
+    </div>
+
+    <span class="avatar-level-badge">
+        Nv. {{ perfil.avatar_nivel }}
+    </span>
+</div>

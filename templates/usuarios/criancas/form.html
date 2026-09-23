@@ -1,0 +1,189 @@
+{% extends "base_app.html" %}
+
+{% block title %}{{ titulo }} | Minha Rotina{% endblock %}
+
+{% block app_content %}
+<div class="form-page">
+
+    <div class="mb-4">
+        <a href="{% url 'criancas_listar' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Crianças
+        </a>
+    </div>
+
+    <div class="content-card form-card">
+        <div class="mb-4">
+            <h1 class="h4 fw-bold mb-1">{{ titulo }}</h1>
+            <p class="text-muted mb-0">
+                Cadastre quem participará das rotinas.
+            </p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form.nome.id_for_label }}" class="form-label fw-semibold">
+                    Nome
+                </label>
+                {{ form.nome }}
+                {% for error in form.nome.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.data_nascimento.id_for_label }}" class="form-label fw-semibold">
+                    Data de nascimento
+                </label>
+                {{ form.data_nascimento }}
+                {% for error in form.data_nascimento.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                <div class="form-label fw-semibold">
+                    Escolha um avatar
+                </div>
+
+                <p class="small text-muted">
+                    O personagem evolui conforme os pontos aumentam.
+                </p>
+
+                <div class="avatar-choice-grid">
+                    {% for radio in form.avatar_tipo %}
+                        <label class="avatar-choice-card">
+                            {{ radio.tag }}
+                            <span class="avatar-choice-content">
+                                <span class="avatar-choice-emoji">
+                                    {{ radio.choice_label|slice:":1" }}
+                                </span>
+                                <span class="avatar-choice-name">
+                                    {{ radio.choice_label }}
+                                </span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                {% for error in form.avatar_tipo.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="access-option">
+                <div class="form-check form-switch">
+                    {{ form.acesso_proprio }}
+                    <label
+                        class="form-check-label fw-semibold"
+                        for="{{ form.acesso_proprio.id_for_label }}"
+                    >
+                        A criança usará o próprio celular
+                    </label>
+                </div>
+
+                <p class="small text-muted mb-0 mt-2">
+                    Ative quando a criança já usar smartphone com autonomia.
+                    Para crianças menores, deixe desligado: o Tutor controla
+                    as tarefas pelo próprio aplicativo.
+                </p>
+            </div>
+
+            <div id="dados-acesso" class="access-fields mt-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="access-icon">
+                        <i class="bi bi-phone"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold">Acesso da criança</div>
+                        <div class="text-muted small">
+                            Dados usados no dispositivo da criança.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label
+                        for="{{ form.usuario_acesso.id_for_label }}"
+                        class="form-label fw-semibold"
+                    >
+                        Usuário
+                    </label>
+                    {{ form.usuario_acesso }}
+                    {% for error in form.usuario_acesso.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.senha.id_for_label }}" class="form-label fw-semibold">
+                            Senha
+                        </label>
+                        {{ form.senha }}
+                        {% for error in form.senha.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label
+                            for="{{ form.confirmar_senha.id_for_label }}"
+                            class="form-label fw-semibold"
+                        >
+                            Confirmar senha
+                        </label>
+                        {{ form.confirmar_senha }}
+                        {% for error in form.confirmar_senha.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if form.instance.pk and form.instance.usuario_id %}
+                    <div class="form-text mt-3">
+                        Deixe a senha em branco se não quiser alterá-la.
+                    </div>
+                {% endif %}
+            </div>
+
+            {% for error in form.non_field_errors %}
+                <div class="alert alert-danger mt-3">{{ error }}</div>
+            {% endfor %}
+
+            <div class="form-actions mt-4">
+                <a href="{% url 'criancas_listar' %}" class="btn btn-light">
+                    Cancelar
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i>
+                    {{ texto_botao }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const acesso = document.getElementById("id_acesso_proprio");
+    const dados = document.getElementById("dados-acesso");
+
+    if (!acesso || !dados) {
+        return;
+    }
+
+    function atualizarAcesso() {
+        dados.classList.toggle("d-none", !acesso.checked);
+    }
+
+    acesso.addEventListener("change", atualizarAcesso);
+    atualizarAcesso();
+});
+</script>
+{% endblock %}

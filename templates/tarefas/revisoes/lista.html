@@ -1,0 +1,83 @@
+{% extends "base_app.html" %}
+
+{% block title %}Revisões | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="page-heading">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Revisões</h1>
+        <p class="text-muted mb-0">
+            Avalie as evidências antes de liberar os pontos.
+        </p>
+    </div>
+
+    <span class="review-count">
+        {{ tarefas|length }} pendente{{ tarefas|length|pluralize }}
+    </span>
+</div>
+
+{% if tarefas %}
+    <div class="review-grid">
+        {% for tarefa in tarefas %}
+            <article class="review-card">
+                <a href="{% url 'revisao_detalhe' tarefa.id %}" class="review-photo">
+                    {% if tarefa.foto %}
+                        <img
+                            src="{% url 'foto_tarefa_privada' tarefa.id %}"
+                            alt="Evidência de {{ tarefa.titulo }}"
+                        >
+                    {% else %}
+                        <div class="review-photo-placeholder">
+                            <i class="bi bi-image"></i>
+                        </div>
+                    {% endif %}
+                </a>
+
+                <div class="review-card-body">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="review-child-avatar">
+                            {{ tarefa.crianca.avatar_emoji }}
+                        </span>
+                        <span class="fw-semibold">
+                            {{ tarefa.crianca.nome_exibicao }}
+                        </span>
+                    </div>
+
+                    <h2 class="h5 fw-bold mb-1">{{ tarefa.titulo }}</h2>
+
+                    <div class="task-meta mb-3">
+                        <span>
+                            <i class="bi bi-star-fill"></i>
+                            {{ tarefa.pontos_base }} pts
+                        </span>
+
+                        {% if tarefa.procrastinou %}
+                            <span class="late-pill">Após 8h</span>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'revisao_detalhe' tarefa.id %}" class="btn btn-primary w-100">
+                        Revisar
+                    </a>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="content-card">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+
+            <h2 class="h5 fw-bold">Tudo revisado</h2>
+
+            <p class="text-muted mb-0">
+                Nenhuma evidência está aguardando sua avaliação.
+            </p>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

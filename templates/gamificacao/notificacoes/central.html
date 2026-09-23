@@ -1,0 +1,162 @@
+{% extends "base_app.html" %}
+
+{% block title %}Notificações | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="page-heading notification-page-heading">
+
+    <div>
+        <span class="hero-eyebrow">
+            Central de avisos
+        </span>
+
+        <h1 class="h3 fw-bold mb-1">
+            Notificações
+        </h1>
+
+        <p class="text-muted mb-0">
+            Evoluções, tarefas não realizadas e resumos da rotina.
+        </p>
+    </div>
+
+
+    {% if total_nao_lidas %}
+        <form
+            method="post"
+            action="{% url 'notificacoes_marcar_todas' %}"
+        >
+            {% csrf_token %}
+
+            <button
+                type="submit"
+                class="btn btn-light"
+            >
+                <i class="bi bi-check2-all"></i>
+                Marcar todas como lidas
+            </button>
+        </form>
+    {% endif %}
+
+</div>
+
+
+<div class="notification-filter-bar mb-4">
+
+    <a
+        href="{% url 'notificacoes_central' %}?filtro=todas"
+        class="{% if filtro == 'todas' %}active{% endif %}"
+    >
+        Todas
+    </a>
+
+    <a
+        href="{% url 'notificacoes_central' %}?filtro=nao_lidas"
+        class="{% if filtro == 'nao_lidas' %}active{% endif %}"
+    >
+        Não lidas
+
+        {% if total_nao_lidas %}
+            <span>
+                {{ total_nao_lidas }}
+            </span>
+        {% endif %}
+    </a>
+
+</div>
+
+
+{% if notificacoes %}
+
+    <div class="notification-center-list">
+
+        {% for notificacao in notificacoes %}
+
+            <a
+                href="{% url 'notificacao_abrir' notificacao.id %}"
+                class="notification-center-item {% if not notificacao.visualizada %}is-unread{% endif %}"
+            >
+
+                <div class="notification-center-icon {{ notificacao.classe_visual }}">
+                    <i class="bi {{ notificacao.icone_bootstrap }}"></i>
+                </div>
+
+
+                <div class="notification-center-content">
+
+                    <div class="notification-center-top">
+
+                        <div>
+                            <h2 class="h6 fw-bold mb-1">
+                                {{ notificacao.titulo }}
+                            </h2>
+
+                            <time>
+                                {{ notificacao.criada_em|date:"d/m/Y H:i" }}
+                            </time>
+                        </div>
+
+                        {% if not notificacao.visualizada %}
+                            <span class="unread-dot"></span>
+                        {% endif %}
+
+                    </div>
+
+
+                    {% if notificacao.mensagem %}
+                        <p>
+                            {{ notificacao.mensagem }}
+                        </p>
+                    {% endif %}
+
+
+                    <div class="notification-center-tags">
+
+                        <span>
+                            {{ notificacao.get_tipo_display }}
+                        </span>
+
+                        {% if notificacao.crianca %}
+                            <span>
+                                {{ notificacao.crianca.avatar_emoji }}
+                                {{ notificacao.crianca.nome_exibicao }}
+                            </span>
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                <i class="bi bi-chevron-right notification-chevron"></i>
+
+            </a>
+
+        {% endfor %}
+
+    </div>
+
+{% else %}
+
+    <div class="content-card">
+
+        <div class="empty-state">
+
+            <div class="empty-state-icon">
+                <i class="bi bi-bell"></i>
+            </div>
+
+            <h2 class="h5 fw-bold">
+                Nenhuma notificação
+            </h2>
+
+            <p class="text-muted mb-0">
+                Quando houver algo importante na rotina, você verá por aqui.
+            </p>
+
+        </div>
+
+    </div>
+
+{% endif %}
+
+{% endblock %}

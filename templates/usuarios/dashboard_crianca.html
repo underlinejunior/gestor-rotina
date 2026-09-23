@@ -1,0 +1,340 @@
+{% extends "base_app.html" %}
+
+{% block title %}Minhas tarefas | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<section class="dashboard-hero child-hero mb-4">
+
+    <div>
+        <span class="hero-eyebrow">
+            Minha rotina de hoje
+        </span>
+
+        <h1 class="display-6 fw-bold mb-2">
+            Oi, {{ request.user.first_name|default:request.user.username }}!
+        </h1>
+
+        <p class="mb-0 hero-copy">
+            Complete tarefas, envie a foto e faça seu avatar evoluir.
+        </p>
+    </div>
+
+    {% if perfil %}
+        {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+    {% endif %}
+
+</section>
+
+
+{% if perfil %}
+
+<div class="points-strip mb-4">
+
+    <div class="points-icon">
+        <i class="bi bi-star-fill"></i>
+    </div>
+
+    <div>
+        <div class="small opacity-75">
+            Saldo para recompensas
+        </div>
+
+        <div class="points-value">
+            {{ perfil.saldo_pontos }}
+        </div>
+    </div>
+
+
+    <div class="flex-grow-1 ms-2">
+
+        <div class="d-flex justify-content-between gap-2 small mb-1">
+            <span>
+                {{ perfil.avatar_titulo_nivel }}
+                · {{ perfil.pontos_evolucao }} XP
+            </span>
+
+            {% if perfil.avatar_nivel < 5 %}
+                <span>
+                    {{ perfil.pontos_para_proximo_nivel }} pts para evoluir
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="avatar-progress avatar-progress-light">
+            <div
+                class="avatar-progress-bar"
+                style="width: {{ perfil.avatar_progresso_percentual }}%;"
+            ></div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+<div class="row g-3">
+
+    <div class="col-4">
+        <div class="child-status-card">
+            <div class="child-status-icon pending">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+
+            <div class="h2 fw-bold mb-0">
+                {{ total_pendentes }}
+            </div>
+
+            <div class="text-muted status-label">
+                Pendentes
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-4">
+        <div class="child-status-card">
+            <div class="child-status-icon review">
+                <i class="bi bi-camera"></i>
+            </div>
+
+            <div class="h2 fw-bold mb-0">
+                {{ total_revisao }}
+            </div>
+
+            <div class="text-muted status-label">
+                Em revisão
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-4">
+        <div class="child-status-card">
+            <div class="child-status-icon done">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+
+            <div class="h2 fw-bold mb-0">
+                {{ total_concluidas }}
+            </div>
+
+            <div class="text-muted status-label">
+                Feitas
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+{% if indicadores_semana %}
+<div class="kid-week-card mt-4">
+
+    <div>
+        <span class="hero-eyebrow">
+            Minha semana
+        </span>
+
+        <h2 class="h5 fw-bold mb-1">
+            {{ indicadores_semana.taxa_conclusao }}% concluído
+        </h2>
+
+        <p class="text-muted small mb-0">
+            {{ indicadores_semana.aprovadas }} tarefa{{ indicadores_semana.aprovadas|pluralize }} aprovada{{ indicadores_semana.aprovadas|pluralize }}
+        </p>
+    </div>
+
+
+    <a
+        href="{% url 'meu_historico' %}"
+        class="btn btn-light"
+    >
+        <i class="bi bi-clock-history"></i>
+        Histórico
+    </a>
+
+</div>
+{% endif %}
+
+
+<div class="kid-game-grid mt-4">
+
+    <a
+        href="{% url 'loja_recompensas' %}"
+        class="kid-game-card"
+    >
+        <span class="kid-game-icon">
+            🎁
+        </span>
+
+        <span>
+            <small>Loja</small>
+            <strong>
+                ⭐ {{ perfil.saldo_pontos }}
+            </strong>
+        </span>
+
+        <i class="bi bi-chevron-right"></i>
+    </a>
+
+
+    <a
+        href="{% url 'minhas_conquistas' %}"
+        class="kid-game-card"
+    >
+        <span class="kid-game-icon">
+            🔥
+        </span>
+
+        <span>
+            <small>Sequência</small>
+            <strong>
+                {{ sequencia_atual }} dia{{ sequencia_atual|pluralize }}
+            </strong>
+        </span>
+
+        <i class="bi bi-chevron-right"></i>
+    </a>
+
+</div>
+
+
+{% if conquistas_recentes %}
+<div class="recent-achievements mt-3">
+    {% for item in conquistas_recentes %}
+        <span class="recent-achievement-pill">
+            {{ item.conquista.icone }}
+            {{ item.conquista.nome }}
+        </span>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+<div class="kid-skills-cta mt-4">
+
+    <div class="kid-skills-cta-icon">
+        <i class="bi bi-graph-up-arrow"></i>
+    </div>
+
+    <div class="flex-grow-1">
+        <span class="hero-eyebrow">
+            Desenvolvimento
+        </span>
+
+        <h2 class="h5 fw-bold mb-1">
+            Veja suas habilidades
+        </h2>
+
+        <p class="text-muted small mb-0">
+            Descubra quais tipos de atividade você tem praticado mais.
+        </p>
+    </div>
+
+    <a
+        href="{% url 'minhas_habilidades' %}"
+        class="btn btn-light"
+    >
+        Ver habilidades
+    </a>
+
+</div>
+
+
+<div class="content-card mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <div>
+            <h2 class="h5 fw-bold mb-1">
+                Próximas tarefas
+            </h2>
+
+            <p class="text-muted small mb-0">
+                Foque em uma por vez.
+            </p>
+        </div>
+
+        <a
+            href="{% url 'minhas_tarefas' %}"
+            class="btn btn-light"
+        >
+            Ver todas
+        </a>
+
+    </div>
+
+
+    {% if tarefas %}
+
+        <div class="task-list">
+
+            {% for tarefa in tarefas %}
+
+                <div class="task-card task-status-{{ tarefa.status|lower }}">
+
+                    <div class="task-main">
+                        <div class="task-title">
+                            {{ tarefa.titulo }}
+                        </div>
+
+                        <div class="task-meta">
+                            <span>
+                                <i class="bi bi-star"></i>
+                                {{ tarefa.pontos_base }} pts
+                            </span>
+
+                            <span>
+                                <i class="bi bi-clock"></i>
+                                {{ tarefa.momento_resumo }}
+                            </span>
+
+                            <span>
+                                {{ tarefa.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+
+
+                    {% if tarefa.pode_enviar_comprovante %}
+                        <a
+                            href="{% url 'enviar_foto' tarefa.id %}"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-camera"></i>
+                            Fazer
+                        </a>
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state child-empty-state">
+
+            <div class="empty-state-icon">
+                <i class="bi bi-stars"></i>
+            </div>
+
+            <h2 class="h5 fw-bold">
+                Tudo tranquilo por aqui
+            </h2>
+
+            <p class="text-muted mb-0">
+                Quando uma nova tarefa estiver disponível, ela aparecerá nesta tela.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

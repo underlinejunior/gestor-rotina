@@ -1,0 +1,123 @@
+{% extends "base_app.html" %}
+
+{% block title %}Minhas tarefas | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="page-heading child-page-heading">
+    <div>
+        <span class="hero-eyebrow">{{ hoje|date:"d/m/Y" }}</span>
+        <h1 class="h3 fw-bold mb-1">Minhas tarefas</h1>
+        <p class="text-muted mb-0">
+            Escolha uma tarefa, faça e envie a foto.
+        </p>
+    </div>
+
+    {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+</div>
+
+{% if tarefas %}
+    <div class="task-list">
+        {% for tarefa in tarefas %}
+            <article class="task-card task-status-{{ tarefa.status|lower }}">
+                <div class="task-state-icon">
+                    {% if tarefa.status == "PENDENTE" %}
+                        <i class="bi bi-hourglass-split"></i>
+                    {% elif tarefa.status == "REVISAO" %}
+                        <i class="bi bi-camera"></i>
+                    {% elif tarefa.status == "APROVADA" %}
+                        <i class="bi bi-check2-circle"></i>
+                    {% else %}
+                        <i class="bi bi-arrow-repeat"></i>
+                    {% endif %}
+                </div>
+
+                <div class="task-main">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <h2 class="h5 fw-bold mb-0">{{ tarefa.titulo }}</h2>
+
+                        {% if tarefa.origem == "BONUS" %}
+                            <span class="bonus-pill">Bônus</span>
+                        {% endif %}
+                    </div>
+
+                    {% if tarefa.descricao %}
+                        <p class="text-muted small mt-2 mb-2">
+                            {{ tarefa.descricao }}
+                        </p>
+                    {% endif %}
+
+                    {% if tarefa.skills_snapshot.all %}
+                        <div class="task-skill-pills task-skill-pills-inline mb-2">
+                            {% for skill in tarefa.skills_snapshot.all %}
+                                <span class="task-skill-pill">
+                                    {{ skill.icone_snapshot }}
+                                    {{ skill.nome_snapshot }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+
+                    <div class="task-meta">
+                        <span>
+                            <i class="bi bi-star-fill"></i>
+                            {{ tarefa.pontos_base }} pts
+                        </span>
+
+                        <span>{{ tarefa.get_status_display }}</span>
+
+                        {% if tarefa.procrastinou %}
+                            <span class="late-pill">Feita com atraso</span>
+                        {% endif %}
+                    </div>
+
+                    {% if tarefa.status == "REJEITADA" and tarefa.feedback_tutor %}
+                        <div class="feedback-box mt-3">
+                            <strong>Orientação:</strong>
+                            {{ tarefa.feedback_tutor }}
+                        </div>
+                    {% endif %}
+
+                    {% if tarefa.status == "APROVADA" and tarefa.feedback_tutor %}
+                        <div class="feedback-box feedback-success mt-3">
+                            <strong>Feedback:</strong>
+                            {{ tarefa.feedback_tutor }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="task-action">
+                    {% if tarefa.pode_enviar_comprovante %}
+                        <a href="{% url 'enviar_foto' tarefa.id %}" class="btn btn-primary">
+                            <i class="bi bi-camera"></i>
+                            {% if tarefa.status == "REJEITADA" %}
+                                Tentar novamente
+                            {% else %}
+                                Concluir
+                            {% endif %}
+                        </a>
+                    {% elif tarefa.status == "REVISAO" %}
+                        <span class="status-pill status-review">Aguardando</span>
+                    {% elif tarefa.status == "APROVADA" %}
+                        <span class="status-pill status-approved">
+                            +{{ tarefa.pontos_concedidos|default:tarefa.pontos_base }} pts
+                        </span>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="content-card">
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="bi bi-stars"></i></div>
+            <h2 class="h5 fw-bold">Nada para fazer agora</h2>
+            <p class="text-muted mb-0">
+                Quando surgir uma nova tarefa, ela aparecerá aqui.
+            </p>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

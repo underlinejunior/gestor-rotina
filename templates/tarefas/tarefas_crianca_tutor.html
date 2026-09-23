@@ -1,0 +1,161 @@
+{% extends "base_app.html" %}
+
+{% block title %}Tarefas de {{ perfil.nome_exibicao }} | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="page-heading">
+
+    <div>
+        <a
+            href="{% url 'criancas_listar' %}"
+            class="back-link mb-2"
+        >
+            <i class="bi bi-arrow-left"></i>
+            Crianças
+        </a>
+
+        <h1 class="h3 fw-bold mb-1">
+            Tarefas de {{ perfil.nome_exibicao }}
+        </h1>
+
+        <p class="text-muted mb-0">
+            {{ hoje|date:"d/m/Y" }} · O Tutor pode registrar a conclusão pelo próprio celular.
+        </p>
+    </div>
+
+
+    <div class="d-flex align-items-center gap-2">
+        <a
+            href="{% url 'historico_crianca_tutor' perfil.id %}"
+            class="btn btn-light"
+        >
+            <i class="bi bi-clock-history"></i>
+            Histórico
+        </a>
+
+        {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+    </div>
+
+</div>
+
+
+{% if tarefas %}
+
+    <div class="task-list">
+
+        {% for tarefa in tarefas %}
+
+            <article class="task-card task-status-{{ tarefa.status|lower }}">
+
+                <div class="task-main">
+
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+
+                        <h2 class="h5 fw-bold mb-0">
+                            {{ tarefa.titulo }}
+                        </h2>
+
+                        {% if tarefa.origem == "BONUS" %}
+                            <span class="bonus-pill">
+                                Bônus
+                            </span>
+                        {% endif %}
+
+                    </div>
+
+
+                    {% if tarefa.descricao %}
+                        <p class="text-muted small mt-2 mb-2">
+                            {{ tarefa.descricao }}
+                        </p>
+                    {% endif %}
+
+
+                    {% if tarefa.skills_snapshot.all %}
+                        <div class="task-skill-pills task-skill-pills-inline mb-2">
+                            {% for skill in tarefa.skills_snapshot.all %}
+                                <span class="task-skill-pill">
+                                    {{ skill.icone_snapshot }}
+                                    {{ skill.nome_snapshot }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+
+                    <div class="task-meta">
+                        <span>
+                            <i class="bi bi-star-fill"></i>
+                            {{ tarefa.pontos_base }} pts
+                        </span>
+
+                        <span>
+                            {{ tarefa.get_status_display }}
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="task-action">
+
+                    {% if tarefa.pode_enviar_comprovante %}
+                        <a
+                            href="{% url 'enviar_foto' tarefa.id %}"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-camera"></i>
+                            Registrar conclusão
+                        </a>
+
+                    {% elif tarefa.status == "REVISAO" %}
+                        <a
+                            href="{% url 'revisao_detalhe' tarefa.id %}"
+                            class="btn btn-light"
+                        >
+                            Revisar
+                        </a>
+
+                    {% elif tarefa.status == "APROVADA" %}
+                        <span class="status-pill status-approved">
+                            Aprovada
+                        </span>
+                    {% endif %}
+
+                </div>
+
+            </article>
+
+        {% endfor %}
+
+    </div>
+
+{% else %}
+
+    <div class="content-card">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+
+            <h2 class="h5 fw-bold">
+                Nenhuma tarefa para hoje
+            </h2>
+
+            <p class="text-muted">
+                Crie uma rotina ou lance uma tarefa bônus.
+            </p>
+
+            <a
+                href="{% url 'rotina_criar' %}"
+                class="btn btn-primary"
+            >
+                Criar rotina
+            </a>
+        </div>
+    </div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Política de Privacidade | Minha Rotina{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-md-5" style="max-width: 920px;">
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
+        <div>
+            <span class="badge text-bg-light border mb-2">Versão {{ versao }}</span>
+            <h1 class="h2 fw-bold mb-2">Política de Privacidade</h1>
+            <p class="text-muted mb-0">
+                Como o protótipo trata dados de responsáveis e crianças.
+            </p>
+        </div>
+        <a href="{% url 'inicio' %}" class="btn btn-outline-secondary">
+            Voltar
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+            <h2 class="h5 fw-bold">1. Dados tratados</h2>
+            <p>
+                O sistema pode armazenar dados do Tutor, como nome, usuário e e-mail;
+                dados do perfil infantil, como nome, data de nascimento, avatar e acesso
+                opcional; informações de rotinas, tarefas, pontos, Skills, recompensas,
+                notificações e fotografias enviadas como evidência de realização.
+            </p>
+
+            <h2 class="h5 fw-bold mt-4">2. Finalidades</h2>
+            <p>
+                Os dados são utilizados para autenticação, organização das rotinas,
+                acompanhamento familiar, revisão de evidências, cálculo de indicadores
+                gamificados, geração de histórico e relatórios e funcionamento das
+                funcionalidades escolhidas pelo responsável.
+            </p>
+
+            <h2 class="h5 fw-bold mt-4">3. Dados de crianças</h2>
+            <p>
+                O perfil infantil é criado e administrado por um Tutor. O sistema procura
+                minimizar a coleta: a criança não precisa fornecer e-mail e não precisa
+                utilizar uma conta Google. O responsável deve cadastrar somente os dados
+                necessários ao uso da solução e observar o melhor interesse da criança.
+            </p>
+
+            <h2 class="h5 fw-bold mt-4">4. Fotografias</h2>
+            <p>
+                As fotografias de evidência são privadas e não são expostas por uma pasta
+                pública de mídia. O acesso ocorre por endpoint autenticado e autorizado por
+                família. No envio pelo formulário da aplicação, a imagem é regravada sem
+                metadados EXIF/GPS e com resolução limitada. Evidências finalizadas podem
+                ser removidas após {{ retencao_dias }} dias por rotina de retenção, e o Tutor
+                também pode removê-las pela Central de Privacidade.
+            </p>
+
+            <h2 class="h5 fw-bold mt-4">5. Compartilhamento e serviços externos</h2>
+            <p>
+                O login com Google é opcional e destinado ao Tutor. Tokens do provedor não
+                são armazenados pelo projeto. O protótipo não vende dados. Integrações futuras,
+                como sugestões por IA, deverão adotar minimização de dados e revisão pelo Tutor
+                antes de qualquer persistência de sugestão.
+            </p>
+
+            <h2 class="h5 fw-bold mt-4">6. Segurança</h2>
+            <p>
+                O sistema utiliza autenticação, proteção CSRF, controle de acesso por família,
+                senhas com hash do Django, estratégia conservadora de cache e entrega privada
+                das evidências. Em produção, devem ser utilizados HTTPS, cookies seguros,
+                chave secreta em variável de ambiente, hosts autorizados e cabeçalhos de
+                segurança.
+            </p>
+
+            <h2 class="h5 fw-bold mt-4">7. Acesso, exportação e exclusão</h2>
+            <p>
+                O Tutor pode acessar a Central de Privacidade para exportar os principais
+                dados estruturados da família, remover evidências fotográficas e solicitar
+                exclusão da própria conta. Em famílias compartilhadas, o histórico que precisa
+                ser preservado para os demais responsáveis é mantido com anonimização da conta
+                removida.
+            </p>
+
+            <h2 class="h5 fw-bold mt-4">8. Escopo acadêmico</h2>
+            <p class="mb-0">
+                Esta política documenta as medidas implementadas no protótipo acadêmico.
+                Uma disponibilização pública exige revisão jurídica e operacional da hipótese
+                legal aplicável, dos prazos de retenção, dos canais de atendimento e das
+                responsabilidades do controlador e dos operadores.
+                {% if contato_privacidade %}
+                    Contato informado para privacidade: {{ contato_privacidade }}.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

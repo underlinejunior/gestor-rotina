@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Entrar | Minha Rotina{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    .login-password-wrap {
+        position: relative;
+    }
+
+    .login-password-wrap .form-control {
+        padding-right: 56px !important;
+    }
+
+    .login-password-toggle {
+        appearance: none;
+        -webkit-appearance: none;
+        position: absolute;
+        z-index: 5;
+        top: 50%;
+        right: 12px;
+        width: 38px;
+        height: 38px;
+        margin: 0;
+        padding: 0;
+        transform: translateY(-50%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0 !important;
+        border-radius: 11px;
+        color: #747986;
+        background: transparent !important;
+        box-shadow: none !important;
+        cursor: pointer;
+    }
+
+    .login-password-toggle:hover,
+    .login-password-toggle:focus-visible {
+        color: #4f46e5;
+        background: #f1f0ff !important;
+        outline: none;
+    }
+
+    .login-password-toggle svg {
+        width: 21px;
+        height: 21px;
+        display: block;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        pointer-events: none;
+    }
+
+    .login-password-toggle .icon-eye-off {
+        display: none;
+    }
+
+    .login-password-toggle.is-visible .icon-eye {
+        display: none;
+    }
+
+    .login-password-toggle.is-visible .icon-eye-off {
+        display: block;
+    }
+
+    .login-google-button {
+        width: 100%;
+        min-height: 64px;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        border: 1px solid #dfe3eb;
+        border-radius: 17px;
+        color: #30343b;
+        background: #fff;
+        text-align: left;
+        transition:
+            border-color .18s ease,
+            box-shadow .18s ease,
+            transform .18s ease,
+            background .18s ease;
+    }
+
+    .login-google-button:hover,
+    .login-google-button:focus-visible {
+        color: #30343b;
+        border-color: #c8c9ff;
+        background: #fbfbff;
+        box-shadow: 0 8px 22px rgba(79, 70, 229, .08);
+        transform: translateY(-1px);
+        outline: none;
+    }
+
+    .login-google-icon {
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 13px;
+        color: #5f6368;
+        background: #f7f8fa;
+        font-size: 19px;
+    }
+
+    .login-google-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .login-google-copy strong {
+        color: #30343b;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .login-google-copy small {
+        color: #7b818c;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .login-google-unavailable {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 15px;
+        border: 1px dashed #d9dce4;
+        border-radius: 16px;
+        color: #747986;
+        background: #fafbfc;
+    }
+
+    .login-google-unavailable > i {
+        width: 38px;
+        min-width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        color: #8b929e;
+        background: #fff;
+        font-size: 18px;
+    }
+
+    .login-google-unavailable strong,
+    .login-google-unavailable span {
+        display: block;
+    }
+
+    .login-google-unavailable strong {
+        color: #515762;
+        font-size: 13px;
+    }
+
+    .login-google-unavailable span {
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="card auth-card">
+        <div class="card-body p-4 p-md-5">
+
+            <div class="auth-logo">
+                <i class="bi bi-check2"></i>
+            </div>
+
+            <div class="text-center mb-4">
+
+                <h1 class="h3 fw-bold mb-2">
+                    Minha Rotina
+                </h1>
+
+                <p class="text-muted-custom mb-0">
+                    Rotinas mais leves, conquistas todos os dias.
+                </p>
+
+            </div>
+
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div
+                        class="alert alert-{{ message.tags|default:'info' }}"
+                    >
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+
+            {% if erro %}
+                <div class="alert alert-danger">
+                    {{ erro }}
+                </div>
+            {% endif %}
+
+
+            {% if google_login_disponivel %}
+
+                <form
+                    method="post"
+                    action="{% provider_login_url 'google' process='login' %}"
+                    class="mb-3"
+                >
+                    {% csrf_token %}
+
+                    <button
+                        type="submit"
+                        class="login-google-button"
+                    >
+                        <span class="login-google-icon">
+                            <i class="bi bi-google"></i>
+                        </span>
+
+                        <span class="login-google-copy">
+                            <strong>
+                                Entrar com Google
+                            </strong>
+
+                            <small>
+                                Acesso rápido para o Tutor
+                            </small>
+                        </span>
+                    </button>
+                </form>
+
+                <div class="auth-divider my-4">
+                    ou use seu acesso
+                </div>
+
+            {% else %}
+
+                <div class="login-google-unavailable mb-4">
+                    <i class="bi bi-google"></i>
+
+                    <div>
+                        <strong>
+                            Login com Google temporariamente indisponível
+                        </strong>
+
+                        <span>
+                            O servidor atual não encontrou as credenciais
+                            configuradas para o Google.
+                        </span>
+                    </div>
+                </div>
+
+            {% endif %}
+
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label
+                        for="username"
+                        class="form-label fw-semibold"
+                    >
+                        Usuário
+                    </label>
+
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="username"
+                        name="username"
+                        autocomplete="username"
+                        placeholder="Digite seu usuário"
+                        required
+                        autofocus
+                    >
+                </div>
+
+
+                <div class="mb-3">
+                    <label
+                        for="password"
+                        class="form-label fw-semibold"
+                    >
+                        Senha
+                    </label>
+
+                    <div class="login-password-wrap">
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="password"
+                            name="password"
+                            autocomplete="current-password"
+                            placeholder="Digite sua senha"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="login-password-toggle"
+                            id="login-password-toggle"
+                            aria-label="Mostrar senha"
+                            aria-pressed="false"
+                            title="Mostrar senha"
+                        >
+                            <svg
+                                class="icon-eye"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                                <circle cx="12" cy="12" r="2.8"></circle>
+                            </svg>
+
+                            <svg
+                                class="icon-eye-off"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path d="m3 3 18 18"></path>
+                                <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a15.5 15.5 0 0 1-3 3.7"></path>
+                                <path d="M14.1 14.2a3 3 0 0 1-4.2-4.3"></path>
+                                <path d="M6.2 6.3C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6a9.5 9.5 0 0 0 3.1-.5"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+
+                <div class="d-grid mt-4">
+                    <button
+                        type="submit"
+                        class="btn btn-primary btn-auth"
+                    >
+                        Entrar
+                    </button>
+                </div>
+            </form>
+
+
+            <p class="login-child-help mt-4">
+                <i class="bi bi-info-circle"></i>
+                Crianças usam o usuário criado pelo responsável.
+                O Google é reservado ao acesso do Tutor.
+            </p>
+
+
+            <p class="text-center mt-4 mb-0">
+                Ainda não possui uma conta?
+
+                <a
+                    href="{% url 'cadastro_tutor' %}"
+                    class="fw-semibold text-decoration-none"
+                >
+                    Criar conta
+                </a>
+            </p>
+
+            <p class="text-center small mt-3 mb-0">
+                <a href="{% url 'privacidade_politica' %}" class="text-decoration-none text-muted">
+                    Política de Privacidade
+                </a>
+            </p>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function () {
+    "use strict";
+
+    const input = document.getElementById("password");
+    const button = document.getElementById("login-password-toggle");
+
+    if (!input || !button) {
+        return;
+    }
+
+    button.addEventListener("click", function () {
+        const mostrar = input.type === "password";
+
+        input.type = mostrar ? "text" : "password";
+
+        button.classList.toggle(
+            "is-visible",
+            mostrar
+        );
+
+        button.setAttribute(
+            "aria-pressed",
+            String(mostrar)
+        );
+
+        button.setAttribute(
+            "aria-label",
+            mostrar ? "Ocultar senha" : "Mostrar senha"
+        );
+
+        button.setAttribute(
+            "title",
+            mostrar ? "Ocultar senha" : "Mostrar senha"
+        );
+
+        input.focus();
+    });
+})();
+</script>
+{% endblock %}

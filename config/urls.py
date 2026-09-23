@@ -1,0 +1,14 @@
+from django.contrib import admin
+from django.urls import include, path
+
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("accounts/", include("allauth.urls")),
+    path("", include("usuarios.urls")),
+    path("", include("tarefas.urls")),
+    path("", include("gamificacao.urls")),
+]
+
+# Deliberadamente não existe rota pública para MEDIA_ROOT. Evidências
+# fotográficas são servidas somente por endpoint autenticado e autorizado.

@@ -1,0 +1,61 @@
+<div class="wizard-skills">
+    <div class="wizard-section-title">
+        <h2>Skills</h2>
+        <span>Preenchidas automaticamente ao escolher uma tarefa.</span>
+    </div>
+
+    <div class="wizard-skills-grid">
+        {% for item in skills_disponiveis %}
+            <div
+                class="wizard-skill-row"
+                data-skill-card="{{ item.skill.id }}"
+            >
+                <input
+                    type="hidden"
+                    name="skill_impact_{{ item.skill.id }}"
+                    id="skill-impact-{{ item.skill.id }}"
+                    value="{{ item.impacto }}"
+                >
+
+                <div class="wizard-skill-name">
+                    <span>{{ item.skill.icone }}</span>
+                    <strong>{{ item.skill.nome }}</strong>
+                </div>
+
+                <div
+                    class="skill-impact-options wizard-skill-impact"
+                    data-skill-id="{{ item.skill.id }}"
+                >
+                    <button
+                        type="button"
+                        data-impact="0"
+                        class="{% if item.impacto == 0 %}active{% endif %}"
+                        title="Sem associação"
+                        aria-label="Sem associação"
+                    >—</button>
+                    <button
+                        type="button"
+                        data-impact="1"
+                        class="{% if item.impacto == 1 %}active{% endif %}"
+                        title="Impacto leve"
+                        aria-label="Impacto leve"
+                    >+</button>
+                    <button
+                        type="button"
+                        data-impact="2"
+                        class="{% if item.impacto == 2 %}active{% endif %}"
+                        title="Impacto médio"
+                        aria-label="Impacto médio"
+                    >++</button>
+                    <button
+                        type="button"
+                        data-impact="3"
+                        class="{% if item.impacto == 3 %}active{% endif %}"
+                        title="Impacto forte"
+                        aria-label="Impacto forte"
+                    >+++</button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

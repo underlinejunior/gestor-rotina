@@ -1,0 +1,92 @@
+<div class="dropdown">
+
+    <button
+        class="header-icon-btn notification-bell-btn"
+        type="button"
+        data-bs-toggle="dropdown"
+        data-bs-auto-close="outside"
+        aria-expanded="false"
+        aria-label="Notificações"
+    >
+        <i class="bi bi-bell"></i>
+
+        {% if total_nao_lidas %}
+            <span class="notification-badge">
+                {% if total_nao_lidas > 9 %}
+                    9+
+                {% else %}
+                    {{ total_nao_lidas }}
+                {% endif %}
+            </span>
+        {% endif %}
+    </button>
+
+
+    <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+
+        <div class="notification-dropdown-header">
+            <div>
+                <strong>Notificações</strong>
+
+                <small>
+                    {% if total_nao_lidas %}
+                        {{ total_nao_lidas }} não lida{{ total_nao_lidas|pluralize }}
+                    {% else %}
+                        Tudo em dia
+                    {% endif %}
+                </small>
+            </div>
+
+            <a href="{% url 'notificacoes_central' %}">
+                Ver todas
+            </a>
+        </div>
+
+
+        <div class="notification-dropdown-list">
+
+            {% if notificacoes_recentes %}
+
+                {% for notificacao in notificacoes_recentes %}
+
+                    <a
+                        href="{% url 'notificacao_abrir' notificacao.id %}"
+                        class="notification-mini-item"
+                    >
+                        <span class="notification-mini-icon {{ notificacao.classe_visual }}">
+                            <i class="bi {{ notificacao.icone_bootstrap }}"></i>
+                        </span>
+
+                        <span class="notification-mini-content">
+                            <strong>
+                                {{ notificacao.titulo }}
+                            </strong>
+
+                            <small>
+                                {{ notificacao.mensagem|truncatechars:85 }}
+                            </small>
+
+                            <time>
+                                {{ notificacao.criada_em|date:"d/m H:i" }}
+                            </time>
+                        </span>
+                    </a>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="notification-empty-mini">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>
+                        Nenhum aviso novo.
+                    </span>
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>

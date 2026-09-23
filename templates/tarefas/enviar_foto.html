@@ -1,0 +1,85 @@
+{% extends "base_app.html" %}
+
+{% block title %}Concluir tarefa | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="camera-page">
+    <div class="mb-4">
+        <a href="javascript:history.back()" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="camera-card">
+        <div class="camera-task-info">
+            <span class="task-points-large">
+                <i class="bi bi-star-fill"></i>
+                {{ tarefa.pontos_base }} pts
+            </span>
+
+            <h1 class="h3 fw-bold mt-3">{{ tarefa.titulo }}</h1>
+
+            {% if tarefa.descricao %}
+                <p class="text-muted">{{ tarefa.descricao }}</p>
+            {% endif %}
+        </div>
+
+        <div class="camera-proof-box">
+            <div class="camera-proof-icon">
+                <i class="bi bi-camera-fill"></i>
+            </div>
+
+            <h2 class="h5 fw-bold">Mostre como ficou</h2>
+
+            <p class="text-muted">
+                Tire uma foto do resultado. Os pontos só serão liberados depois da revisão do Tutor.
+            </p>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <label for="{{ form.foto.id_for_label }}" class="camera-button">
+                    <i class="bi bi-camera"></i>
+                    Abrir câmera
+                </label>
+
+                {{ form.foto }}
+
+                <div id="nome-arquivo" class="small text-muted mt-2"></div>
+
+                {% for error in form.foto.errors %}
+                    <div class="text-danger small mt-2">{{ error }}</div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">
+                    <i class="bi bi-send"></i>
+                    Enviar para revisão
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("id_foto");
+    const nome = document.getElementById("nome-arquivo");
+
+    if (!input || !nome) {
+        return;
+    }
+
+    input.addEventListener("change", function () {
+        nome.textContent =
+            input.files && input.files.length
+            ? "Foto pronta para enviar."
+            : "";
+    });
+});
+</script>
+{% endblock %}

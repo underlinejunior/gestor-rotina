@@ -1,0 +1,160 @@
+{% extends "base_app.html" %}
+
+{% block title %}Família | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="page-heading mb-4">
+    <div>
+        <span class="hero-eyebrow">
+            Responsáveis
+        </span>
+
+        <h1 class="h3 fw-bold mb-1">
+            {{ familia.nome }}
+        </h1>
+
+        <p class="text-muted mb-0">
+            Convide outro responsável para acompanhar as mesmas crianças.
+        </p>
+    </div>
+</div>
+
+
+<div class="family-grid">
+
+    <section class="content-card">
+        <span class="hero-eyebrow">
+            Responsáveis vinculados
+        </span>
+
+        <div class="guardian-list mt-3">
+            {% for tutor in tutores %}
+                <div class="guardian-row">
+                    <div class="guardian-avatar">
+                        {{ tutor.first_name|first|default:tutor.username|first|upper }}
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <strong>
+                            {{ tutor.get_full_name|default:tutor.username }}
+                        </strong>
+
+                        <small>
+                            {{ tutor.email|default:"Conta do responsável" }}
+                        </small>
+                    </div>
+
+                    {% if tutor.id == request.user.id %}
+                        <span class="badge text-bg-light">
+                            Você
+                        </span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+
+    <section class="content-card">
+        <span class="hero-eyebrow">
+            Convidar responsável
+        </span>
+
+        <h2 class="h5 fw-bold mb-2">
+            Compartilhar código
+        </h2>
+
+        <p class="text-muted small">
+            O outro responsável entra na própria conta e informa o código.
+            Ele terá acesso à mesma família.
+        </p>
+
+        {% if convites %}
+            {% for convite in convites %}
+                {% if convite.disponivel %}
+                    <div class="invite-code-card">
+                        <small>Código válido por 48 horas</small>
+
+                        <strong>
+                            {{ convite.codigo }}
+                        </strong>
+
+                        <form
+                            method="post"
+                            action="{% url 'convite_tutor_cancelar' convite.id %}"
+                        >
+                            {% csrf_token %}
+                            <button
+                                type="submit"
+                                class="btn btn-light btn-sm"
+                            >
+                                Cancelar código
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <form
+                method="post"
+                action="{% url 'convite_tutor_criar' %}"
+            >
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    <i class="bi bi-person-plus"></i>
+                    Gerar código de convite
+                </button>
+            </form>
+        {% endif %}
+    </section>
+
+
+    <section class="content-card family-join-card">
+        <span class="hero-eyebrow">
+            Recebeu um código?
+        </span>
+
+        <h2 class="h5 fw-bold mb-2">
+            Entrar em outra família
+        </h2>
+
+        <p class="text-muted small">
+            Use esta opção quando outro responsável já cadastrou
+            as crianças e convidou você.
+        </p>
+
+        <form
+            method="post"
+            action="{% url 'familia_entrar_codigo' %}"
+        >
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label
+                    class="form-label fw-semibold"
+                    for="{{ form_codigo.codigo.id_for_label }}"
+                >
+                    Código
+                </label>
+
+                {{ form_codigo.codigo }}
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-light"
+            >
+                <i class="bi bi-link-45deg"></i>
+                Entrar com código
+            </button>
+        </form>
+    </section>
+
+</div>
+
+{% endblock %}

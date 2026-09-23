@@ -1,0 +1,139 @@
+{% extends "base_app.html" %}
+
+{% block title %}Resgates | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="page-heading mb-4">
+    <div>
+        <a
+            href="{% url 'loja_recompensas' %}"
+            class="back-link mb-2"
+        >
+            <i class="bi bi-arrow-left"></i>
+            Recompensas
+        </a>
+
+        <span class="hero-eyebrow">
+            Loja da família
+        </span>
+
+        <h1 class="h3 fw-bold mb-1">
+            Resgates
+        </h1>
+
+        <p class="text-muted mb-0">
+            Confirme a entrega ou cancele e devolva os pontos.
+        </p>
+    </div>
+</div>
+
+
+{% if resgate_destaque %}
+<section class="reward-spotlight mb-4">
+    <div class="reward-spotlight-badge">
+        <i class="bi bi-stars"></i>
+        Solicitação em destaque
+    </div>
+
+    <div class="reward-spotlight-body">
+        <div class="reward-spotlight-icon">
+            {{ resgate_destaque.icone_snapshot }}
+        </div>
+
+        <div class="flex-grow-1">
+            <h2 class="h4 fw-bold mb-1">
+                {{ resgate_destaque.crianca.nome_exibicao }} quer
+                {{ resgate_destaque.titulo_snapshot }}
+            </h2>
+
+            <p class="text-muted mb-2">
+                Pedido realizado em {{ resgate_destaque.solicitado_em|date:"d/m/Y H:i" }}
+                com uso de ⭐ {{ resgate_destaque.custo_snapshot }}.
+            </p>
+
+            <div class="reward-spotlight-tags">
+                <span class="badge text-bg-light">Status: {{ resgate_destaque.get_status_display }}</span>
+                <span class="badge text-bg-warning">Vale reforço positivo</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+
+<div class="content-card">
+    {% if resgates %}
+        <div class="redemption-list">
+            {% for resgate in resgates %}
+                <div class="redemption-row">
+                    <div class="redemption-icon">
+                        {{ resgate.icone_snapshot }}
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <strong>
+                            {{ resgate.titulo_snapshot }}
+                        </strong>
+
+                        <div class="small text-muted">
+                            {{ resgate.crianca.nome_exibicao }}
+                            · ⭐ {{ resgate.custo_snapshot }}
+                            · {{ resgate.solicitado_em|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+
+                    <span class="badge text-bg-light">
+                        {{ resgate.get_status_display }}
+                    </span>
+
+                    {% if resgate.status == "SOLICITADO" %}
+                        <div class="d-flex gap-1 flex-wrap">
+                            <form
+                                method="post"
+                                action="{% url 'resgate_entregar' resgate.id %}"
+                            >
+                                {% csrf_token %}
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    <i class="bi bi-check-lg"></i>
+                                    Entregue
+                                </button>
+                            </form>
+
+                            <form
+                                method="post"
+                                action="{% url 'resgate_cancelar' resgate.id %}"
+                            >
+                                {% csrf_token %}
+                                <button
+                                    type="submit"
+                                    class="btn btn-light btn-sm"
+                                >
+                                    Cancelar
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-bag-check"></i>
+            </div>
+            <h2 class="h5 fw-bold">
+                Nenhum resgate ainda
+            </h2>
+            <p class="text-muted mb-0">
+                Quando uma criança usar pontos na loja, aparecerá aqui.
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

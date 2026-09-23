@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Privacidade | Minha Rotina{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="card auth-card auth-card-wide">
+        <div class="card-body p-4 p-md-5">
+            <div class="auth-logo">
+                <i class="bi bi-shield-check"></i>
+            </div>
+
+            <div class="text-center mb-4">
+                <h1 class="h3 fw-bold">Privacidade e dados da família</h1>
+                <p class="text-muted-custom mb-0">
+                    Antes de continuar, confirme a versão {{ versao }} da Política de Privacidade.
+                </p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="alert alert-light border small">
+                O sistema pode tratar dados de perfis infantis e fotografias de tarefas.
+                As evidências são privadas, e o responsável pode exportar ou excluir dados
+                na Central de Privacidade.
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-check mb-4">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        name="aceite"
+                        id="id_aceite"
+                        required
+                    >
+                    <label class="form-check-label" for="id_aceite">
+                        Li a
+                        <a href="{% url 'privacidade_politica' %}" target="_blank" rel="noopener">
+                            Política de Privacidade
+                        </a>
+                        e declaro ser responsável autorizado pelos dados infantis que cadastrar.
+                    </label>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-auth">
+                        Confirmar e continuar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

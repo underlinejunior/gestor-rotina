@@ -1,0 +1,87 @@
+from django.urls import path
+from . import views
+
+
+urlpatterns = [
+    path(
+        "rotinas/",
+        views.rotinas_listar,
+        name="rotinas_listar",
+    ),
+    path(
+        "rotinas/nova/",
+        views.rotina_criar,
+        name="rotina_criar",
+    ),
+    path(
+        "rotinas/sugestoes/",
+        views.sugestoes_tarefas,
+        name="sugestoes_tarefas",
+    ),
+    path(
+        "rotinas/<int:molde_id>/editar/",
+        views.rotina_editar,
+        name="rotina_editar",
+    ),
+    path(
+        "rotinas/<int:molde_id>/alternar/",
+        views.rotina_alternar,
+        name="rotina_alternar",
+    ),
+    path(
+        "rotinas/<int:molde_id>/excluir/",
+        views.rotina_excluir,
+        name="rotina_excluir",
+    ),
+    path(
+        "tarefas/bonus/nova/",
+        views.tarefa_bonus_criar,
+        name="tarefa_bonus_criar",
+    ),
+    path(
+        "minhas-tarefas/",
+        views.minhas_tarefas,
+        name="minhas_tarefas",
+    ),
+    path(
+        "meu-historico/",
+        views.meu_historico,
+        name="meu_historico",
+    ),
+    path(
+        "criancas/<int:perfil_id>/tarefas/",
+        views.tarefas_crianca_tutor,
+        name="tarefas_crianca_tutor",
+    ),
+    path(
+        "criancas/<int:perfil_id>/historico/",
+        views.historico_crianca_tutor,
+        name="historico_crianca_tutor",
+    ),
+    path(
+        "criancas/<int:perfil_id>/relatorio-semanal/",
+        views.relatorio_semanal_crianca,
+        name="relatorio_semanal_crianca",
+    ),
+    path(
+        "tarefas/<int:tarefa_id>/foto/",
+        views.foto_tarefa_privada,
+        name="foto_tarefa_privada",
+    ),
+    path(
+        "tarefas/<int:tarefa_id>/enviar-foto/",
+        views.enviar_foto,
+        name="enviar_foto",
+    ),
+    path(
+        "revisoes/",
+        views.revisoes_listar,
+        name="revisoes_listar",
+    ),
+    path(
+        "revisoes/<int:tarefa_id>/",
+        views.revisao_detalhe,
+        name="revisao_detalhe",
+    ),
+    path("api/sugerir-rotina/", views.api_sugerir_rotina, name="api_sugerir_rotina"),
+]

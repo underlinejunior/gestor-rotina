@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#4f46e5">
+
+    <title>Sem conexão | Minha Rotina</title>
+
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            color: #1f2937;
+            background:
+                radial-gradient(
+                    circle at top left,
+                    rgba(124, 58, 237, 0.12),
+                    transparent 34%
+                ),
+                #f6f7fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .offline-card {
+            width: min(100%, 430px);
+            padding: 30px 24px;
+            border-radius: 26px;
+            background: white;
+            text-align: center;
+            box-shadow:
+                0 18px 48px
+                rgba(31, 41, 55, 0.1);
+        }
+
+        .offline-icon {
+            width: 82px;
+            height: 82px;
+            margin: 0 auto 20px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(
+                    145deg,
+                    #ede9fe,
+                    #eef2ff
+                );
+            font-size: 38px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+        }
+
+        p {
+            margin: 0;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        button {
+            width: 100%;
+            min-height: 50px;
+            margin-top: 24px;
+            border: 0;
+            border-radius: 14px;
+            color: white;
+            background: #4f46e5;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .tip {
+            margin-top: 16px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="offline-card">
+
+        <div class="offline-icon">
+            📡
+        </div>
+
+        <h1>Você está sem conexão</h1>
+
+        <p>
+            O Minha Rotina continua instalado no seu aparelho,
+            mas precisa de internet para carregar tarefas,
+            enviar fotos e sincronizar pontos.
+        </p>
+
+        <button
+            type="button"
+            onclick="window.location.reload()"
+        >
+            Tentar novamente
+        </button>
+
+        <div class="tip">
+            Assim que a conexão voltar, toque no botão acima.
+        </div>
+
+    </main>
+
+</body>
+</html>

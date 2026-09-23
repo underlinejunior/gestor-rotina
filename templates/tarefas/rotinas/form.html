@@ -1,0 +1,809 @@
+{% extends "base_app.html" %}
+
+{% block title %}{{ titulo }} | Minha Rotina{% endblock %}
+
+{% block app_content %}
+<div class="form-page form-page-wide">
+    <div class="mb-3">
+        <a href="{% url 'rotinas_listar' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Rotinas
+        </a>
+    </div>
+
+    <div class="content-card routine-wizard-card">
+        <div class="routine-wizard-head">
+            <h1>{{ titulo }}</h1>
+            <span id="wizard-counter">1 de 4</span>
+        </div>
+
+        <div class="routine-wizard-progress" aria-hidden="true">
+            <span class="active" data-progress-step="1"></span>
+            <span data-progress-step="2"></span>
+            <span data-progress-step="3"></span>
+            <span data-progress-step="4"></span>
+        </div>
+
+        <form method="POST" id="routine-wizard-form" novalidate>
+            {% csrf_token %}
+
+            <section class="routine-wizard-step active" data-step="1">
+                <div class="wizard-section-title">
+                    <h2>Criança</h2>
+                </div>
+
+                <div class="mb-3">
+                    {{ form.crianca }}
+                    {% for error in form.crianca.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                {% if form.replicar_todas %}
+                    <label class="wizard-switch-row" for="{{ form.replicar_todas.id_for_label }}">
+                        {{ form.replicar_todas }}
+                        <span>Replicar para todas as crianças</span>
+                    </label>
+                {% endif %}
+
+                <div class="wizard-step-alert d-none" role="alert"></div>
+
+                <div class="wizard-nav wizard-nav-end">
+                    <button type="button" class="btn btn-primary" data-wizard-next>
+                        Continuar
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section class="routine-wizard-step" data-step="2">
+                <div class="wizard-section-title">
+                    <div>
+                        <h2>Tarefa</h2>
+                        <span>Escolha como deseja informar a tarefa.</span>
+                    </div>
+                </div>
+
+                <div class="skill-emphasis-box">
+                    <div class="skill-emphasis-head">
+                        <div>
+                            <strong>Ênfase nas habilidades</strong>
+                            <span>O sistema pode equilibrar automaticamente ou você pode escolher até 3 Skills.</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-emphasis-options" id="skill-emphasis-options">
+                        <button type="button" class="skill-emphasis-chip active" data-emphasis-auto="true">
+                            <span class="skill-emphasis-icon">⚖️</span>
+                            <span>Equilibrar automaticamente</span>
+                        </button>
+
+                        {% for item in skills_disponiveis %}
+                            <button
+                                type="button"
+                                class="skill-emphasis-chip"
+                                data-emphasis-skill="{{ item.skill.slug }}"
+                                data-emphasis-skill-id="{{ item.skill.id }}"
+                            >
+                                <span class="skill-emphasis-icon">{{ item.skill.icone }}</span>
+                                <span>{{ item.skill.nome }}</span>
+                                <small data-emphasis-status></small>
+                            </button>
+                        {% endfor %}
+                    </div>
+
+                    <div id="skill-balance-insight" class="skill-balance-insight" aria-live="polite">
+                        Selecione uma criança para analisar o equilíbrio das Skills nas rotinas atuais.
+                    </div>
+                </div>
+
+                <div
+                    class="task-source-switcher"
+                    id="task-source-switcher"
+                    data-default-source="{% if form.is_bound or form.instance.pk %}manual{% else %}system{% endif %}"
+                    role="tablist"
+                    aria-label="Forma de informar a tarefa"
+                >
+                    <button type="button" class="task-source-button" data-task-source-button="manual" role="tab">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>
+                            <strong>Informar manual</strong>
+                            <small>Digite a tarefa</small>
+                        </span>
+                    </button>
+                    <button type="button" class="task-source-button" data-task-source-button="system" role="tab">
+                        <i class="bi bi-grid"></i>
+                        <span>
+                            <strong>Sugestões do sistema</strong>
+                            <small>Catálogo por idade e Skills</small>
+                        </span>
+                    </button>
+                    <button type="button" class="task-source-button" data-task-source-button="ai" role="tab">
+                        <i class="bi bi-stars"></i>
+                        <span>
+                            <strong>Sugestões da IA</strong>
+                            <small>Geradas para esta criança</small>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="task-source-panel" data-task-source-panel="manual" role="tabpanel">
+                    <div class="wizard-manual-task wizard-manual-task-primary">
+                        <label for="{{ form.titulo.id_for_label }}">Título da tarefa</label>
+                        {{ form.titulo }}
+                        {% for error in form.titulo.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <details class="wizard-details">
+                        <summary>Ajustar descrição e pontos</summary>
+                        <div class="row g-3 pt-3">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label" for="{{ form.descricao.id_for_label }}">Descrição</label>
+                                {{ form.descricao }}
+                                {% for error in form.descricao.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" for="{{ form.pontos_base.id_for_label }}">Pontos</label>
+                                {{ form.pontos_base }}
+                                {% for error in form.pontos_base.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                {{ sugestoes_iniciais|json_script:"predefined-initial-data" }}
+
+                <div class="task-source-panel" data-task-source-panel="system" role="tabpanel">
+                    <div class="task-source-panel-head">
+                        <div>
+                            <span class="task-source-badge task-source-badge-system">
+                                <i class="bi bi-grid"></i> Sistema
+                            </span>
+                            <small id="predefined-task-help">Selecione a criança para personalizar as sugestões.</small>
+                        </div>
+                    </div>
+                    <div id="predefined-task-list" class="wizard-task-list" aria-live="polite"></div>
+                </div>
+
+                <div class="task-source-panel" data-task-source-panel="ai" role="tabpanel">
+                    <div class="task-source-panel-head">
+                        <div>
+                            <span class="task-source-badge task-source-badge-ai">
+                                <i class="bi bi-stars"></i> Inteligência artificial
+                            </span>
+                            <small>A IA considera idade, habilidades menos desenvolvidas, Skills já repetidas e a ênfase escolhida.</small>
+                        </div>
+                        <button type="button" id="btn-sugerir-ia" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-stars"></i>
+                            Gerar sugestões
+                        </button>
+                    </div>
+                    <div id="lista-sugestoes-ia" class="wizard-ai-list" aria-live="polite">
+                        <div class="wizard-ai-message muted">Clique em “Gerar sugestões” quando quiser consultar a IA.</div>
+                    </div>
+                </div>
+
+                <div class="wizard-step-alert d-none" role="alert"></div>
+
+                <div class="wizard-nav">
+                    <button type="button" class="btn btn-light" data-wizard-back>
+                        <i class="bi bi-arrow-left"></i>
+                        Voltar
+                    </button>
+                    <button type="button" class="btn btn-primary" data-wizard-next>
+                        Continuar
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section class="routine-wizard-step" data-step="3">
+                <div class="wizard-section-title">
+                    <h2>Quando fazer?</h2>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="{{ form.frequencia.id_for_label }}">Frequência</label>
+                        {{ form.frequencia }}
+                        {% for error in form.frequencia.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label" for="{{ form.periodo.id_for_label }}">Momento do dia</label>
+                        {{ form.periodo }}
+                        {% for error in form.periodo.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div id="dias-semana-box" class="wizard-weekdays mt-3">
+                    <label class="form-label">Dias</label>
+                    <div class="weekday-grid">
+                        {% for checkbox in form.dias_semana_selecionados %}
+                            <label class="weekday-chip">
+                                {{ checkbox.tag }}
+                                <span>{{ checkbox.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    {% for error in form.dias_semana_selecionados.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div id="horario-especifico-box" class="mt-3">
+                    <label class="form-label" for="{{ form.horario.id_for_label }}">Horário</label>
+                    {{ form.horario }}
+                    {% for error in form.horario.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <label class="wizard-switch-row mt-3" for="{{ form.lembrete_ativo.id_for_label }}">
+                    {{ form.lembrete_ativo }}
+                    <span>Lembrar desta tarefa</span>
+                </label>
+
+                <div class="wizard-step-alert d-none" role="alert"></div>
+
+                <div class="wizard-nav">
+                    <button type="button" class="btn btn-light" data-wizard-back>
+                        <i class="bi bi-arrow-left"></i>
+                        Voltar
+                    </button>
+                    <button type="button" class="btn btn-primary" data-wizard-next>
+                        Continuar
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section class="routine-wizard-step" data-step="4">
+                {% include "gamificacao/habilidades/_seletor_skills.html" %}
+
+                <label class="wizard-switch-row mt-4" for="{{ form.ativa.id_for_label }}">
+                    {{ form.ativa }}
+                    <span>Rotina ativa</span>
+                </label>
+
+                {% for error in form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">{{ error }}</div>
+                {% endfor %}
+
+                <div class="wizard-nav">
+                    <button type="button" class="btn btn-light" data-wizard-back>
+                        <i class="bi bi-arrow-left"></i>
+                        Voltar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i>
+                        {{ texto_botao }}
+                    </button>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("routine-wizard-form");
+    const steps = Array.from(document.querySelectorAll(".routine-wizard-step"));
+    const progress = Array.from(document.querySelectorAll("[data-progress-step]"));
+    const counter = document.getElementById("wizard-counter");
+
+    const frequencia = document.getElementById("id_frequencia");
+    const diasBox = document.getElementById("dias-semana-box");
+    const periodo = document.getElementById("id_periodo");
+    const horario = document.getElementById("id_horario");
+    const horarioBox = document.getElementById("horario-especifico-box");
+    const lembrete = document.getElementById("id_lembrete_ativo");
+    const crianca = document.getElementById("id_crianca");
+    const aiButton = document.getElementById("btn-sugerir-ia");
+    const aiList = document.getElementById("lista-sugestoes-ia");
+    const predefinedHelp = document.getElementById("predefined-task-help");
+    const predefinedList = document.getElementById("predefined-task-list");
+    const titulo = document.getElementById("id_titulo");
+    const descricao = document.getElementById("id_descricao");
+    const pontos = document.getElementById("id_pontos_base");
+    const sourceSwitcher = document.getElementById("task-source-switcher");
+    const sourceButtons = Array.from(document.querySelectorAll("[data-task-source-button]"));
+    const sourcePanels = Array.from(document.querySelectorAll("[data-task-source-panel]"));
+    const autoEmphasisButton = document.querySelector("[data-emphasis-auto]");
+    const emphasisButtons = Array.from(document.querySelectorAll("[data-emphasis-skill]"));
+    const balanceInsight = document.getElementById("skill-balance-insight");
+
+    const suggestionUrl = "{% url 'sugestoes_tarefas' %}";
+    const aiSuggestionUrl = "{% url 'api_sugerir_rotina' %}";
+    const initialDataNode = document.getElementById("predefined-initial-data");
+    const initialSuggestions = initialDataNode
+        ? (JSON.parse(initialDataNode.textContent || "[]") || [])
+        : [];
+
+    let currentStep = 1;
+    let currentSource = sourceSwitcher ? sourceSwitcher.dataset.defaultSource || "system" : "system";
+    let automaticEmphasis = true;
+    const selectedEmphasis = new Set();
+    let recommendedSlugs = new Set();
+
+    function showStep(numero) {
+        currentStep = Math.max(1, Math.min(steps.length, numero));
+        steps.forEach(function (step) {
+            step.classList.toggle("active", Number(step.dataset.step) === currentStep);
+        });
+        progress.forEach(function (item) {
+            item.classList.toggle("active", Number(item.dataset.progressStep) <= currentStep);
+        });
+        if (counter) counter.textContent = currentStep + " de " + steps.length;
+        if (currentStep === 2 && currentSource === "system") {
+            carregarSugestoes(6);
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function stepAlert(stepNumber, message) {
+        const step = document.querySelector('[data-step="' + stepNumber + '"]');
+        const alert = step ? step.querySelector(".wizard-step-alert") : null;
+        if (!alert) return;
+        alert.textContent = message || "";
+        alert.classList.toggle("d-none", !message);
+    }
+
+    function validateStep(stepNumber) {
+        stepAlert(stepNumber, "");
+        if (stepNumber === 1 && (!crianca || !crianca.value)) {
+            stepAlert(1, "Selecione uma criança para continuar.");
+            if (crianca) crianca.focus();
+            return false;
+        }
+        if (stepNumber === 2 && (!titulo || !titulo.value.trim())) {
+            stepAlert(2, "Escolha uma sugestão ou informe o título da tarefa.");
+            return false;
+        }
+        if (stepNumber === 3) {
+            if (frequencia && frequencia.value === "SEMANAL") {
+                const dias = document.querySelectorAll('input[name="dias_semana_selecionados"]:checked');
+                if (!dias.length) {
+                    stepAlert(3, "Escolha pelo menos um dia da semana.");
+                    return false;
+                }
+            }
+            if (periodo && periodo.value === "HORARIO" && horario && !horario.value) {
+                stepAlert(3, "Informe o horário da tarefa.");
+                horario.focus();
+                return false;
+            }
+            if (lembrete && lembrete.checked && periodo && periodo.value === "QUALQUER") {
+                stepAlert(3, "Escolha um momento do dia para usar o lembrete.");
+                periodo.focus();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    document.querySelectorAll("[data-wizard-next]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            if (validateStep(currentStep)) showStep(currentStep + 1);
+        });
+    });
+    document.querySelectorAll("[data-wizard-back]").forEach(function (button) {
+        button.addEventListener("click", function () { showStep(currentStep - 1); });
+    });
+
+    function contextoDaRotina() {
+        const contextos = {
+            MANHA: "rotina matinal",
+            TARDE: "rotina da tarde",
+            NOITE: "rotina noturna",
+            HORARIO: "rotina em horário específico",
+            QUALQUER: "rotina diária"
+        };
+        return periodo ? (contextos[periodo.value] || "rotina diária") : "rotina diária";
+    }
+
+    function atualizarHorario() {
+        if (periodo && horarioBox) horarioBox.classList.toggle("d-none", periodo.value !== "HORARIO");
+    }
+    function atualizarDias() {
+        if (frequencia && diasBox) diasBox.classList.toggle("d-none", frequencia.value !== "SEMANAL");
+    }
+
+    function selectSource(source) {
+        currentSource = source;
+        sourceButtons.forEach(function (button) {
+            const active = button.dataset.taskSourceButton === source;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        sourcePanels.forEach(function (panel) {
+            panel.classList.toggle("active", panel.dataset.taskSourcePanel === source);
+        });
+        if (source === "system" && crianca && crianca.value) carregarSugestoes(6);
+    }
+
+    sourceButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            selectSource(button.dataset.taskSourceButton);
+        });
+    });
+
+    function getEnfaseParam() {
+        return automaticEmphasis || !selectedEmphasis.size
+            ? "auto"
+            : Array.from(selectedEmphasis).join(",");
+    }
+
+    function atualizarBotoesEnfase() {
+        if (autoEmphasisButton) autoEmphasisButton.classList.toggle("active", automaticEmphasis);
+        emphasisButtons.forEach(function (button) {
+            button.classList.toggle("active", selectedEmphasis.has(button.dataset.emphasisSkill));
+        });
+    }
+
+    function marcarIaDesatualizada() {
+        if (!aiList) return;
+        const temCards = aiList.querySelector(".wizard-task-option");
+        if (temCards) {
+            aiList.innerHTML = '<div class="wizard-ai-message muted">A ênfase mudou. Gere novamente para atualizar as sugestões da IA.</div>';
+        }
+    }
+
+    function onEmphasisChanged() {
+        atualizarBotoesEnfase();
+        marcarIaDesatualizada();
+        if (crianca && crianca.value) carregarSugestoes(6);
+    }
+
+    if (autoEmphasisButton) {
+        autoEmphasisButton.addEventListener("click", function () {
+            automaticEmphasis = true;
+            selectedEmphasis.clear();
+            onEmphasisChanged();
+        });
+    }
+
+    emphasisButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            const slug = button.dataset.emphasisSkill;
+            automaticEmphasis = false;
+            if (selectedEmphasis.has(slug)) {
+                selectedEmphasis.delete(slug);
+            } else if (selectedEmphasis.size < 3) {
+                selectedEmphasis.add(slug);
+            } else {
+                if (balanceInsight) balanceInsight.textContent = "Você pode escolher até 3 Skills de ênfase.";
+                return;
+            }
+            if (!selectedEmphasis.size) automaticEmphasis = true;
+            onEmphasisChanged();
+        });
+    });
+
+    function renderDiagnostico(diagnostico) {
+        if (!diagnostico) return;
+        recommendedSlugs = new Set((diagnostico.recomendadas || []).map(function (item) { return item.slug; }));
+        const repetidas = new Set((diagnostico.repetidas || []).map(function (item) { return item.slug; }));
+        const porSlug = {};
+        (diagnostico.skills || []).forEach(function (item) { porSlug[item.slug] = item; });
+
+        emphasisButtons.forEach(function (button) {
+            const slug = button.dataset.emphasisSkill;
+            const item = porSlug[slug];
+            button.classList.toggle("recommended", recommendedSlugs.has(slug));
+            button.classList.toggle("overused", repetidas.has(slug));
+            const status = button.querySelector("[data-emphasis-status]");
+            if (!status) return;
+            if (repetidas.has(slug)) status.textContent = "muito usada";
+            else if (recommendedSlugs.has(slug)) status.textContent = "prioridade";
+            else if (item && item.rotinas_ativas === 0) status.textContent = "sem rotina";
+            else status.textContent = "";
+        });
+
+        if (balanceInsight) {
+            balanceInsight.textContent = diagnostico.resumo || "O sistema analisou as Skills desta criança.";
+        }
+    }
+
+    function definirImpacto(skillId, impacto) {
+        const input = document.getElementById("skill-impact-" + skillId);
+        const group = document.querySelector('[data-skill-id="' + skillId + '"]');
+        const card = document.querySelector('[data-skill-card="' + skillId + '"]');
+        if (!input || !group) return;
+        input.value = impacto;
+        group.querySelectorAll("button").forEach(function (button) {
+            button.classList.toggle("active", Number(button.dataset.impact) === Number(impacto));
+        });
+        if (card) card.classList.toggle("has-impact", Number(impacto) > 0);
+    }
+
+    function limparSkills() {
+        document.querySelectorAll(".skill-impact-options").forEach(function (group) {
+            definirImpacto(group.dataset.skillId, 0);
+        });
+    }
+    function aplicarSkills(skills) {
+        limparSkills();
+        (skills || []).forEach(function (skill) { definirImpacto(skill.id, skill.impacto); });
+    }
+
+    document.querySelectorAll(".skill-impact-options").forEach(function (group) {
+        group.querySelectorAll("button").forEach(function (button) {
+            button.addEventListener("click", function () {
+                definirImpacto(group.dataset.skillId, button.dataset.impact);
+            });
+        });
+        const input = document.getElementById("skill-impact-" + group.dataset.skillId);
+        if (input) definirImpacto(group.dataset.skillId, input.value);
+    });
+
+    function criarSkillResumo(skill) {
+        const span = document.createElement("span");
+        span.className = "wizard-task-skill";
+        const emEnfase = automaticEmphasis
+            ? recommendedSlugs.has(skill.slug)
+            : selectedEmphasis.has(skill.slug);
+        if (emEnfase) span.classList.add("is-emphasis");
+        span.textContent = (skill.icone || "✨") + " " + skill.nome + " " + (skill.simbolo || "");
+        return span;
+    }
+
+    function marcarTarefaSelecionada(chave) {
+        document.querySelectorAll(".wizard-task-option").forEach(function (button) {
+            button.classList.toggle("active", button.dataset.selectionKey === String(chave));
+        });
+    }
+
+    function limparDias() {
+        document.querySelectorAll('input[name="dias_semana_selecionados"]').forEach(function (checkbox) {
+            checkbox.checked = false;
+        });
+    }
+
+    function aplicarSugestao(item, origem) {
+        if (titulo) titulo.value = item.titulo || "";
+        if (descricao) descricao.value = item.descricao || "";
+        if (pontos) pontos.value = item.pontos || 10;
+        if (frequencia && item.frequencia) frequencia.value = item.frequencia;
+        if (item.dias_semana) {
+            limparDias();
+            (item.dias_semana || []).forEach(function (dia) {
+                const checkbox = document.querySelector('input[name="dias_semana_selecionados"][value="' + dia + '"]');
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+        aplicarSkills(item.skills || []);
+        atualizarDias();
+        marcarTarefaSelecionada(origem === "ia" ? item.id : "catalogo-" + item.id);
+        stepAlert(2, "");
+    }
+
+    function criarCardTarefa(item, origem) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "wizard-task-option " + (origem === "ia" ? "origin-ai" : "origin-system");
+        button.dataset.selectionKey = origem === "ia" ? item.id : "catalogo-" + item.id;
+
+        const icon = document.createElement("span");
+        icon.className = "wizard-task-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = item.icone || (origem === "ia" ? "✨" : "📌");
+
+        const main = document.createElement("span");
+        main.className = "wizard-task-main";
+
+        const headline = document.createElement("span");
+        headline.className = "wizard-task-headline";
+
+        const strong = document.createElement("strong");
+        strong.textContent = item.titulo;
+        headline.appendChild(strong);
+
+        const source = document.createElement("span");
+        source.className = "wizard-card-source " + (origem === "ia" ? "ai" : "system");
+        source.innerHTML = origem === "ia" ? '<i class="bi bi-stars"></i> IA' : '<i class="bi bi-grid"></i> Sistema';
+        headline.appendChild(source);
+        main.appendChild(headline);
+
+        const skills = document.createElement("span");
+        skills.className = "wizard-task-skills";
+        (item.skills || []).slice(0, 3).forEach(function (skill) {
+            skills.appendChild(criarSkillResumo(skill));
+        });
+        main.appendChild(skills);
+
+        const action = document.createElement("span");
+        action.className = "wizard-task-action";
+        action.innerHTML = '<i class="bi bi-arrow-right"></i>';
+
+        button.appendChild(icon);
+        button.appendChild(main);
+        button.appendChild(action);
+        button.addEventListener("click", function () { aplicarSugestao(item, origem); });
+        return button;
+    }
+
+    function mostrarMensagemIa(mensagem, classe) {
+        if (!aiList) return;
+        aiList.innerHTML = "";
+        const alerta = document.createElement("div");
+        alerta.className = "wizard-ai-message " + classe;
+        alerta.textContent = mensagem;
+        aiList.appendChild(alerta);
+    }
+
+    function renderizarSugestoesIa(dados) {
+        if (!aiList) return;
+        aiList.innerHTML = "";
+        renderDiagnostico(dados.diagnostico);
+        (dados.sugestoes || []).forEach(function (item) {
+            aiList.appendChild(criarCardTarefa(item, "ia"));
+        });
+    }
+
+    async function carregarSugestoesIa() {
+        if (!aiButton || !aiList) return;
+        if (!crianca || !crianca.value) {
+            mostrarMensagemIa("Selecione uma criança primeiro.", "warning");
+            return;
+        }
+        const textoOriginal = aiButton.innerHTML;
+        aiButton.disabled = true;
+        aiButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Gerando';
+        mostrarMensagemIa("Analisando habilidades e gerando opções...", "muted");
+        try {
+            const params = new URLSearchParams({
+                crianca_id: crianca.value,
+                contexto: contextoDaRotina(),
+                enfase: getEnfaseParam()
+            });
+            const response = await fetch(aiSuggestionUrl + "?" + params.toString(), {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+            const dados = await response.json();
+            if (!response.ok) throw new Error(dados.erro || "Falha ao gerar sugestões.");
+            if (!dados.sugestoes || !dados.sugestoes.length) throw new Error("Nenhuma sugestão foi gerada.");
+            renderizarSugestoesIa(dados);
+        } catch (error) {
+            mostrarMensagemIa(error.message || "As sugestões com IA estão indisponíveis agora.", "error");
+        } finally {
+            aiButton.disabled = false;
+            aiButton.innerHTML = textoOriginal;
+        }
+    }
+
+    function renderizarSugestoes(dados) {
+        if (!predefinedList) return;
+        predefinedList.innerHTML = "";
+        renderDiagnostico(dados.diagnostico);
+        if (predefinedHelp) predefinedHelp.textContent = dados.subtitulo || "Sugestões adequadas à criança.";
+        if (!dados.sugestoes || !dados.sugestoes.length) {
+            predefinedList.innerHTML = '<div class="wizard-task-status">Nenhuma nova tarefa do sistema encontrada para estes filtros.</div>';
+            return;
+        }
+        dados.sugestoes.forEach(function (item) {
+            predefinedList.appendChild(criarCardTarefa(item, "sistema"));
+        });
+    }
+
+    let systemSuggestionsRequest = 0;
+
+    async function carregarSugestoes(limite) {
+        if (!predefinedList) return;
+
+        const requestId = ++systemSuggestionsRequest;
+        const criancaId = crianca ? crianca.value : "";
+
+        if (!criancaId) {
+            if (predefinedHelp) {
+                predefinedHelp.textContent = initialSuggestions.length
+                    ? "Sugestões gerais do catálogo. Selecione uma criança para personalizar."
+                    : "Selecione uma criança para personalizar as sugestões.";
+            }
+            if (initialSuggestions.length) {
+                renderizarSugestoes({ sugestoes: initialSuggestions });
+            } else {
+                predefinedList.innerHTML = '<div class="wizard-task-status">Nenhuma sugestão do catálogo disponível.</div>';
+            }
+            return;
+        }
+
+        predefinedList.innerHTML = '<div class="wizard-task-status"><span class="spinner-border spinner-border-sm"></span> Analisando Skills e rotinas atuais...</div>';
+
+        try {
+            const params = new URLSearchParams({
+                crianca_id: criancaId,
+                limite: limite,
+                enfase: getEnfaseParam()
+            });
+            const response = await fetch(suggestionUrl + "?" + params.toString(), {
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                cache: "no-store"
+            });
+            const dados = await response.json();
+            if (!response.ok) {
+                throw new Error(dados.erro || "Falha ao consultar o catálogo.");
+            }
+            if (requestId !== systemSuggestionsRequest) return;
+            renderizarSugestoes(dados);
+        } catch (error) {
+            if (requestId !== systemSuggestionsRequest) return;
+            if (initialSuggestions.length) {
+                renderizarSugestoes({
+                    sugestoes: initialSuggestions,
+                    subtitulo: "Não foi possível personalizar agora. Mostrando sugestões gerais do sistema."
+                });
+            } else {
+                predefinedList.innerHTML = '<div class="wizard-task-status">Não foi possível carregar as tarefas do sistema.</div>';
+            }
+        }
+    }
+
+    if (frequencia) frequencia.addEventListener("change", atualizarDias);
+    if (periodo) periodo.addEventListener("change", atualizarHorario);
+    if (aiButton) aiButton.addEventListener("click", carregarSugestoesIa);
+
+    if (initialSuggestions.length) {
+        renderizarSugestoes({
+            sugestoes: initialSuggestions,
+            subtitulo: "Sugestões gerais do catálogo. A seleção da criança personaliza a ordem."
+        });
+    }
+
+    if (crianca) {
+        crianca.addEventListener("change", function () {
+            automaticEmphasis = true;
+            selectedEmphasis.clear();
+            recommendedSlugs = new Set();
+            atualizarBotoesEnfase();
+            if (aiList) aiList.innerHTML = '<div class="wizard-ai-message muted">Clique em “Gerar sugestões” quando quiser consultar a IA.</div>';
+            carregarSugestoes(6);
+        });
+        if (crianca.value) carregarSugestoes(6);
+    }
+
+    if (titulo) {
+        titulo.addEventListener("input", function () {
+            document.querySelectorAll(".wizard-task-option.active").forEach(function (button) {
+                button.classList.remove("active");
+            });
+        });
+    }
+
+    if (form) {
+        form.addEventListener("submit", function (event) {
+            for (let step = 1; step <= 3; step += 1) {
+                if (!validateStep(step)) {
+                    event.preventDefault();
+                    showStep(step);
+                    return;
+                }
+            }
+        });
+    }
+
+    atualizarDias();
+    atualizarHorario();
+    atualizarBotoesEnfase();
+    selectSource(currentSource);
+
+    const firstErrorStep = steps.find(function (step) {
+        return step.querySelector(".text-danger, .alert-danger");
+    });
+    if (firstErrorStep) showStep(Number(firstErrorStep.dataset.step));
+    else showStep(1);
+});
+</script>
+{% endblock %}

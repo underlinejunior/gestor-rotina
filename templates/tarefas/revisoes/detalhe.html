@@ -1,0 +1,140 @@
+{% extends "base_app.html" %}
+
+{% block title %}Revisar {{ tarefa.titulo }} | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<div class="review-detail-page">
+    <div class="mb-4">
+        <a href="{% url 'revisoes_listar' %}" class="back-link">
+            <i class="bi bi-arrow-left"></i>
+            Revisões
+        </a>
+    </div>
+
+    <div class="review-detail-grid">
+        <section class="review-image-panel">
+            {% if tarefa.foto %}
+                <img
+                    src="{% url 'foto_tarefa_privada' tarefa.id %}"
+                    alt="Evidência enviada"
+                    class="review-detail-image"
+                >
+            {% endif %}
+        </section>
+
+        <section class="content-card review-form-panel">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="review-child-avatar review-child-avatar-lg">
+                    {{ tarefa.crianca.avatar_emoji }}
+                </span>
+
+                <div>
+                    <div class="small text-muted">
+                        {{ tarefa.crianca.nome_exibicao }}
+                    </div>
+                    <h1 class="h4 fw-bold mb-0">{{ tarefa.titulo }}</h1>
+                </div>
+            </div>
+
+            <div class="review-info-box mb-4">
+                <div>
+                    <span class="small text-muted">Pontos base</span>
+                    <strong>{{ tarefa.pontos_base }}</strong>
+                </div>
+
+                <div>
+                    <span class="small text-muted">Enviada</span>
+                    <strong>{{ tarefa.enviada_em|date:"d/m H:i" }}</strong>
+                </div>
+
+                <div>
+                    <span class="small text-muted">Tempo</span>
+                    <strong>
+                        {% if tarefa.procrastinou %}
+                            Após 8h
+                        {% else %}
+                            No prazo
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+
+            {% if tarefa.skills_snapshot.all %}
+                <div class="task-skills-review mb-4">
+
+                    <span class="hero-eyebrow">
+                        Habilidades praticadas
+                    </span>
+
+                    <div class="task-skill-pills mt-1">
+
+                        {% for skill in tarefa.skills_snapshot.all %}
+                            <span class="task-skill-pill">
+                                {{ skill.icone_snapshot }}
+                                {{ skill.nome_snapshot }}
+                                {{ skill.impacto_simbolo }}
+                                <small>
+                                    +{{ skill.xp_planejado }} XP
+                                </small>
+                            </span>
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+            {% endif %}
+
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Pontuação final</label>
+                    {{ form.pontos_concedidos }}
+
+                    <div class="form-text">
+                        Você pode aumentar ou reduzir os pontos antes de aprovar.
+                    </div>
+
+                    {% for error in form.pontos_concedidos.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Feedback</label>
+                    {{ form.feedback_tutor }}
+
+                    {% for error in form.feedback_tutor.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="review-actions">
+                    <button
+                        type="submit"
+                        name="acao"
+                        value="rejeitar"
+                        class="btn btn-outline-danger btn-lg"
+                    >
+                        <i class="bi bi-x-lg"></i>
+                        Rejeitar
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="acao"
+                        value="aprovar"
+                        class="btn btn-success btn-lg"
+                    >
+                        <i class="bi bi-check-lg"></i>
+                        Aprovar
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+{% endblock %}

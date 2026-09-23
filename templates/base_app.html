@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% load gamificacao_tags %}
+
+{% block content %}
+
+<div class="app-layout">
+
+    <aside class="app-sidebar d-none d-lg-flex">
+
+        <div>
+            <a
+                href="{% url 'inicio' %}"
+                class="app-brand"
+            >
+                <span class="app-brand-icon">
+                    <i class="bi bi-check2"></i>
+                </span>
+
+                <span>Minha Rotina</span>
+            </a>
+
+
+            <nav class="app-menu">
+
+                <a
+                    href="{% url 'inicio' %}"
+                    class="app-menu-link"
+                >
+                    <i class="bi bi-house"></i>
+                    Início
+                </a>
+
+                {% if request.user.tipo == "TUTOR" %}
+
+                    <a
+                        href="{% url 'criancas_listar' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-people"></i>
+                        Crianças
+                    </a>
+
+                    <a
+                        href="{% url 'rotinas_listar' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-list-check"></i>
+                        Rotinas
+                    </a>
+
+                    <a
+                        href="{% url 'revisoes_listar' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-camera"></i>
+                        Revisões
+                    </a>
+
+                    <a
+                        href="{% url 'loja_recompensas' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-gift"></i>
+                        Recompensas
+                    </a>
+
+                    <a
+                        href="{% url 'familia_configuracao' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-person-hearts"></i>
+                        Família
+                    </a>
+
+                    <a
+                        href="{% url 'privacidade_central' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-shield-lock"></i>
+                        Privacidade
+                    </a>
+
+                {% else %}
+
+                    <a
+                        href="{% url 'minhas_tarefas' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-check2-square"></i>
+                        Minhas tarefas
+                    </a>
+
+                    <a
+                        href="{% url 'meu_historico' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-clock-history"></i>
+                        Meu histórico
+                    </a>
+
+                    <a
+                        href="{% url 'minhas_habilidades' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-graph-up-arrow"></i>
+                        Minhas habilidades
+                    </a>
+
+                    <a
+                        href="{% url 'loja_recompensas' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-gift"></i>
+                        Recompensas
+                    </a>
+
+                    <a
+                        href="{% url 'minhas_conquistas' %}"
+                        class="app-menu-link"
+                    >
+                        <i class="bi bi-trophy"></i>
+                        Conquistas
+                    </a>
+
+                {% endif %}
+
+                <a
+                    href="{% url 'notificacoes_central' %}"
+                    class="app-menu-link"
+                >
+                    <i class="bi bi-bell"></i>
+                    Notificações
+                </a>
+
+            </nav>
+        </div>
+
+
+        <form method="post" action="{% url 'logout' %}" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="app-menu-link border-0 bg-transparent w-100 text-start">
+                <i class="bi bi-box-arrow-right"></i>
+                Sair
+            </button>
+        </form>
+
+    </aside>
+
+
+    <main class="app-main">
+
+        <header class="app-header">
+
+            <a
+                href="{% url 'inicio' %}"
+                class="mobile-brand d-lg-none"
+            >
+                <span class="app-brand-icon app-brand-icon-small">
+                    <i class="bi bi-check2"></i>
+                </span>
+
+                <span>Minha Rotina</span>
+            </a>
+
+
+            <div class="ms-auto d-flex align-items-center gap-3">
+
+                {% painel_notificacoes request.user %}
+
+
+                <div class="app-user">
+
+                    <div class="app-avatar">
+                        {{ request.user.first_name|first|default:"U"|upper }}
+                    </div>
+
+                    <div class="d-none d-sm-block">
+                        <div class="fw-semibold">
+                            {{ request.user.first_name|default:request.user.username }}
+                        </div>
+
+                        <div class="small text-muted">
+                            {{ request.user.get_tipo_display }}
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <div class="app-content">
+
+            {% if request.user.tipo == "TUTOR" and request.user.privacidade_pendente %}
+                <div class="alert alert-warning d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                    <span>
+                        <i class="bi bi-shield-exclamation me-1"></i>
+                        Há uma atualização da Política de Privacidade para confirmar.
+                    </span>
+                    <a href="{% url 'privacidade_aceite' %}" class="btn btn-sm btn-warning">
+                        Revisar agora
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block app_content %}{% endblock %}
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<nav class="mobile-nav d-lg-none">
+
+    <a href="{% url 'inicio' %}">
+        <i class="bi bi-house"></i>
+        <span>Início</span>
+    </a>
+
+    {% if request.user.tipo == "TUTOR" %}
+
+        <a href="{% url 'criancas_listar' %}">
+            <i class="bi bi-people"></i>
+            <span>Crianças</span>
+        </a>
+
+        <a href="{% url 'rotinas_listar' %}">
+            <i class="bi bi-list-check"></i>
+            <span>Rotinas</span>
+        </a>
+
+        <a href="{% url 'loja_recompensas' %}">
+            <i class="bi bi-gift"></i>
+            <span>Prêmios</span>
+        </a>
+
+    {% else %}
+
+        <a href="{% url 'minhas_tarefas' %}">
+            <i class="bi bi-check2-square"></i>
+            <span>Tarefas</span>
+        </a>
+
+        <a href="{% url 'meu_historico' %}">
+            <i class="bi bi-clock-history"></i>
+            <span>Histórico</span>
+        </a>
+
+        <a href="{% url 'minhas_habilidades' %}">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span>Skills</span>
+        </a>
+
+        <a href="{% url 'loja_recompensas' %}">
+            <i class="bi bi-gift"></i>
+            <span>Prêmios</span>
+        </a>
+
+    {% endif %}
+
+</nav>
+
+
+{% include "pwa/install_banner.html" %}
+
+
+{% if celebracao_evento %}
+<div
+    id="celebration-modal"
+    class="celebration-overlay"
+    aria-hidden="false"
+>
+    <div class="celebration-stage">
+
+        <div class="celebration-fireworks">
+            <span class="burst burst-one"></span>
+            <span class="burst burst-two"></span>
+            <span class="burst burst-three"></span>
+        </div>
+
+        <div class="celebration-stars">
+            <span>✦</span>
+            <span>✧</span>
+            <span>★</span>
+            <span>✦</span>
+            <span>✧</span>
+            <span>★</span>
+        </div>
+
+        <div
+            class="celebration-confetti"
+            id="celebration-confetti"
+        ></div>
+
+        <div class="celebration-card">
+
+            <button
+                type="button"
+                class="celebration-close"
+                id="celebration-close"
+                aria-label="Fechar"
+            >
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+            <div class="celebration-pill">
+                {{ celebracao_evento.pill_text|default:"🎉 Destaque especial" }}
+            </div>
+
+            <div class="celebration-avatar-badge">
+                {{ celebracao_evento.avatar_emoji|default:"✨" }}
+            </div>
+
+            <h2 class="celebration-title">
+                {{ celebracao_evento.titulo }}
+            </h2>
+
+            <p class="celebration-text">
+                {{ celebracao_evento.mensagem }}
+            </p>
+
+            {% if celebracao_evento.nivel_novo %}
+                <div class="celebration-levels">
+
+                    <div class="celebration-level-box level-old">
+                        <small>Nível anterior</small>
+                        <strong>
+                            Nv. {{ celebracao_evento.nivel_anterior }}
+                        </strong>
+                    </div>
+
+                    <div class="celebration-level-arrow">
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+
+                    <div class="celebration-level-box level-new">
+                        <small>Novo nível</small>
+                        <strong>
+                            Nv. {{ celebracao_evento.nivel_novo }}
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div class="celebration-highlight">
+                    {{ celebracao_evento.crianca_nome }}
+                    agora está em destaque como
+                    <strong>
+                        {{ celebracao_evento.titulo_novo_nivel }}
+                    </strong>
+                </div>
+            {% else %}
+                <div class="celebration-highlight">
+                    {{ celebracao_evento.highlight_text|default:"Prepare-se para completar tarefas, ganhar estrelas e viver uma rotina muito mais divertida." }}
+                </div>
+            {% endif %}
+
+            <button
+                type="button"
+                class="btn btn-primary btn-lg celebration-button"
+                id="celebration-button"
+            >
+                Continuar
+            </button>
+
+        </div>
+
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+
+{% block extra_js %}
+{{ block.super }}
+{% if celebracao_evento %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("celebration-modal");
+    const closeButton = document.getElementById("celebration-close");
+    const actionButton = document.getElementById("celebration-button");
+    const confettiContainer = document.getElementById("celebration-confetti");
+
+    if (!modal) {
+        return;
+    }
+
+    function closeCelebration() {
+        modal.classList.add("is-closing");
+        setTimeout(function () {
+            modal.remove();
+        }, 280);
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener("click", closeCelebration);
+    }
+
+    if (actionButton) {
+        actionButton.addEventListener("click", closeCelebration);
+    }
+
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            closeCelebration();
+        }
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeCelebration();
+        }
+    });
+
+    if (confettiContainer) {
+        const symbols = ["✦", "★", "✧", "●", "◆", "✦"];
+
+        for (let i = 0; i < 28; i += 1) {
+            const item = document.createElement("span");
+
+            item.className = "confetti-piece";
+            item.textContent = symbols[i % symbols.length];
+            item.style.left = (Math.random() * 100) + "%";
+            item.style.animationDelay = (Math.random() * 0.9) + "s";
+            item.style.animationDuration = (2.6 + Math.random() * 1.6) + "s";
+            item.style.fontSize = (12 + Math.random() * 14) + "px";
+
+            confettiContainer.appendChild(item);
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

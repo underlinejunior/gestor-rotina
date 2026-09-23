@@ -1,0 +1,417 @@
+{% extends "base_app.html" %}
+
+{% block title %}Início | Minha Rotina{% endblock %}
+
+{% block app_content %}
+
+<section class="dashboard-hero tutor-hero mb-4">
+
+    <div>
+        <span class="hero-eyebrow">
+            Visão da família
+        </span>
+
+        <h1 class="h3 fw-bold mb-2">
+            Olá, {{ request.user.first_name|default:request.user.username }}!
+        </h1>
+
+        <p class="mb-0 hero-copy">
+            Acompanhe as rotinas, revise as evidências e veja os avatares evoluírem.
+        </p>
+    </div>
+
+    <div class="hero-illustration">
+        <i class="bi bi-stars"></i>
+    </div>
+
+</section>
+
+
+<div class="row g-3 mb-4">
+
+    <div class="col-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="bi bi-people"></i>
+            </div>
+
+            <div class="metric-value">
+                {{ total_criancas }}
+            </div>
+
+            <div class="metric-label">
+                Crianças
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="bi bi-list-check"></i>
+            </div>
+
+            <div class="metric-value">
+                {{ total_tarefas_hoje }}
+            </div>
+
+            <div class="metric-label">
+                Tarefas hoje
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-6 col-xl-3">
+        <a
+            href="{% url 'revisoes_listar' %}"
+            class="metric-card metric-card-link"
+        >
+            <div class="metric-icon">
+                <i class="bi bi-camera"></i>
+            </div>
+
+            <div class="metric-value">
+                {{ total_revisoes }}
+            </div>
+
+            <div class="metric-label">
+                Para revisar
+            </div>
+        </a>
+    </div>
+
+
+    <div class="col-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+
+            <div class="metric-value">
+                {{ total_pendentes }}
+            </div>
+
+            <div class="metric-label">
+                Pendentes hoje
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+{% if indicadores_semana %}
+<section class="weekly-summary mb-4">
+
+    <div class="weekly-summary-heading">
+        <div>
+            <span class="hero-eyebrow">
+                Últimos 7 dias
+            </span>
+
+            <h2 class="h5 fw-bold mb-0">
+                Resumo da família
+            </h2>
+        </div>
+
+        <div class="completion-ring">
+            <strong>
+                {{ indicadores_semana.taxa_conclusao }}%
+            </strong>
+            <span>conclusão</span>
+        </div>
+    </div>
+
+
+    <div class="weekly-summary-grid">
+
+        <div>
+            <strong>
+                {{ indicadores_semana.aprovadas }}
+            </strong>
+            <span>Aprovadas</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ indicadores_semana.nao_realizadas }}
+            </strong>
+            <span>Não realizadas</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ indicadores_semana.atrasadas }}
+            </strong>
+            <span>Com atraso</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ indicadores_semana.revisao }}
+            </strong>
+            <span>Em revisão</span>
+        </div>
+
+    </div>
+
+</section>
+{% endif %}
+
+
+<div class="quick-actions mb-4">
+
+    <a
+        href="{% url 'rotina_criar' %}"
+        class="quick-action-card"
+    >
+        <span class="quick-action-icon">
+            <i class="bi bi-plus-lg"></i>
+        </span>
+
+        <span>
+            <strong>Nova rotina</strong>
+            <small>Criar tarefa recorrente</small>
+        </span>
+    </a>
+
+
+    <a
+        href="{% url 'tarefa_bonus_criar' %}"
+        class="quick-action-card"
+    >
+        <span class="quick-action-icon bonus">
+            <i class="bi bi-lightning-charge"></i>
+        </span>
+
+        <span>
+            <strong>Tarefa bônus</strong>
+            <small>Lançar uma atividade agora</small>
+        </span>
+    </a>
+
+
+    <a
+        href="{% url 'loja_recompensas' %}"
+        class="quick-action-card"
+    >
+        <span class="quick-action-icon reward">
+            <i class="bi bi-gift"></i>
+        </span>
+
+        <span>
+            <strong>Recompensas</strong>
+            <small>Loja, resgates e experiências</small>
+        </span>
+    </a>
+
+
+    <a
+        href="{% url 'familia_configuracao' %}"
+        class="quick-action-card"
+    >
+        <span class="quick-action-icon">
+            <i class="bi bi-person-hearts"></i>
+        </span>
+
+        <span>
+            <strong>Família</strong>
+            <small>Convidar outro responsável</small>
+        </span>
+    </a>
+
+
+    <a
+        href="{% url 'revisoes_listar' %}"
+        class="quick-action-card"
+    >
+        <span class="quick-action-icon review">
+            <i class="bi bi-camera"></i>
+        </span>
+
+        <span>
+            <strong>Revisar fotos</strong>
+            <small>
+                {{ total_revisoes }} aguardando avaliação
+            </small>
+        </span>
+    </a>
+
+</div>
+
+
+<div class="content-card">
+
+    <div class="d-flex justify-content-between align-items-center gap-3 mb-4">
+
+        <div>
+            <h2 class="h5 fw-bold mb-1">
+                Crianças
+            </h2>
+
+            <p class="text-muted small mb-0">
+                Pontos, evolução e desempenho semanal.
+            </p>
+        </div>
+
+
+        <a
+            href="{% url 'crianca_criar' %}"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-plus-lg"></i>
+
+            <span class="d-none d-sm-inline">
+                Nova criança
+            </span>
+        </a>
+
+    </div>
+
+
+    {% if criancas %}
+
+        <div class="row g-3">
+
+            {% for perfil in criancas %}
+
+                <div class="col-12 col-lg-6">
+
+                    <div class="child-card child-card-dashboard">
+
+                        {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+
+
+                        <div class="flex-grow-1 min-w-0">
+
+                            <div class="d-flex justify-content-between gap-2">
+
+                                <div>
+                                    <div class="fw-bold text-truncate">
+                                        {{ perfil.nome_exibicao }}
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        {{ perfil.avatar_titulo_nivel }}
+                                        · {{ perfil.saldo_pontos }} pontos
+                                    </div>
+                                </div>
+
+                                <span class="mini-rate">
+                                    {{ perfil.indicadores_semana.taxa_conclusao }}%
+                                </span>
+
+                            </div>
+
+
+                            <div class="avatar-progress mt-2">
+                                <div
+                                    class="avatar-progress-bar"
+                                    style="width: {{ perfil.avatar_progresso_percentual }}%;"
+                                ></div>
+                            </div>
+
+
+                            <div class="child-week-line mt-2">
+                                <span>
+                                    <i class="bi bi-check2-circle"></i>
+                                    {{ perfil.indicadores_semana.aprovadas }} feitas
+                                </span>
+
+                                <span>
+                                    <i class="bi bi-dash-circle"></i>
+                                    {{ perfil.indicadores_semana.nao_realizadas }} não realizadas
+                                </span>
+
+                                <span>
+                                    🔥 {{ perfil.sequencia_atual }} em sequência
+                                </span>
+                            </div>
+
+
+                            <div class="child-card-links mt-3">
+
+                                <a
+                                    href="{% url 'tarefas_crianca_tutor' perfil.id %}"
+                                    class="btn btn-light btn-sm"
+                                >
+                                    <i class="bi bi-check2-square"></i>
+                                    Hoje
+                                </a>
+
+                                <a
+                                    href="{% url 'historico_crianca_tutor' perfil.id %}"
+                                    class="btn btn-light btn-sm"
+                                >
+                                    <i class="bi bi-clock-history"></i>
+                                    Histórico
+                                </a>
+
+                                <a
+                                    href="{% url 'habilidades_crianca_tutor' perfil.id %}"
+                                    class="btn btn-light btn-sm"
+                                >
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                    Skills
+                                </a>
+
+                                <a
+                                    href="{% url 'conquistas_crianca_tutor' perfil.id %}"
+                                    class="btn btn-light btn-sm"
+                                >
+                                    <i class="bi bi-trophy"></i>
+                                    Conquistas
+                                </a>
+
+                                <a
+                                    href="{% url 'relatorio_semanal_crianca' perfil.id %}"
+                                    class="btn btn-light btn-sm"
+                                >
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                    Relatório
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <div class="empty-state-icon">
+                <i class="bi bi-person-plus"></i>
+            </div>
+
+            <h3 class="h5 fw-bold">
+                Nenhuma criança cadastrada
+            </h3>
+
+            <p class="text-muted">
+                Cadastre o primeiro perfil infantil para começar a organizar rotinas.
+            </p>
+
+            <a
+                href="{% url 'crianca_criar' %}"
+                class="btn btn-primary"
+            >
+                Cadastrar primeira criança
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
