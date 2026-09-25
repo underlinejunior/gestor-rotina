@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    const INSTALL_DISMISSED_KEY = "minhaRotinaInstallDismissed";
+    const INSTALL_DISMISSED_KEY = "rotinaConectaInstallDismissed";
 
     function isStandalone() {
         return (
@@ -10,7 +10,6 @@
         );
     }
 
-
     function isIOS() {
         return (
             /iphone|ipad|ipod/i.test(window.navigator.userAgent)
@@ -18,6 +17,23 @@
         );
     }
 
+    function isMobileOrTablet() {
+        const userAgent = window.navigator.userAgent;
+        const mobileUserAgent = /android|iphone|ipad|ipod|mobile/i.test(
+            userAgent
+        );
+        const iPadDesktopMode = (
+            window.navigator.platform === "MacIntel"
+            && window.navigator.maxTouchPoints > 1
+        );
+        const touchTablet = (
+            window.navigator.maxTouchPoints > 1
+            && window.matchMedia("(pointer: coarse)").matches
+            && Math.min(window.screen.width, window.screen.height) <= 1366
+        );
+
+        return mobileUserAgent || iPadDesktopMode || touchTablet;
+    }
 
     function registerServiceWorker() {
         if (!("serviceWorker" in navigator)) {
@@ -37,7 +53,6 @@
                 });
         });
     }
-
 
     function setupInstallExperience() {
         let deferredPrompt = null;
@@ -62,7 +77,7 @@
             "pwa-ios-close"
         );
 
-        if (isStandalone()) {
+        if (isStandalone() || !isMobileOrTablet()) {
             return;
         }
 
@@ -95,7 +110,6 @@
             }
         );
 
-
         if (installButton) {
             installButton.addEventListener(
                 "click",
@@ -116,7 +130,6 @@
             );
         }
 
-
         if (closeButton) {
             closeButton.addEventListener(
                 "click",
@@ -131,7 +144,6 @@
             );
         }
 
-
         if (iosClose) {
             iosClose.addEventListener(
                 "click",
@@ -145,7 +157,6 @@
                 }
             );
         }
-
 
         window.addEventListener(
             "appinstalled",
@@ -162,7 +173,6 @@
             }
         );
     }
-
 
     function setupPasswordToggles() {
         document
@@ -231,7 +241,6 @@
                 );
             });
     }
-
 
     registerServiceWorker();
 

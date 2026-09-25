@@ -1,20 +1,213 @@
 {% extends "base_app.html" %}
 
-{% block title %}Habilidades de {{ perfil.nome_exibicao }} | Minha Rotina{% endblock %}
+{% block title %}Habilidades de {{ perfil.nome_exibicao }} | Rotina Conecta{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .skill-radar-card {
+        min-width: 0;
+        overflow: hidden;
+        padding-bottom: 12px;
+    }
+
+    .skill-radar-card .radar-head {
+        margin-bottom: 0;
+    }
+
+    .skill-radar-card .radar-head .hero-eyebrow {
+        margin-bottom: 2px;
+    }
+
+    .skill-radar-card .radar-head h2 {
+        margin-bottom: 2px !important;
+    }
+
+    .skill-radar-card .radar-head p {
+        margin-bottom: 0 !important;
+        line-height: 1.3;
+    }
+
+    .skill-radar-wrap {
+        position: relative;
+        width: min(100%, 640px);
+        margin: 0 auto -8px;
+    }
+
+    #skills-radar {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+
+    .skill-radar-scale-note {
+        margin: 2px 0 8px;
+        color: #8a8f99;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .skill-radar-helper {
+        margin: 0 0 12px;
+        color: #8a8f99;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .skill-radar-info {
+        margin: 0 auto 4px;
+        max-width: 460px;
+        padding: 12px 14px;
+        border: 1px solid #e6e7f2;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #fbfbff 0%, #f7f7ff 100%);
+    }
+
+    .skill-radar-info-label {
+        display: inline-block;
+        margin-bottom: 4px;
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .skill-radar-info-title {
+        margin: 0;
+        color: var(--cor-texto);
+        font-size: 16px;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    .skill-radar-info-text {
+        margin: 4px 0 0;
+        color: var(--cor-texto-secundario);
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    .skill-radar-grid {
+        fill: none;
+        stroke: #d8dceb;
+        stroke-width: 1.1;
+    }
+
+    .skill-radar-axis {
+        stroke: #e6e9f2;
+        stroke-width: 1;
+    }
+
+    .skill-radar-area {
+        fill: rgba(94, 82, 242, .18);
+        stroke: #5b46e5;
+        stroke-width: 2.3;
+    }
+
+    .skill-radar-dot {
+        fill: #5b46e5;
+        stroke: #fff;
+        stroke-width: 2.3;
+        transition: r .15s ease, fill .15s ease, filter .15s ease;
+        cursor: pointer;
+    }
+
+    .skill-radar-dot.is-active {
+        fill: #3f2fd2;
+        filter: drop-shadow(0 0 8px rgba(91, 70, 229, .32));
+    }
+
+    .skill-radar-label {
+        font-size: 28px;
+        cursor: pointer;
+        user-select: none;
+        transition: transform .15s ease, opacity .15s ease;
+    }
+
+    .skill-radar-label.is-active {
+        transform: scale(1.12);
+    }
+
+    .skill-radar-hit {
+        fill: transparent;
+        cursor: pointer;
+    }
+
+    .skill-radar-tooltip {
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 4;
+        min-width: 150px;
+        padding: 9px 10px;
+        border: 1px solid #dfe3f0;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .97);
+        box-shadow: 0 12px 28px rgba(31, 41, 55, .12);
+        color: #1f2937;
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -120%);
+        transition: opacity .12s ease;
+    }
+
+    .skill-radar-tooltip.is-visible {
+        opacity: 1;
+    }
+
+    .skill-radar-tooltip strong {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    .skill-radar-tooltip small {
+        display: block;
+        color: #6b7280;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    @media (max-width: 767px) {
+        .skill-radar-card {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .skill-radar-wrap {
+            width: 100%;
+        }
+
+        .skill-radar-label {
+            font-size: 24px;
+        }
+
+        .skill-radar-info {
+            padding: 11px 12px;
+        }
+
+        .skill-radar-info-title {
+            font-size: 15px;
+        }
+
+        .skill-radar-info-text {
+            font-size: 12px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block app_content %}
 
 <div class="skills-page">
 
     <div class="page-heading">
-
         <div>
-
             {% if request.user.tipo == "TUTOR" %}
-                <a
-                    href="{% url 'criancas_listar' %}"
-                    class="back-link mb-2"
-                >
+                <a href="{% url 'criancas_listar' %}" class="back-link mb-2">
                     <i class="bi bi-arrow-left"></i>
                     Crianças
                 </a>
@@ -36,18 +229,13 @@
                 Indicadores baseados nas tarefas aprovadas
                 relacionadas a cada habilidade.
             </p>
-
         </div>
 
-
         {% include "usuarios/partials/avatar.html" with perfil=perfil %}
-
     </div>
-
 
     <div class="skill-disclaimer mb-4">
         <i class="bi bi-info-circle"></i>
-
         <span>
             Estes níveis representam a frequência de prática
             registrada no aplicativo. Eles não são uma avaliação
@@ -55,34 +243,61 @@
         </span>
     </div>
 
-
     <div class="skills-overview-grid mb-4">
 
         <section class="content-card skill-radar-card">
 
-            <div class="mb-3">
+            <div class="radar-head">
                 <span class="hero-eyebrow">
                     Evolução histórica
                 </span>
 
-                <h2 class="h5 fw-bold mb-1">
+                <h2 class="h5 fw-bold">
                     Visão geral
                 </h2>
 
-                <p class="text-muted small mb-0">
-                    Quanto mais atividades aprovadas ligadas
-                    a uma habilidade, maior o preenchimento.
+                <p class="text-muted small">
+                    O limite do gráfico é calculado automaticamente:
+                    sempre 130% da habilidade com maior valor.
                 </p>
             </div>
-
 
             <div class="skill-radar-wrap">
                 <svg
                     id="skills-radar"
-                    viewBox="0 0 420 420"
+                    viewBox="0 0 560 470"
+                    preserveAspectRatio="xMidYMid meet"
                     role="img"
                     aria-label="Gráfico radar de habilidades"
                 ></svg>
+
+                <div
+                    id="skills-radar-tooltip"
+                    class="skill-radar-tooltip"
+                ></div>
+            </div>
+
+            <div
+                id="skills-radar-scale-note"
+                class="skill-radar-scale-note"
+            ></div>
+
+            <p class="skill-radar-helper">
+                Passe o mouse ou toque nos ícones e pontos do gráfico.
+            </p>
+
+            <div id="skills-radar-info" class="skill-radar-info">
+                <span class="skill-radar-info-label">
+                    Habilidade em destaque
+                </span>
+
+                <h3 id="skills-radar-info-title" class="skill-radar-info-title">
+                    —
+                </h3>
+
+                <p id="skills-radar-info-text" class="skill-radar-info-text">
+                    Toque em um ponto ou ícone da teia para visualizar os detalhes.
+                </p>
             </div>
 
             {{ radar|json_script:"skills-radar-data" }}
@@ -107,11 +322,8 @@
                 </p>
             </div>
 
-
             <div class="recent-practice-list">
-
                 {% for item in habilidades %}
-
                     <div class="recent-practice-row">
 
                         <span class="recent-practice-icon">
@@ -142,11 +354,8 @@
                             </small>
 
                         </div>
-
                     </div>
-
                 {% endfor %}
-
             </div>
 
         </section>
@@ -155,21 +364,16 @@
 
 
     <div class="skills-cards-grid">
-
         {% for item in habilidades %}
-
             <article class="skill-progress-card">
 
                 <div class="skill-progress-top">
-
                     <div class="skill-progress-icon">
                         {{ item.skill.icone }}
                     </div>
 
                     <div class="flex-grow-1 min-w-0">
-
                         <div class="d-flex justify-content-between gap-2">
-
                             <div>
                                 <h2 class="h6 fw-bold mb-0">
                                     {{ item.skill.nome }}
@@ -184,18 +388,13 @@
                             <strong class="skill-xp-total">
                                 {{ item.xp_total }} XP
                             </strong>
-
                         </div>
-
                     </div>
-
                 </div>
-
 
                 <p class="skill-description">
                     {{ item.skill.descricao }}
                 </p>
-
 
                 <div class="skill-progress-track">
                     <div
@@ -204,9 +403,7 @@
                     ></div>
                 </div>
 
-
                 <div class="skill-progress-footer">
-
                     {% if item.nivel < 5 %}
                         <span>
                             Faltam {{ item.faltam }} XP
@@ -221,19 +418,15 @@
                     <span>
                         +{{ item.xp_30_dias }} XP em 30 dias
                     </span>
-
                 </div>
 
             </article>
-
         {% endfor %}
-
     </div>
 
 </div>
 
 {% endblock %}
-
 
 {% block extra_js %}
 {{ block.super }}
@@ -242,106 +435,82 @@
 document.addEventListener("DOMContentLoaded", function () {
     const svg = document.getElementById("skills-radar");
     const dataNode = document.getElementById("skills-radar-data");
+    const scaleNote = document.getElementById("skills-radar-scale-note");
+    const tooltip = document.getElementById("skills-radar-tooltip");
+    const infoTitle = document.getElementById("skills-radar-info-title");
+    const infoText = document.getElementById("skills-radar-info-text");
 
     if (!svg || !dataNode) {
         return;
     }
 
-    const data = JSON.parse(
-        dataNode.textContent || "[]"
-    );
+    const data = JSON.parse(dataNode.textContent || "[]");
 
     if (!data.length) {
         return;
     }
 
     const NS = "http://www.w3.org/2000/svg";
-    const cx = 210;
-    const cy = 210;
-    const maxRadius = 128;
-    const labelRadius = 170;
+    const cx = 280;
+    const cy = 230;
+    const maxRadius = 155;
+    const iconRadius = 194;
+    const levels = 5;
     const count = data.length;
 
-    function point(index, radius) {
-        const angle = (
-            -Math.PI / 2
-            + (
-                index
-                * 2
-                * Math.PI
-                / count
-            )
-        );
+    const values = data.map(function (item) {
+        return Math.max(0, Number(item.valor) || 0);
+    });
 
+    const maxSkillValue = Math.max.apply(null, values);
+    const scaleMax = maxSkillValue > 0
+        ? (maxSkillValue * 1.3)
+        : 1;
+
+    if (scaleNote) {
+        scaleNote.textContent =
+            "Maior habilidade: "
+            + maxSkillValue.toLocaleString("pt-BR", {maximumFractionDigits: 2})
+            + " · Limite visual da teia: "
+            + scaleMax.toLocaleString("pt-BR", {maximumFractionDigits: 2})
+            + " (130%)";
+    }
+
+    const interactiveItems = [];
+
+    function point(index, radius) {
+        const angle = -Math.PI / 2 + (index * 2 * Math.PI / count);
         return {
-            x: (
-                cx
-                + Math.cos(angle)
-                * radius
-            ),
-            y: (
-                cy
-                + Math.sin(angle)
-                * radius
-            )
+            x: cx + Math.cos(angle) * radius,
+            y: cy + Math.sin(angle) * radius
         };
     }
 
     function polygonPoints(radiusFactor) {
         return data
             .map(function (_, index) {
-                const p = point(
-                    index,
-                    maxRadius * radiusFactor
-                );
-
+                const p = point(index, maxRadius * radiusFactor);
                 return p.x + "," + p.y;
             })
             .join(" ");
     }
 
-    for (
-        let level = 1;
-        level <= 5;
-        level += 1
-    ) {
-        const grid = document.createElementNS(
-            NS,
-            "polygon"
-        );
-
-        grid.setAttribute(
-            "points",
-            polygonPoints(level / 5)
-        );
-
-        grid.setAttribute(
-            "class",
-            "skill-radar-grid"
-        );
-
+    for (let level = 1; level <= levels; level += 1) {
+        const grid = document.createElementNS(NS, "polygon");
+        grid.setAttribute("points", polygonPoints(level / levels));
+        grid.setAttribute("class", "skill-radar-grid");
         svg.appendChild(grid);
     }
 
     data.forEach(function (_, index) {
-        const p = point(
-            index,
-            maxRadius
-        );
-
-        const line = document.createElementNS(
-            NS,
-            "line"
-        );
+        const p = point(index, maxRadius);
+        const line = document.createElementNS(NS, "line");
 
         line.setAttribute("x1", cx);
         line.setAttribute("y1", cy);
         line.setAttribute("x2", p.x);
         line.setAttribute("y2", p.y);
-        line.setAttribute(
-            "class",
-            "skill-radar-axis"
-        );
+        line.setAttribute("class", "skill-radar-axis");
 
         svg.appendChild(line);
     });
@@ -350,120 +519,156 @@ document.addEventListener("DOMContentLoaded", function () {
         .map(function (item, index) {
             const value = Math.max(
                 0,
-                Math.min(
-                    5,
-                    Number(item.valor) || 0
-                )
+                Math.min(scaleMax, Number(item.valor) || 0)
             );
 
-            const p = point(
-                index,
-                maxRadius * (value / 5)
-            );
-
+            const p = point(index, maxRadius * (value / scaleMax));
             return p.x + "," + p.y;
         })
         .join(" ");
 
-    const area = document.createElementNS(
-        NS,
-        "polygon"
-    );
-
-    area.setAttribute(
-        "points",
-        valuePoints
-    );
-
-    area.setAttribute(
-        "class",
-        "skill-radar-area"
-    );
-
+    const area = document.createElementNS(NS, "polygon");
+    area.setAttribute("points", valuePoints);
+    area.setAttribute("class", "skill-radar-area");
     svg.appendChild(area);
+
+    function updateInfo(item) {
+        const pct = maxSkillValue > 0
+            ? ((item.value / maxSkillValue) * 100)
+            : 0;
+
+        if (infoTitle) {
+            infoTitle.textContent = (item.icon || "•") + " " + item.name;
+        }
+
+        if (infoText) {
+            infoText.textContent =
+                "Valor atual: "
+                + item.value.toLocaleString("pt-BR", {maximumFractionDigits: 2})
+                + " · "
+                + pct.toLocaleString("pt-BR", {maximumFractionDigits: 1})
+                + "% da maior habilidade.";
+        }
+    }
+
+    function showTooltip(item, x, y) {
+        if (!tooltip) return;
+
+        tooltip.innerHTML =
+            "<strong>" + (item.icon || "•") + " " + item.name + "</strong>"
+            + "<small>Valor: "
+            + item.value.toLocaleString("pt-BR", {maximumFractionDigits: 2})
+            + "</small>";
+
+        tooltip.style.left = x + "px";
+        tooltip.style.top = y + "px";
+        tooltip.classList.add("is-visible");
+    }
+
+    function hideTooltip() {
+        if (!tooltip) return;
+        tooltip.classList.remove("is-visible");
+    }
+
+    function clearActive() {
+        interactiveItems.forEach(function (entry) {
+            entry.dot.classList.remove("is-active");
+            entry.label.classList.remove("is-active");
+        });
+    }
+
+    function activate(entry) {
+        clearActive();
+        entry.dot.classList.add("is-active");
+        entry.label.classList.add("is-active");
+        updateInfo(entry.meta);
+    }
 
     data.forEach(function (item, index) {
         const value = Math.max(
             0,
-            Math.min(
-                5,
-                Number(item.valor) || 0
-            )
+            Math.min(scaleMax, Number(item.valor) || 0)
         );
 
-        const dotPoint = point(
-            index,
-            maxRadius * (value / 5)
-        );
+        const meta = {
+            name: item.nome || "Habilidade",
+            icon: item.icone || "•",
+            value: Number(item.valor) || 0
+        };
 
-        const dot = document.createElementNS(
-            NS,
-            "circle"
-        );
+        const dotPoint = point(index, maxRadius * (value / scaleMax));
 
-        dot.setAttribute(
-            "cx",
-            dotPoint.x
-        );
-
-        dot.setAttribute(
-            "cy",
-            dotPoint.y
-        );
-
-        dot.setAttribute("r", 5);
-
-        dot.setAttribute(
-            "class",
-            "skill-radar-dot"
-        );
-
+        const dot = document.createElementNS(NS, "circle");
+        dot.setAttribute("cx", dotPoint.x);
+        dot.setAttribute("cy", dotPoint.y);
+        dot.setAttribute("r", 6);
+        dot.setAttribute("class", "skill-radar-dot");
         svg.appendChild(dot);
 
-        const labelPoint = point(
-            index,
-            labelRadius
-        );
+        const iconPoint = point(index, iconRadius);
 
-        const label = document.createElementNS(
-            NS,
-            "text"
-        );
-
-        label.setAttribute(
-            "x",
-            labelPoint.x
-        );
-
-        label.setAttribute(
-            "y",
-            labelPoint.y
-        );
-
-        label.setAttribute(
-            "class",
-            "skill-radar-label"
-        );
-
-        label.setAttribute(
-            "text-anchor",
-            labelPoint.x < cx - 8
-                ? "end"
-                : (
-                    labelPoint.x > cx + 8
-                    ? "start"
-                    : "middle"
-                )
-        );
-
-        label.textContent = (
-            item.icone
-            + " "
-            + item.nome
-        );
-
+        const label = document.createElementNS(NS, "text");
+        label.setAttribute("x", iconPoint.x);
+        label.setAttribute("y", iconPoint.y);
+        label.setAttribute("class", "skill-radar-label");
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("dominant-baseline", "middle");
+        label.textContent = item.icone || "•";
         svg.appendChild(label);
+
+        const hit = document.createElementNS(NS, "circle");
+        hit.setAttribute("cx", dotPoint.x);
+        hit.setAttribute("cy", dotPoint.y);
+        hit.setAttribute("r", 17);
+        hit.setAttribute("class", "skill-radar-hit");
+        svg.appendChild(hit);
+
+        const labelHit = document.createElementNS(NS, "circle");
+        labelHit.setAttribute("cx", iconPoint.x);
+        labelHit.setAttribute("cy", iconPoint.y);
+        labelHit.setAttribute("r", 18);
+        labelHit.setAttribute("class", "skill-radar-hit");
+        svg.appendChild(labelHit);
+
+        const entry = {dot: dot, label: label, meta: meta};
+        interactiveItems.push(entry);
+
+        function bindInteraction(el, useDotPoint) {
+            el.addEventListener("mouseenter", function () {
+                activate(entry);
+                const p = useDotPoint ? dotPoint : iconPoint;
+                showTooltip(entry.meta, p.x, p.y);
+            });
+
+            el.addEventListener("mousemove", function () {
+                const p = useDotPoint ? dotPoint : iconPoint;
+                showTooltip(entry.meta, p.x, p.y);
+            });
+
+            el.addEventListener("mouseleave", hideTooltip);
+
+            el.addEventListener("click", function () {
+                activate(entry);
+                const p = useDotPoint ? dotPoint : iconPoint;
+                showTooltip(entry.meta, p.x, p.y);
+            });
+
+            el.addEventListener("touchstart", function () {
+                activate(entry);
+                const p = useDotPoint ? dotPoint : iconPoint;
+                showTooltip(entry.meta, p.x, p.y);
+            }, {passive: true});
+        }
+
+        bindInteraction(dot, true);
+        bindInteraction(hit, true);
+        bindInteraction(label, false);
+        bindInteraction(labelHit, false);
     });
+
+    if (interactiveItems.length) {
+        activate(interactiveItems[0]);
+    }
 });
 </script>
 

@@ -1,10 +1,10 @@
 {% load static %}
-const CACHE_VERSION = "minha-rotina-v8";
+const CACHE_VERSION = "rotina-conecta-v9";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const APP_SHELL = [
     "{% url 'offline' %}",
-    "{% static 'css/app.css' %}?v=20260901-emphasis-status-v4",
+    "{% static 'css/app.css' %}?v=20260924-delivery",
     "{% static 'js/app.js' %}",
     "{% static 'manifest.webmanifest' %}",
     "{% static 'img/icons/app-icon-180.png' %}",
@@ -38,7 +38,10 @@ self.addEventListener("activate", function (event) {
                     keys
                         .filter(function (key) {
                             return (
-                                key.startsWith("minha-rotina-")
+                                (
+                                    key.startsWith("rotina-conecta-")
+                                    || key.startsWith("minha-rotina-")
+                                )
                                 && key !== STATIC_CACHE
                             );
                         })

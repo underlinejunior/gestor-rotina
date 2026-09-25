@@ -43,28 +43,36 @@ class Skill(models.Model):
         }.get(int(impacto), "")
 
 
+XP_MAX_SKILL = 250
+
+
 def dados_nivel_skill(xp):
-    xp = max(0, int(xp or 0))
+    """
+    Escala compacta de evolução das Skills.
+
+    Cada nível ocupa uma faixa de 50 XP e a trilha visual
+    é concluída em 250 XP. O XP histórico pode continuar
+    acima desse valor, mas a progressão de nível permanece
+    no nível 5.
+    """
+    xp_real = max(0, int(xp or 0))
+    xp_considerado = min(xp_real, XP_MAX_SKILL)
+
     niveis = (
-        (1, 0, 60, "Descobrindo"),
-        (2, 60, 150, "Praticando"),
-        (3, 150, 300, "Evoluindo"),
-        (4, 300, 500, "Consolidando"),
-        (5, 500, None, "Dominando"),
+        (1, 0, 50, "Descobrindo"),
+        (2, 50, 100, "Praticando"),
+        (3, 100, 150, "Evoluindo"),
+        (4, 150, 200, "Consolidando"),
+        (5, 200, 250, "Dominando"),
     )
 
     for nivel, inicio, fim, titulo in niveis:
-        if fim is None or xp < fim:
-            if fim is None:
-                percentual = 100
-                faltam = 0
-            else:
-                intervalo = fim - inicio
-                percentual = round(
-                    ((xp - inicio) / intervalo) * 100
-                )
-                percentual = min(100, max(0, percentual))
-                faltam = max(0, fim - xp)
+        if xp_considerado < fim:
+            intervalo = fim - inicio
+            percentual = round(
+                ((xp_considerado - inicio) / intervalo) * 100
+            )
+            percentual = min(100, max(0, percentual))
 
             return {
                 "nivel": nivel,
@@ -72,16 +80,24 @@ def dados_nivel_skill(xp):
                 "inicio": inicio,
                 "proximo": fim,
                 "percentual": percentual,
-                "faltam": faltam,
+                "faltam": max(0, fim - xp_considerado),
+                "xp_exibido": xp_considerado,
+                "xp_real": xp_real,
+                "xp_maximo": XP_MAX_SKILL,
+                "concluido": False,
             }
 
     return {
         "nivel": 5,
         "titulo": "Dominando",
-        "inicio": 500,
+        "inicio": 200,
         "proximo": None,
         "percentual": 100,
         "faltam": 0,
+        "xp_exibido": XP_MAX_SKILL,
+        "xp_real": xp_real,
+        "xp_maximo": XP_MAX_SKILL,
+        "concluido": True,
     }
 
 
@@ -478,7 +494,6 @@ class NotificacaoSistema(models.Model):
             "pill_text": pill_text,
             "highlight_text": highlight_text,
         }
-
 
 
 class Recompensa(models.Model):

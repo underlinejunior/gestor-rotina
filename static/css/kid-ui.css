@@ -1,0 +1,1213 @@
+/* =========================================================
+   Experiência infantil — V1
+   Escopo propositalmente isolado em classes kid-* para não
+   alterar as telas do Tutor.
+   ========================================================= */
+
+:root {
+    --kid-purple: #5b4cf0;
+    --kid-purple-dark: #4338ca;
+    --kid-purple-soft: #f1efff;
+    --kid-blue: #2563eb;
+    --kid-green: #16a34a;
+    --kid-green-soft: #ecfdf3;
+    --kid-yellow: #f59e0b;
+    --kid-yellow-soft: #fff8df;
+    --kid-orange: #ea580c;
+    --kid-pink: #db2777;
+    --kid-ink: #1f2937;
+    --kid-muted: #667085;
+    --kid-line: #e7e9f3;
+    --kid-surface: #ffffff;
+    --kid-shadow: 0 16px 42px rgba(67, 56, 202, 0.09);
+}
+
+.kid-page {
+    width: min(100%, 1120px);
+    margin-inline: auto;
+    color: var(--kid-ink);
+}
+
+.kid-kicker,
+.kid-card-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 7px;
+    color: #5f56b8;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+/* Cabeçalho da criança */
+.kid-home-hero,
+.kid-page-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 190px;
+    padding: 28px 30px;
+    border-radius: 28px;
+    color: #fff;
+    background:
+        radial-gradient(circle at 88% 12%, rgba(255,255,255,.24), transparent 22%),
+        radial-gradient(circle at 5% 100%, rgba(255,211,102,.20), transparent 28%),
+        linear-gradient(135deg, #5145e5 0%, #7048e8 52%, #8b5cf6 100%);
+    box-shadow: 0 22px 50px rgba(79, 70, 229, .20);
+}
+
+.kid-home-hero::after,
+.kid-page-hero::after {
+    content: "";
+    position: absolute;
+    width: 170px;
+    height: 170px;
+    right: -65px;
+    bottom: -80px;
+    border-radius: 50%;
+    border: 24px solid rgba(255,255,255,.08);
+}
+
+.kid-home-copy,
+.kid-page-hero > div:first-child {
+    position: relative;
+    z-index: 2;
+}
+
+.kid-home-hero .kid-kicker,
+.kid-page-hero .kid-kicker {
+    color: rgba(255,255,255,.82);
+}
+
+.kid-home-hero h1,
+.kid-page-hero h1 {
+    margin: 0 0 8px;
+    font-size: clamp(30px, 4vw, 46px);
+    font-weight: 900;
+    letter-spacing: -.035em;
+}
+
+.kid-home-hero p,
+.kid-page-hero p {
+    max-width: 610px;
+    margin: 0;
+    color: rgba(255,255,255,.86);
+    font-size: 17px;
+    line-height: 1.5;
+}
+
+.kid-hero-avatar,
+.kid-page-avatar {
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+    padding: 13px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 26px;
+    background: rgba(255,255,255,.12);
+    backdrop-filter: blur(8px);
+}
+
+.kid-hero-points {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 18px;
+    padding: 9px 13px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    background: rgba(255,255,255,.13);
+    backdrop-filter: blur(8px);
+}
+
+.kid-hero-points span {
+    font-size: 20px;
+}
+
+.kid-hero-points strong {
+    font-size: 20px;
+}
+
+.kid-hero-points small {
+    color: rgba(255,255,255,.8);
+}
+
+/* Nível do avatar */
+.kid-level-card {
+    padding: 19px 22px;
+    border: 1px solid #ddd9ff;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #fbfaff, #fff);
+}
+
+.kid-level-top,
+.kid-level-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.kid-level-top h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.kid-level-xp {
+    padding: 8px 11px;
+    border-radius: 999px;
+    color: var(--kid-purple-dark);
+    background: var(--kid-purple-soft);
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.kid-progress-track {
+    height: 14px;
+    margin: 14px 0 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #eae8fb;
+}
+
+.kid-progress-bar {
+    min-width: 4%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #6d5dfc, #9a6cff);
+    box-shadow: 0 0 18px rgba(109, 93, 252, .32);
+    transition: width .45s ease;
+}
+
+.kid-level-footer {
+    color: var(--kid-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Seções */
+.kid-section {
+    padding: 22px;
+    border: 1px solid var(--kid-line);
+    border-radius: 26px;
+    background: var(--kid-surface);
+    box-shadow: 0 10px 34px rgba(31, 41, 55, .045);
+}
+
+.kid-section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.kid-section-heading h2,
+.kid-week-copy h2 {
+    margin: 0 0 3px;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -.025em;
+}
+
+.kid-section-heading p,
+.kid-week-copy p {
+    margin: 0;
+    color: var(--kid-muted);
+    font-size: 14px;
+}
+
+.kid-section-heading-compact {
+    align-items: center;
+}
+
+.kid-text-link {
+    flex: 0 0 auto;
+    color: var(--kid-purple-dark);
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.kid-text-link:hover {
+    color: var(--kid-purple);
+}
+
+/* Cards de tarefa */
+.kid-task-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.kid-task-list {
+    display: grid;
+    gap: 15px;
+}
+
+.kid-task-card {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 18px;
+    border: 1px solid #e6e7ef;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 9px 26px rgba(31, 41, 55, .045);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.kid-task-card:hover {
+    transform: translateY(-2px);
+    border-color: #d4d0ff;
+    box-shadow: var(--kid-shadow);
+}
+
+.kid-task-card-wide {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 22px;
+}
+
+.kid-task-card-wide > * {
+    grid-column: 1;
+}
+
+.kid-task-card-wide .kid-task-action-area {
+    grid-column: 2;
+    grid-row: 1 / span 7;
+    align-self: center;
+    min-width: 210px;
+}
+
+.kid-task-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.kid-task-symbol {
+    width: 50px;
+    min-width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: #f5f3ff;
+    font-size: 24px;
+}
+
+.kid-task-heading {
+    min-width: 0;
+    flex: 1;
+}
+
+.kid-task-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.kid-task-body h3,
+.kid-task-heading h2 {
+    margin: 0;
+    color: var(--kid-ink);
+    font-size: 19px;
+    font-weight: 900;
+    line-height: 1.3;
+}
+
+.kid-task-description {
+    margin: -2px 0 0;
+    color: var(--kid-muted);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.kid-status-badge,
+.kid-bonus-badge,
+.kid-late-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.kid-status-pendente {
+    color: #9a3412;
+    background: #fff1e8;
+}
+
+.kid-status-revisao {
+    color: #5b21b6;
+    background: #f2eaff;
+}
+
+.kid-status-aprovada {
+    color: #166534;
+    background: #eaf9ef;
+}
+
+.kid-status-rejeitada {
+    color: #9f1239;
+    background: #fff0f4;
+}
+
+.kid-bonus-badge {
+    color: #8a4b00;
+    background: #fff4ca;
+}
+
+.kid-late-badge {
+    color: #92400e;
+    background: #fffbeb;
+}
+
+.kid-task-reward {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    color: var(--kid-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.kid-task-reward > span:first-child {
+    color: #9a6700;
+}
+
+.kid-task-reward-large {
+    font-size: 14px;
+}
+
+.kid-primary-action,
+.kid-secondary-action,
+.kid-camera-button {
+    min-height: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 15px;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.kid-primary-action {
+    padding: 12px 17px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--kid-purple), #7c3aed);
+    box-shadow: 0 9px 20px rgba(91, 76, 240, .20);
+}
+
+.kid-primary-action:hover {
+    color: #fff;
+    filter: brightness(1.03);
+}
+
+.kid-secondary-action {
+    padding: 11px 15px;
+    color: var(--kid-purple-dark);
+    border: 1px solid #dcd8ff;
+    background: #fff;
+}
+
+.kid-waiting-action,
+.kid-done-action {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 13px;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: 900;
+    text-align: center;
+}
+
+.kid-waiting-action {
+    color: #5b21b6;
+    background: #f5f0ff;
+}
+
+.kid-done-action {
+    color: #166534;
+    background: var(--kid-green-soft);
+}
+
+.kid-skill-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.kid-skill-pills span {
+    padding: 5px 9px;
+    border: 1px solid #e8e7f5;
+    border-radius: 999px;
+    color: #5f5b73;
+    background: #fafaff;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.kid-feedback {
+    display: flex;
+    gap: 10px;
+    padding: 12px 13px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+.kid-feedback > span {
+    font-size: 21px;
+}
+
+.kid-feedback p {
+    margin: 2px 0 0;
+}
+
+.kid-feedback-attention {
+    background: #fff7ed;
+}
+
+.kid-feedback-success {
+    background: #f0fdf4;
+}
+
+/* Resumo do dia */
+.kid-today-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.kid-summary-item {
+    min-width: 0;
+    padding: 16px 13px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 10px;
+    border: 1px solid var(--kid-line);
+    border-radius: 18px;
+    background: #fff;
+}
+
+.kid-summary-icon {
+    grid-row: 1 / 3;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: #f7f7fb;
+    font-size: 20px;
+}
+
+.kid-summary-item strong {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.kid-summary-item small {
+    margin-top: 3px;
+    color: var(--kid-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Atalhos da gamificação */
+.kid-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.kid-action-card {
+    min-width: 0;
+    min-height: 94px;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 11px;
+    padding: 15px;
+    border: 1px solid var(--kid-line);
+    border-radius: 19px;
+    color: inherit;
+    text-decoration: none;
+    background: #fff;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.kid-action-card:hover {
+    color: inherit;
+    transform: translateY(-2px);
+    box-shadow: var(--kid-shadow);
+}
+
+.kid-action-emoji {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 15px;
+    font-size: 25px;
+}
+
+.kid-action-reward .kid-action-emoji { background: #fff4ca; }
+.kid-action-streak .kid-action-emoji { background: #fff0e8; }
+.kid-action-skills .kid-action-emoji { background: #eaf9ef; }
+
+.kid-action-copy {
+    min-width: 0;
+}
+
+.kid-action-copy small,
+.kid-action-copy strong {
+    display: block;
+}
+
+.kid-action-copy small {
+    margin-bottom: 2px;
+    color: var(--kid-muted);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.kid-action-copy strong {
+    font-size: 14px;
+    line-height: 1.25;
+}
+
+/* Semana */
+.kid-week-progress {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    border: 1px solid #dcefe2;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #f6fff8, #fff);
+}
+
+.kid-week-circle {
+    width: 76px;
+    height: 76px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, #fff 56%, transparent 58%),
+        conic-gradient(#22c55e calc(var(--kid-week-progress) * 1%), #e4eee7 0);
+}
+
+.kid-week-circle strong {
+    font-size: 18px;
+}
+
+/* Conquistas */
+.kid-achievements-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid #efe8c8;
+    border-radius: 18px;
+    background: #fffdf4;
+}
+
+.kid-achievements-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.kid-achievements-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.kid-achievement-pill {
+    padding: 6px 9px;
+    border-radius: 999px;
+    color: #725b18;
+    background: #fff6ce;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+/* Página Minhas tarefas */
+.kid-page-hero {
+    min-height: 150px;
+}
+
+.kid-page-hero h1 {
+    font-size: clamp(28px, 4vw, 38px);
+}
+
+.kid-how-it-works {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--kid-line);
+    border-radius: 20px;
+    background: #fff;
+}
+
+.kid-how-it-works > i {
+    color: #bbb8ca;
+}
+
+.kid-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kid-step > span {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--kid-purple);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.kid-step strong,
+.kid-step small {
+    display: block;
+}
+
+.kid-step strong {
+    font-size: 13px;
+}
+
+.kid-step small {
+    color: var(--kid-muted);
+    font-size: 10px;
+}
+
+/* Estado vazio */
+.kid-empty-state {
+    padding: 28px 18px;
+    text-align: center;
+    border: 1px dashed #d9d7e7;
+    border-radius: 20px;
+    background: #fcfcff;
+}
+
+.kid-empty-state-large {
+    padding-block: 48px;
+}
+
+.kid-empty-emoji {
+    margin-bottom: 10px;
+    font-size: 44px;
+}
+
+.kid-empty-state h2,
+.kid-empty-state h3 {
+    margin: 0 0 5px;
+    font-weight: 900;
+}
+
+.kid-empty-state p {
+    max-width: 520px;
+    margin: 0 auto 15px;
+    color: var(--kid-muted);
+}
+
+/* Fluxo da foto */
+.kid-proof-page {
+    max-width: 780px;
+}
+
+.kid-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #514b72;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.kid-proof-card {
+    overflow: hidden;
+    border: 1px solid var(--kid-line);
+    border-radius: 28px;
+    background: #fff;
+    box-shadow: 0 18px 55px rgba(31, 41, 55, .07);
+}
+
+.kid-proof-task {
+    padding: 25px 26px;
+    background:
+        radial-gradient(circle at right top, rgba(124,58,237,.10), transparent 35%),
+        linear-gradient(135deg, #f8f7ff, #fff);
+}
+
+.kid-proof-task h1 {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.kid-proof-task > p {
+    margin: 0;
+    color: var(--kid-muted);
+}
+
+.kid-proof-reward {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    color: #805b00;
+    background: #fff4c7;
+}
+
+.kid-proof-reward strong {
+    font-size: 17px;
+}
+
+.kid-proof-reward small {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.kid-proof-body {
+    padding: 26px;
+}
+
+.kid-proof-steps {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr auto;
+    align-items: center;
+    margin-bottom: 26px;
+}
+
+.kid-proof-step {
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    color: #9490a8;
+    font-size: 11px;
+}
+
+.kid-proof-step > span {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid #e3e1eb;
+    background: #fff;
+    font-weight: 900;
+}
+
+.kid-proof-step.is-done,
+.kid-proof-step.is-current {
+    color: var(--kid-purple-dark);
+}
+
+.kid-proof-step.is-done > span {
+    color: #fff;
+    border-color: var(--kid-green);
+    background: var(--kid-green);
+}
+
+.kid-proof-step.is-current > span {
+    color: #fff;
+    border-color: var(--kid-purple);
+    background: var(--kid-purple);
+    box-shadow: 0 0 0 5px #efedff;
+}
+
+.kid-proof-line {
+    height: 2px;
+    margin: 0 8px 18px;
+    background: #e9e7ef;
+}
+
+.kid-camera-intro {
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+.kid-camera-emoji {
+    margin-bottom: 6px;
+    font-size: 42px;
+}
+
+.kid-camera-intro h2 {
+    margin: 0 0 5px;
+    font-size: 24px;
+    font-weight: 900;
+}
+
+.kid-camera-intro p {
+    margin: 0;
+    color: var(--kid-muted);
+}
+
+.kid-camera-form {
+    position: relative;
+}
+
+.kid-camera-form input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.kid-camera-button {
+    width: 100%;
+    min-height: 94px;
+    flex-direction: column;
+    gap: 2px;
+    border: 2px dashed #cfcafb;
+    color: var(--kid-purple-dark);
+    background: #faf9ff;
+}
+
+.kid-camera-button i {
+    margin-bottom: 3px;
+    font-size: 26px;
+}
+
+.kid-camera-button span {
+    font-size: 16px;
+}
+
+.kid-camera-button small {
+    color: var(--kid-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.kid-camera-button:hover {
+    background: #f4f2ff;
+}
+
+.kid-photo-preview {
+    margin-top: 16px;
+    overflow: hidden;
+    border: 1px solid #dce3de;
+    border-radius: 18px;
+    background: #f7fff9;
+}
+
+.kid-photo-preview img {
+    width: 100%;
+    max-height: 360px;
+    display: block;
+    object-fit: contain;
+    background: #eef1f0;
+}
+
+.kid-photo-ready {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 13px;
+}
+
+.kid-photo-ready span {
+    font-size: 21px;
+}
+
+.kid-photo-ready strong,
+.kid-photo-ready small {
+    display: block;
+}
+
+.kid-photo-ready small {
+    color: var(--kid-muted);
+    font-size: 11px;
+}
+
+.kid-file-message {
+    margin-top: 7px;
+    color: var(--kid-muted);
+    font-size: 11px;
+    text-align: center;
+}
+
+.kid-form-error {
+    margin-top: 8px;
+    color: #b42318;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.kid-submit-proof {
+    width: 100%;
+    margin-top: 18px;
+    min-height: 56px;
+    font-size: 16px;
+}
+
+.kid-proof-note {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    margin: 11px 0 0;
+    color: var(--kid-muted);
+    font-size: 11px;
+    text-align: center;
+}
+
+/* Deixa a navegação inferior mais amigável nas telas infantis atualizadas. */
+body:has(.kid-page) .mobile-nav {
+    min-height: 76px;
+    padding-inline: 5px;
+    border-top-color: #e7e5f4;
+    box-shadow: 0 -8px 30px rgba(31, 41, 55, .06);
+}
+
+body:has(.kid-page) .mobile-nav a {
+    min-height: 64px;
+    margin: 4px 2px;
+    border-radius: 14px;
+    font-weight: 800;
+}
+
+body:has(.kid-page) .mobile-nav a:active {
+    background: #f1efff;
+}
+
+body:has(.kid-page) .mobile-nav i {
+    font-size: 23px;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+    .kid-task-grid,
+    .kid-action-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kid-task-card-wide {
+        display: flex;
+    }
+
+    .kid-task-card-wide .kid-task-action-area {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .kid-week-progress {
+        grid-template-columns: auto 1fr;
+    }
+
+    .kid-week-progress .kid-secondary-action {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .kid-home-hero,
+    .kid-page-hero {
+        min-height: 0;
+        padding: 22px 20px;
+        border-radius: 23px;
+    }
+
+    .kid-home-hero h1,
+    .kid-page-hero h1 {
+        font-size: 29px;
+    }
+
+    .kid-home-hero p,
+    .kid-page-hero p {
+        font-size: 14px;
+    }
+
+    .kid-hero-avatar,
+    .kid-page-avatar {
+        padding: 8px;
+        border-radius: 20px;
+    }
+
+    .kid-hero-avatar .evolving-avatar,
+    .kid-page-avatar .evolving-avatar {
+        width: 64px;
+        min-width: 64px;
+        height: 64px;
+    }
+
+    .kid-hero-avatar .avatar-face,
+    .kid-page-avatar .avatar-face {
+        font-size: 32px;
+    }
+
+    .kid-hero-points {
+        align-items: baseline;
+        flex-wrap: wrap;
+    }
+
+    .kid-hero-points small {
+        width: 100%;
+        padding-left: 28px;
+        font-size: 10px;
+    }
+
+    .kid-level-card,
+    .kid-section,
+    .kid-proof-task,
+    .kid-proof-body {
+        padding: 17px;
+    }
+
+    .kid-section {
+        border-radius: 21px;
+    }
+
+    .kid-section-heading {
+        align-items: flex-start;
+    }
+
+    .kid-section-heading h2,
+    .kid-week-copy h2 {
+        font-size: 20px;
+    }
+
+    .kid-text-link {
+        font-size: 12px;
+    }
+
+    .kid-today-summary {
+        gap: 7px;
+    }
+
+    .kid-summary-item {
+        padding: 12px 7px;
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .kid-summary-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 17px;
+    }
+
+    .kid-summary-item strong {
+        margin-top: 5px;
+        font-size: 20px;
+    }
+
+    .kid-summary-item small {
+        font-size: 10px;
+    }
+
+    .kid-week-progress {
+        grid-template-columns: 1fr;
+        text-align: center;
+        justify-items: center;
+    }
+
+    .kid-how-it-works {
+        gap: 5px;
+        padding: 10px 7px;
+    }
+
+    .kid-step {
+        gap: 4px;
+    }
+
+    .kid-step > span {
+        width: 27px;
+        height: 27px;
+    }
+
+    .kid-step small {
+        display: none;
+    }
+
+    .kid-how-it-works > i {
+        font-size: 11px;
+    }
+
+    .kid-proof-reward {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .kid-proof-reward small {
+        width: 100%;
+        padding-left: 28px;
+    }
+}
+
+@media (max-width: 390px) {
+    .kid-home-hero,
+    .kid-page-hero {
+        gap: 12px;
+    }
+
+    .kid-hero-avatar,
+    .kid-page-avatar {
+        display: none;
+    }
+
+    .kid-level-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .kid-section-heading {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .kid-proof-body,
+    .kid-proof-task {
+        padding: 15px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kid-task-card,
+    .kid-action-card,
+    .kid-progress-bar {
+        transition: none;
+    }
+}

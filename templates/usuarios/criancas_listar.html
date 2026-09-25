@@ -1,0 +1,49 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Crianças | Minha Rotina{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/ui_polish.css' %}?v=20260923-child-pro-card">
+{% endblock %}
+
+{% block app_content %}
+<div class="children-page">
+
+    <div class="children-page-header">
+        <div>
+            <h1 class="children-page-title">Crianças</h1>
+            <p class="children-page-subtitle">Gerencie perfis, avatares, tarefas e histórico.</p>
+        </div>
+
+        <a href="{% url 'crianca_criar' %}" class="children-add-btn">
+            <i class="bi bi-plus-lg"></i>
+            <span>Nova criança</span>
+        </a>
+    </div>
+
+    {% if criancas %}
+        <div class="children-list">
+            {% for crianca in criancas %}
+                {% include "usuarios/partials/crianca_card_profissional.html" with crianca=crianca %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <section class="content-card">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h2 class="h5 fw-bold">Nenhuma criança cadastrada</h2>
+                <p class="text-muted mb-3">Cadastre a primeira criança para começar a montar as rotinas.</p>
+                <a href="{% url 'crianca_criar' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i>
+                    Nova criança
+                </a>
+            </div>
+        </section>
+    {% endif %}
+
+</div>
+{% endblock %}

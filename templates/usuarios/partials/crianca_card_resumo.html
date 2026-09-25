@@ -1,0 +1,113 @@
+{% load gamificacao_tags %}
+
+{% indicadores_semana_crianca perfil as indicadores_card %}
+{% sequencia_crianca perfil as sequencia_card %}
+
+<article class="child-summary-card">
+
+    <div class="child-summary-card__top">
+
+        <div class="child-summary-card__avatar">
+            {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+        </div>
+
+        <div class="child-summary-card__content">
+
+            <div class="child-summary-card__heading">
+                <div class="min-w-0">
+                    <h3 class="child-summary-card__name">
+                        {{ perfil.nome_exibicao }}
+                    </h3>
+
+                    <p class="child-summary-card__subtitle">
+                        {{ perfil.avatar_titulo_nivel }}
+                        · {{ perfil.saldo_pontos }} pontos
+                    </p>
+                </div>
+
+                <a
+                    href="{% url 'crianca_editar' perfil.id %}"
+                    class="child-summary-card__edit"
+                    title="Editar perfil"
+                    aria-label="Editar {{ perfil.nome_exibicao }}"
+                >
+                    <i class="bi bi-pencil"></i>
+                </a>
+            </div>
+
+            <div class="child-summary-card__progress">
+                <div
+                    class="child-summary-card__progress-bar"
+                    style="width: {{ perfil.avatar_progresso_percentual }}%;"
+                ></div>
+            </div>
+
+            <div class="child-summary-card__info-row">
+                {% if perfil.acesso_proprio %}
+                    <span class="child-summary-card__access">
+                        <i class="bi bi-phone"></i>
+                        Acesso próprio
+                    </span>
+                {% else %}
+                    <span class="child-summary-card__access is-tutor">
+                        <i class="bi bi-person-check"></i>
+                        Somente Tutor
+                    </span>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <div class="child-summary-card__rate">
+            <strong>{{ indicadores_card.taxa_conclusao }}%</strong>
+            <span>7 dias</span>
+        </div>
+
+    </div>
+
+    <div class="child-summary-card__stats">
+        <span class="child-summary-card__stat">
+            <i class="bi bi-check2-circle"></i>
+            {{ indicadores_card.aprovadas }} feitas
+        </span>
+
+        <span class="child-summary-card__stat">
+            <i class="bi bi-dash-circle"></i>
+            {{ indicadores_card.nao_realizadas }} não realizadas
+        </span>
+
+        <span class="child-summary-card__stat">
+            🔥 {{ sequencia_card }} em sequência
+        </span>
+    </div>
+
+    <div class="child-summary-card__actions">
+
+        <a href="{% url 'tarefas_crianca_tutor' perfil.id %}" class="child-summary-action child-summary-action--today">
+            <span class="child-summary-action__icon" aria-hidden="true"></span>
+            <span class="child-summary-action__label">Hoje</span>
+        </a>
+
+        <a href="{% url 'historico_crianca_tutor' perfil.id %}" class="child-summary-action child-summary-action--history">
+            <span class="child-summary-action__icon" aria-hidden="true"></span>
+            <span class="child-summary-action__label">Histórico</span>
+        </a>
+
+        <a href="{% url 'habilidades_crianca_tutor' perfil.id %}" class="child-summary-action child-summary-action--skills">
+            <span class="child-summary-action__icon" aria-hidden="true"></span>
+            <span class="child-summary-action__label">Skills</span>
+        </a>
+
+        <a href="{% url 'conquistas_crianca_tutor' perfil.id %}" class="child-summary-action child-summary-action--achievements">
+            <span class="child-summary-action__icon" aria-hidden="true"></span>
+            <span class="child-summary-action__label">Conquistas</span>
+        </a>
+
+        <a href="{% url 'relatorio_semanal_crianca' perfil.id %}" class="child-summary-action child-summary-action--report">
+            <span class="child-summary-action__icon" aria-hidden="true"></span>
+            <span class="child-summary-action__label">Relatório</span>
+        </a>
+
+    </div>
+
+</article>

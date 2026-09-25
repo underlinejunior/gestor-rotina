@@ -1,8 +1,6 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 import mimetypes
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
@@ -21,15 +19,12 @@ from django.views.decorators.http import (
 from gamificacao.catalogo import carregar_catalogo_padrao
 
 from gamificacao.models import (
-    ConquistaCrianca,
     MoldeTarefaSkill,
     MovimentoPontos,
-    MovimentoSkill,
     ProgressoSkill,
     Skill,
 )
 from gamificacao.services import (
-    calcular_sequencia,
     salvar_skills_molde,
     salvar_skills_tarefa_bonus,
 )
@@ -148,7 +143,6 @@ def _calcular_idade(
     )
 
 
-
 def _slugs_enfase_solicitados(request, skills_ativas):
     """Retorna até três Skills escolhidas manualmente como ênfase."""
     valor = (request.GET.get("enfase", "auto") or "auto").strip().lower()
@@ -239,7 +233,7 @@ def _diagnostico_skills_crianca(perfil, skills_ativas=None):
         rotinas_ativas = len(info_cobertura["rotinas"])
         carga = int(info_cobertura["carga"])
 
-        # Quanto maior, mais sentido faz trabalhar esta Skill agora.
+
         lacuna_xp = 1.0 if max_xp == 0 else 1.0 - (xp / max_xp)
         lacuna_cobertura = 1.0 if max_carga == 0 else 1.0 - (carga / max_carga)
         prioridade = round((lacuna_xp * 0.62 + lacuna_cobertura * 0.38) * 100)
@@ -481,7 +475,6 @@ def api_sugerir_rotina(request):
     )
 
 
-
 def _skills_para_formulario(
     request,
     molde=None,
@@ -542,7 +535,6 @@ def _skills_para_formulario(
             )
         )
     ]
-
 
 
 def _garantir_catalogo_sugestoes():
@@ -1377,392 +1369,6 @@ def meu_historico(
     )
 
 
-
-def _inicio_semana_relatorio(request):
-    hoje = timezone.localdate()
-    valor = (
-        request.GET.get("inicio")
-        or ""
-    ).strip()
-
-    if valor:
-        try:
-            inicio = datetime.strptime(
-                valor,
-                "%Y-%m-%d",
-            ).date()
-        except ValueError:
-            inicio = hoje
-    else:
-        inicio = hoje
-
-    return (
-        inicio
-        - timedelta(
-            days=inicio.weekday()
-        )
-    )
-
-
-def _classe_status_relatorio(status):
-    return {
-        InstanciaTarefa.Status.APROVADA: "approved",
-        InstanciaTarefa.Status.NAO_REALIZADA: "missed",
-        InstanciaTarefa.Status.REVISAO: "review",
-        InstanciaTarefa.Status.REJEITADA: "rejected",
-        InstanciaTarefa.Status.PENDENTE: "pending",
-        "PROGRAMADA": "planned",
-    }.get(
-        status,
-        "planned",
-    )
-
-
-def _ordem_momento_relatorio(periodo, horario=None):
-    ordem = {
-        "MANHA": 1,
-        "TARDE": 2,
-        "NOITE": 3,
-        "HORARIO": 4,
-        "QUALQUER": 5,
-    }
-
-    return (
-        ordem.get(periodo, 6),
-        horario or datetime.max.time(),
-    )
-
-
-@login_required(login_url="login")
-def relatorio_semanal_crianca(
-    request,
-    perfil_id,
-):
-    if request.user.tipo != Usuario.Tipo.TUTOR:
-        return redirect("inicio")
-
-    familia = _familia_do_tutor(
-        request
-    )
-
-    perfil = get_object_or_404(
-        PerfilCrianca,
-        id=perfil_id,
-        familia=familia,
-    )
-
-    inicio = _inicio_semana_relatorio(
-        request
-    )
-    fim = inicio + timedelta(days=6)
-    hoje = timezone.localdate()
-
-    dias_datas = [
-        inicio + timedelta(days=indice)
-        for indice in range(7)
-    ]
-
-    nomes_dias = [
-        "Segunda",
-        "Terça",
-        "Quarta",
-        "Quinta",
-        "Sexta",
-        "Sábado",
-        "Domingo",
-    ]
-
-    moldes = list(
-        MoldeTarefa.objects
-        .filter(
-            crianca=perfil,
-            ativa=True,
-        )
-        .prefetch_related(
-            "skills_associadas__skill"
-        )
-        .order_by(
-            "titulo"
-        )
-    )
-
-    instancias = list(
-        InstanciaTarefa.objects
-        .filter(
-            crianca=perfil,
-            data_referencia__gte=inicio,
-            data_referencia__lte=fim,
-        )
-        .select_related(
-            "molde"
-        )
-        .prefetch_related(
-            "skills_snapshot"
-        )
-        .order_by(
-            "data_referencia",
-            "criada_em",
-        )
-    )
-
-    instancias_por_data = defaultdict(list)
-
-    for tarefa in instancias:
-        instancias_por_data[
-            tarefa.data_referencia
-        ].append(tarefa)
-
-    dias = []
-    total_planejado = 0
-
-    for indice, data in enumerate(dias_datas):
-        itens = []
-        moldes_ja_presentes = set()
-
-        for tarefa in instancias_por_data.get(
-            data,
-            [],
-        ):
-            if tarefa.molde_id:
-                moldes_ja_presentes.add(
-                    tarefa.molde_id
-                )
-
-            skills = [
-                {
-                    "icone": item.icone_snapshot,
-                    "nome": item.nome_snapshot,
-                }
-                for item in tarefa.skills_snapshot.all()
-            ]
-
-            itens.append(
-                {
-                    "titulo": tarefa.titulo,
-                    "descricao": tarefa.descricao,
-                    "pontos": tarefa.pontos_base,
-                    "status": tarefa.status,
-                    "status_label": tarefa.get_status_display(),
-                    "status_class": _classe_status_relatorio(
-                        tarefa.status
-                    ),
-                    "momento": tarefa.momento_resumo,
-                    "periodo": tarefa.periodo,
-                    "horario": tarefa.horario,
-                    "skills": skills,
-                    "bonus": (
-                        tarefa.origem
-                        == InstanciaTarefa.Origem.BONUS
-                    ),
-                }
-            )
-
-        for molde in moldes:
-            if (
-                molde.id in moldes_ja_presentes
-                or not molde.deve_gerar_em(data)
-            ):
-                continue
-
-            skills = [
-                {
-                    "icone": associacao.skill.icone,
-                    "nome": associacao.skill.nome,
-                }
-                for associacao in molde.skills_associadas.all()
-            ]
-
-            itens.append(
-                {
-                    "titulo": molde.titulo,
-                    "descricao": molde.descricao,
-                    "pontos": molde.pontos_base,
-                    "status": "PROGRAMADA",
-                    "status_label": "Programada",
-                    "status_class": "planned",
-                    "momento": molde.momento_resumo,
-                    "periodo": molde.periodo,
-                    "horario": molde.horario,
-                    "skills": skills,
-                    "bonus": False,
-                }
-            )
-
-        itens.sort(
-            key=lambda item: (
-                *_ordem_momento_relatorio(
-                    item["periodo"],
-                    item["horario"],
-                ),
-                item["titulo"].lower(),
-            )
-        )
-
-        total_planejado += len(itens)
-
-        dias.append(
-            {
-                "nome": nomes_dias[indice],
-                "data": data,
-                "hoje": data == hoje,
-                "itens": itens,
-            }
-        )
-
-    aprovadas = sum(
-        1
-        for tarefa in instancias
-        if tarefa.status == InstanciaTarefa.Status.APROVADA
-    )
-
-    nao_realizadas = sum(
-        1
-        for tarefa in instancias
-        if tarefa.status == InstanciaTarefa.Status.NAO_REALIZADA
-    )
-
-    em_revisao = sum(
-        1
-        for tarefa in instancias
-        if tarefa.status == InstanciaTarefa.Status.REVISAO
-    )
-
-    pendentes = sum(
-        1
-        for tarefa in instancias
-        if tarefa.status in {
-            InstanciaTarefa.Status.PENDENTE,
-            InstanciaTarefa.Status.REJEITADA,
-        }
-    )
-
-    finalizadas = (
-        aprovadas
-        + nao_realizadas
-    )
-
-    taxa_conclusao = (
-        round(
-            aprovadas
-            / finalizadas
-            * 100
-        )
-        if finalizadas
-        else 0
-    )
-
-    pontos_ganhos = sum(
-        int(tarefa.pontos_concedidos or 0)
-        for tarefa in instancias
-        if tarefa.status == InstanciaTarefa.Status.APROVADA
-    )
-
-    penalidades = abs(
-        MovimentoPontos.objects
-        .filter(
-            crianca=perfil,
-            tipo=MovimentoPontos.Tipo.PENALIDADE,
-            tarefa__data_referencia__gte=inicio,
-            tarefa__data_referencia__lte=fim,
-        )
-        .aggregate(
-            total=Sum("pontos")
-        )["total"]
-        or 0
-    )
-
-    skills_semana = list(
-        MovimentoSkill.objects
-        .filter(
-            crianca=perfil,
-            tarefa__data_referencia__gte=inicio,
-            tarefa__data_referencia__lte=fim,
-        )
-        .values(
-            "skill__nome",
-            "skill__icone",
-        )
-        .annotate(
-            xp=Sum("xp")
-        )
-        .order_by(
-            "-xp",
-            "skill__nome",
-        )[:8]
-    )
-
-    conquistas_semana = (
-        ConquistaCrianca.objects
-        .filter(
-            crianca=perfil,
-            desbloqueada_em__date__gte=inicio,
-            desbloqueada_em__date__lte=fim,
-        )
-        .select_related(
-            "conquista"
-        )
-        .order_by(
-            "desbloqueada_em"
-        )
-    )
-
-    contexto = {
-        "perfil": perfil,
-        "familia": familia,
-        "idade": _calcular_idade(
-            perfil.data_nascimento
-        ),
-        "inicio": inicio,
-        "fim": fim,
-        "inicio_anterior": (
-            inicio
-            - timedelta(days=7)
-        ),
-        "inicio_proxima": (
-            inicio
-            + timedelta(days=7)
-        ),
-        "inicio_atual": (
-            hoje
-            - timedelta(
-                days=hoje.weekday()
-            )
-        ),
-        "dias": dias,
-        "total_planejado": total_planejado,
-        "aprovadas": aprovadas,
-        "nao_realizadas": nao_realizadas,
-        "em_revisao": em_revisao,
-        "pendentes": pendentes,
-        "taxa_conclusao": taxa_conclusao,
-        "pontos_ganhos": pontos_ganhos,
-        "penalidades": penalidades,
-        "pontos_liquidos": (
-            pontos_ganhos
-            - penalidades
-        ),
-        "skills_semana": skills_semana,
-        "conquistas_semana": conquistas_semana,
-        "sequencia_atual": calcular_sequencia(
-            perfil
-        ),
-        "gerado_em": timezone.localtime(),
-        "responsaveis": (
-            familia.tutores.all()
-            .order_by(
-                "first_name",
-                "username",
-            )
-        ),
-    }
-
-    return render(
-        request,
-        "tarefas/relatorios/semanal.html",
-        contexto,
-    )
-
-
 @login_required(login_url="login")
 @require_GET
 def foto_tarefa_privada(request, tarefa_id):
@@ -1789,7 +1395,7 @@ def foto_tarefa_privada(request, tarefa_id):
         tarefa = None
 
     if not tarefa or not tarefa.foto:
-        # 404 evita revelar se a tarefa/arquivo existe para outro usuário.
+
         from django.http import Http404
         raise Http404
 

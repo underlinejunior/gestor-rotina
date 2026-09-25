@@ -1,5 +1,7 @@
 from django.urls import path
+
 from . import views
+from .relatorio_semanal import relatorio_semanal_crianca
 
 
 urlpatterns = [
@@ -60,7 +62,7 @@ urlpatterns = [
     ),
     path(
         "criancas/<int:perfil_id>/relatorio-semanal/",
-        views.relatorio_semanal_crianca,
+        relatorio_semanal_crianca,
         name="relatorio_semanal_crianca",
     ),
     path(
@@ -83,5 +85,9 @@ urlpatterns = [
         views.revisao_detalhe,
         name="revisao_detalhe",
     ),
-    path("api/sugerir-rotina/", views.api_sugerir_rotina, name="api_sugerir_rotina"),
+    path(
+        "api/sugerir-rotina/",
+        views.api_sugerir_rotina,
+        name="api_sugerir_rotina",
+    ),
 ]

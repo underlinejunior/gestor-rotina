@@ -11,13 +11,13 @@
 
     <meta name="theme-color" content="#4f46e5">
     <meta name="color-scheme" content="light">
-    <meta name="application-name" content="Minha Rotina">
+    <meta name="application-name" content="Rotina Conecta">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Minha Rotina">
+    <meta name="apple-mobile-web-app-title" content="Rotina Conecta">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <title>{% block title %}Minha Rotina{% endblock %}</title>
+    <title>{% block title %}Rotina Conecta{% endblock %}</title>
 
     <link
         rel="manifest"
@@ -49,7 +49,7 @@
 
     <link
         rel="stylesheet"
-        href="{% static 'css/app.css' %}?v=20260901-emphasis-status-v4"
+        href="{% static 'css/app.css' %}?v=20260924-delivery"
     >
 
     {% block extra_css %}{% endblock %}
@@ -62,7 +62,7 @@
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
     ></script>
 
-    <script src="{% static 'js/app.js' %}"></script>
+    <script src="{% static 'js/app.js' %}?v=20260924-delivery"></script>
 
     {% block extra_js %}{% endblock %}
 </body>

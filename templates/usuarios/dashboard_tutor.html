@@ -1,6 +1,15 @@
 {% extends "base_app.html" %}
+{% load static %}
 
-{% block title %}Início | Minha Rotina{% endblock %}
+{% block title %}Início | Rotina Conecta{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link
+    rel="stylesheet"
+    href="{% static 'css/child_summary_card.css' %}?v=20260924-delivery"
+>
+{% endblock %}
 
 {% block app_content %}
 
@@ -273,114 +282,10 @@
 
     {% if criancas %}
 
-        <div class="row g-3">
+        <div class="children-unified-dashboard">
 
             {% for perfil in criancas %}
-
-                <div class="col-12 col-lg-6">
-
-                    <div class="child-card child-card-dashboard">
-
-                        {% include "usuarios/partials/avatar.html" with perfil=perfil %}
-
-
-                        <div class="flex-grow-1 min-w-0">
-
-                            <div class="d-flex justify-content-between gap-2">
-
-                                <div>
-                                    <div class="fw-bold text-truncate">
-                                        {{ perfil.nome_exibicao }}
-                                    </div>
-
-                                    <div class="text-muted small">
-                                        {{ perfil.avatar_titulo_nivel }}
-                                        · {{ perfil.saldo_pontos }} pontos
-                                    </div>
-                                </div>
-
-                                <span class="mini-rate">
-                                    {{ perfil.indicadores_semana.taxa_conclusao }}%
-                                </span>
-
-                            </div>
-
-
-                            <div class="avatar-progress mt-2">
-                                <div
-                                    class="avatar-progress-bar"
-                                    style="width: {{ perfil.avatar_progresso_percentual }}%;"
-                                ></div>
-                            </div>
-
-
-                            <div class="child-week-line mt-2">
-                                <span>
-                                    <i class="bi bi-check2-circle"></i>
-                                    {{ perfil.indicadores_semana.aprovadas }} feitas
-                                </span>
-
-                                <span>
-                                    <i class="bi bi-dash-circle"></i>
-                                    {{ perfil.indicadores_semana.nao_realizadas }} não realizadas
-                                </span>
-
-                                <span>
-                                    🔥 {{ perfil.sequencia_atual }} em sequência
-                                </span>
-                            </div>
-
-
-                            <div class="child-card-links mt-3">
-
-                                <a
-                                    href="{% url 'tarefas_crianca_tutor' perfil.id %}"
-                                    class="btn btn-light btn-sm"
-                                >
-                                    <i class="bi bi-check2-square"></i>
-                                    Hoje
-                                </a>
-
-                                <a
-                                    href="{% url 'historico_crianca_tutor' perfil.id %}"
-                                    class="btn btn-light btn-sm"
-                                >
-                                    <i class="bi bi-clock-history"></i>
-                                    Histórico
-                                </a>
-
-                                <a
-                                    href="{% url 'habilidades_crianca_tutor' perfil.id %}"
-                                    class="btn btn-light btn-sm"
-                                >
-                                    <i class="bi bi-graph-up-arrow"></i>
-                                    Skills
-                                </a>
-
-                                <a
-                                    href="{% url 'conquistas_crianca_tutor' perfil.id %}"
-                                    class="btn btn-light btn-sm"
-                                >
-                                    <i class="bi bi-trophy"></i>
-                                    Conquistas
-                                </a>
-
-                                <a
-                                    href="{% url 'relatorio_semanal_crianca' perfil.id %}"
-                                    class="btn btn-light btn-sm"
-                                >
-                                    <i class="bi bi-file-earmark-pdf"></i>
-                                    Relatório
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+                {% include "usuarios/partials/crianca_card_resumo.html" with perfil=perfil %}
             {% endfor %}
 
         </div>

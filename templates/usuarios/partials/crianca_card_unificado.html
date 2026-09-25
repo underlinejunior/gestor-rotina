@@ -1,0 +1,116 @@
+{# Card padrão reutilizável da criança #}
+<article class="child-unified-card">
+    <div class="child-unified-card__body">
+
+        <div class="child-unified-card__avatar-wrap">
+            <div class="child-unified-card__avatar">
+                {{ crianca.avatar_emoji|default:"🧒" }}
+            </div>
+            <div class="child-unified-card__level">
+                Nv.{{ crianca.avatar_nivel|default:"1" }}
+            </div>
+        </div>
+
+        <div class="child-unified-card__main">
+            <div class="child-unified-card__top">
+                <div>
+                    <h2 class="child-unified-card__name">
+                        {{ crianca.nome_exibicao|default:crianca.nome }}
+                    </h2>
+
+                    <p class="child-unified-card__subtitle">
+                        {{ crianca.avatar_titulo_nivel|default:"Explorador" }}
+                        · {{ crianca.saldo_pontos|default:0 }} pontos
+                    </p>
+                </div>
+
+                <div class="child-unified-card__score">
+                    {{ crianca.progresso_geral|default:100 }}%
+                </div>
+            </div>
+
+            <div class="child-unified-card__progress">
+                <div
+                    class="child-unified-card__progress-bar"
+                    style="width: {{ crianca.avatar_progresso_percentual|default:0 }}%;"
+                ></div>
+            </div>
+
+            <div class="child-unified-card__meta">
+                <span class="child-unified-card__meta-item">
+                    <i class="bi bi-check2-circle"></i>
+                    {{ crianca.tarefas_feitas|default:0 }} feitas
+                </span>
+
+                <span class="child-unified-card__meta-item">
+                    <i class="bi bi-x-circle"></i>
+                    {{ crianca.tarefas_nao_realizadas|default:0 }} não realizadas
+                </span>
+
+                <span class="child-unified-card__meta-item">
+                    🔥 {{ crianca.sequencia_atual|default:0 }} em sequência
+                </span>
+            </div>
+
+            {% if crianca.usuario %}
+                <span class="child-unified-card__access">
+                    <i class="bi bi-phone"></i>
+                    Acesso próprio
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="child-unified-card__actions">
+            <a
+                href="{% url 'tarefas_crianca_tutor' crianca.id %}"
+                class="child-unified-action child-unified-action--today"
+            >
+                <span class="child-unified-action__icon">
+                    <i class="bi bi-ui-checks-grid"></i>
+                </span>
+                <span class="child-unified-action__label">Hoje</span>
+            </a>
+
+            <a
+                href="{% url 'historico_crianca_tutor' crianca.id %}"
+                class="child-unified-action child-unified-action--history"
+            >
+                <span class="child-unified-action__icon">
+                    <i class="bi bi-clock-history"></i>
+                </span>
+                <span class="child-unified-action__label">Histórico</span>
+            </a>
+
+            <a
+                href="{% url 'painel_habilidades_crianca' crianca.id %}"
+                class="child-unified-action child-unified-action--skills"
+            >
+                <span class="child-unified-action__icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </span>
+                <span class="child-unified-action__label">Skills</span>
+            </a>
+
+            <a
+                href="{% url 'conquistas_crianca_tutor' crianca.id %}"
+                class="child-unified-action child-unified-action--achievements"
+            >
+                <span class="child-unified-action__icon">
+                    <i class="bi bi-trophy"></i>
+                </span>
+                <span class="child-unified-action__label">Conquistas</span>
+            </a>
+
+            <a
+                href="{% url 'relatorio_semanal_crianca' crianca.id %}"
+                class="child-unified-action child-unified-action--report"
+            >
+                <span class="child-unified-action__icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                </span>
+                <span class="child-unified-action__label">Relatório</span>
+            </a>
+        </div>
+
+    </div>
+</article>

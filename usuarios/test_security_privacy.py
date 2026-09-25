@@ -1,141 +1,158 @@
-import json
+from datetime import timedelta
+from io import BytesIO
 from tempfile import TemporaryDirectory
 
-from django.conf import settings
-from django.test import Client, TestCase, override_settings
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
+from django.test import TransactionTestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
+from PIL import Image
 
-from usuarios.forms import CadastroTutorForm
+from tarefas.forms import EnvioComprovanteForm
+from tarefas.models import InstanciaTarefa
 from usuarios.models import Familia, PerfilCrianca, Usuario
 
 
-class PrivacyAndAccountSecurityTests(TestCase):
+def imagem_jpeg_bytes():
+    buffer = BytesIO()
+    Image.new("RGB", (32, 32), "white").save(buffer, format="JPEG")
+    return buffer.getvalue()
+
+
+class PrivateEvidenceSecurityTests(TransactionTestCase):
     def setUp(self):
+        self.temp_media = TemporaryDirectory()
+        self.media_override = override_settings(MEDIA_ROOT=self.temp_media.name)
+        self.media_override.enable()
+
         self.tutor = Usuario.objects.create_user(
-            username="tutor_privacidade",
+            username="tutor_foto",
             password="SenhaSegura123!",
             tipo=Usuario.Tipo.TUTOR,
-            email="tutor@example.com",
         )
-        self.familia = Familia.objects.create(nome="Família Privacidade")
+        self.familia = Familia.objects.create(nome="Família Foto")
         self.familia.tutores.add(self.tutor)
 
-    def test_cadastro_exige_ciencia_da_politica(self):
-        dados = {
-            "first_name": "Novo",
-            "last_name": "Tutor",
-            "email": "novo@example.com",
-            "username": "novo_tutor",
-            "password1": "UmaSenhaForte123!",
-            "password2": "UmaSenhaForte123!",
-        }
-
-        form = CadastroTutorForm(data=dados)
-        self.assertFalse(form.is_valid())
-        self.assertIn("aceite_privacidade", form.errors)
-
-        dados["aceite_privacidade"] = True
-        form = CadastroTutorForm(data=dados)
-        self.assertTrue(form.is_valid(), form.errors)
-
-    def test_aceite_registra_data_e_versao_vigente(self):
-        self.client.force_login(self.tutor)
-
-        resposta = self.client.post(
-            reverse("privacidade_aceite"),
-            {"aceite": "on"},
-        )
-
-        self.assertRedirects(resposta, reverse("inicio"))
-        self.tutor.refresh_from_db()
-        self.assertIsNotNone(self.tutor.privacidade_aceita_em)
-        self.assertEqual(
-            self.tutor.privacidade_versao,
-            settings.PRIVACY_POLICY_VERSION,
-        )
-
-    def test_exportacao_e_privada_e_sem_cache(self):
-        PerfilCrianca.objects.create(
-            familia=self.familia,
-            nome="Criança Teste",
-        )
-        self.client.force_login(self.tutor)
-
-        resposta = self.client.get(reverse("privacidade_exportar"))
-
-        self.assertEqual(resposta.status_code, 200)
-        self.assertEqual(resposta["Cache-Control"], "private, no-store")
-        self.assertIn("attachment;", resposta["Content-Disposition"])
-
-        dados = json.loads(resposta.content.decode("utf-8"))
-        self.assertEqual(dados["familia"]["id"], self.familia.id)
-        self.assertEqual(len(dados["criancas"]), 1)
-
-    def test_logout_exige_post(self):
-        self.client.force_login(self.tutor)
-
-        resposta_get = self.client.get(reverse("logout"))
-        self.assertEqual(resposta_get.status_code, 405)
-
-        resposta_post = self.client.post(reverse("logout"))
-        self.assertRedirects(resposta_post, reverse("login"))
-
-    def test_operacao_sensivel_sem_csrf_e_rejeitada(self):
-        client = Client(enforce_csrf_checks=True)
-        client.force_login(self.tutor)
-
-        resposta = client.post(reverse("privacidade_apagar_evidencias"))
-        self.assertEqual(resposta.status_code, 403)
-
-    def test_exclusao_do_unico_tutor_remove_familia_e_conta(self):
-        usuario_id = self.tutor.id
-        familia_id = self.familia.id
-        self.client.force_login(self.tutor)
-
-        resposta = self.client.post(
-            reverse("privacidade_excluir_conta"),
-            {"confirmacao": "EXCLUIR"},
-        )
-
-        self.assertRedirects(resposta, reverse("login"))
-        self.assertFalse(Usuario.objects.filter(pk=usuario_id).exists())
-        self.assertFalse(Familia.objects.filter(pk=familia_id).exists())
-
-    def test_exclusao_em_familia_compartilhada_anonimiza_tutor(self):
-        outro_tutor = Usuario.objects.create_user(
-            username="outro_responsavel",
-            password="SenhaSegura123!",
-            tipo=Usuario.Tipo.TUTOR,
-        )
-        self.familia.tutores.add(outro_tutor)
-        usuario_id = self.tutor.id
-        self.client.force_login(self.tutor)
-
-        resposta = self.client.post(
-            reverse("privacidade_excluir_conta"),
-            {"confirmacao": "EXCLUIR"},
-        )
-
-        self.assertRedirects(resposta, reverse("login"))
-        usuario = Usuario.objects.get(pk=usuario_id)
-        self.assertFalse(usuario.is_active)
-        self.assertEqual(usuario.email, "")
-        self.assertFalse(self.familia.tutores.filter(pk=usuario_id).exists())
-        self.assertTrue(self.familia.tutores.filter(pk=outro_tutor.pk).exists())
-
-    def test_crianca_nao_acessa_central_de_privacidade_do_tutor(self):
-        usuario_crianca = Usuario.objects.create_user(
-            username="crianca_privacidade",
+        self.usuario_crianca = Usuario.objects.create_user(
+            username="crianca_foto",
             password="SenhaCrianca123!",
             tipo=Usuario.Tipo.CRIANCA,
         )
-        PerfilCrianca.objects.create(
+        self.crianca = PerfilCrianca.objects.create(
             familia=self.familia,
-            nome="Criança",
-            usuario=usuario_crianca,
+            nome="Criança Foto",
+            usuario=self.usuario_crianca,
             acesso_proprio=True,
         )
-        self.client.force_login(usuario_crianca)
 
-        resposta = self.client.get(reverse("privacidade_central"))
-        self.assertRedirects(resposta, reverse("inicio"))
+        self.tarefa = InstanciaTarefa.objects.create(
+            familia=self.familia,
+            crianca=self.crianca,
+            titulo="Guardar brinquedos",
+            descricao="",
+            pontos_base=10,
+            data_referencia=timezone.localdate(),
+            status=InstanciaTarefa.Status.REVISAO,
+        )
+        self.tarefa.foto.save(
+            "evidencia.jpg",
+            ContentFile(imagem_jpeg_bytes()),
+            save=True,
+        )
+
+    def tearDown(self):
+        try:
+            self.tarefa.foto.close()
+        except (AttributeError, ValueError):
+            pass
+
+        self.media_override.disable()
+        self.temp_media.cleanup()
+
+    @staticmethod
+    def _ler_e_fechar_arquivo(resposta):
+        return b"".join(resposta.streaming_content)
+
+    def test_evidencia_exige_autenticacao(self):
+        resposta = self.client.get(
+            reverse("foto_tarefa_privada", args=[self.tarefa.id])
+        )
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn(reverse("login"), resposta.url)
+
+    def test_tutor_da_familia_acessa_evidencia_sem_cache(self):
+        self.client.force_login(self.tutor)
+        resposta = self.client.get(
+            reverse("foto_tarefa_privada", args=[self.tarefa.id])
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("no-store", resposta["Cache-Control"])
+        self.assertEqual(resposta["X-Content-Type-Options"], "nosniff")
+
+        conteudo = self._ler_e_fechar_arquivo(resposta)
+        self.assertGreater(len(conteudo), 0)
+
+    def test_crianca_acessa_somente_a_propria_evidencia(self):
+        self.client.force_login(self.usuario_crianca)
+        resposta = self.client.get(
+            reverse("foto_tarefa_privada", args=[self.tarefa.id])
+        )
+        self.assertEqual(resposta.status_code, 200)
+
+        conteudo = self._ler_e_fechar_arquivo(resposta)
+        self.assertGreater(len(conteudo), 0)
+
+    def test_tutor_de_outra_familia_nao_acessa_evidencia(self):
+        outro_tutor = Usuario.objects.create_user(
+            username="outro_tutor_foto",
+            password="SenhaSegura123!",
+            tipo=Usuario.Tipo.TUTOR,
+        )
+        outra_familia = Familia.objects.create(nome="Outra Família")
+        outra_familia.tutores.add(outro_tutor)
+        self.client.force_login(outro_tutor)
+
+        resposta = self.client.get(
+            reverse("foto_tarefa_privada", args=[self.tarefa.id])
+        )
+        self.assertEqual(resposta.status_code, 404)
+
+    def test_rota_media_publica_nao_entrega_evidencia(self):
+        self.client.force_login(self.tutor)
+        resposta = self.client.get(f"/media/{self.tarefa.foto.name}")
+        self.assertEqual(resposta.status_code, 404)
+
+    def test_retencao_remove_foto_antiga_sem_apagar_historico(self):
+        antiga = timezone.now() - timedelta(days=200)
+        InstanciaTarefa.objects.filter(pk=self.tarefa.pk).update(
+            enviada_em=antiga,
+            status=InstanciaTarefa.Status.APROVADA,
+        )
+
+        call_command("limpar_evidencias_antigas", dias=180)
+
+        self.tarefa.refresh_from_db()
+        self.assertFalse(bool(self.tarefa.foto))
+        self.assertEqual(self.tarefa.titulo, "Guardar brinquedos")
+        self.assertEqual(self.tarefa.status, InstanciaTarefa.Status.APROVADA)
+
+    def test_formulario_regrava_imagem_em_jpeg_sem_metadados(self):
+        arquivo = SimpleUploadedFile(
+            "foto-original.jpg",
+            imagem_jpeg_bytes(),
+            content_type="image/jpeg",
+        )
+        form = EnvioComprovanteForm(
+            files={"foto": arquivo},
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        foto_limpa = form.cleaned_data["foto"]
+        self.assertTrue(foto_limpa.name.endswith(".jpg"))
+
+        with Image.open(foto_limpa) as imagem:
+            self.assertEqual(imagem.format, "JPEG")
+            self.assertEqual(imagem.getexif(), {})

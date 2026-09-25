@@ -374,8 +374,7 @@ class EnvioComprovanteForm(forms.Form):
                 "A resolução da imagem é muito alta."
             )
 
-        # Corrige orientação e regrava a imagem sem EXIF/GPS. Além de reduzir
-        # metadados pessoais desnecessários, limita o tamanho armazenado.
+
         imagem = ImageOps.exif_transpose(imagem)
         imagem.thumbnail((1920, 1920))
 

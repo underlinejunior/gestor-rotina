@@ -1,6 +1,6 @@
 {% extends "base_app.html" %}
 
-{% block title %}Minhas tarefas | Minha Rotina{% endblock %}
+{% block title %}Minhas tarefas | Rotina Conecta{% endblock %}
 
 {% block app_content %}
 
@@ -274,19 +274,25 @@
 
             {% for tarefa in tarefas %}
 
-                <div class="task-card task-status-{{ tarefa.status|lower }}">
+                <article class="task-card dashboard-task-card task-status-{{ tarefa.status|lower }}">
 
-                    <div class="task-main">
-                        <div class="task-title">
+                    <div class="dashboard-task-main">
+
+                        <span class="dashboard-task-kicker">
+                            Missão de hoje
+                        </span>
+
+                        <div class="dashboard-task-title">
                             {{ tarefa.titulo }}
                         </div>
 
-                        <div class="task-meta">
-                            <span>
-                                <i class="bi bi-star"></i>
-                                {{ tarefa.pontos_base }} pts
-                            </span>
+                        {% if tarefa.descricao %}
+                            <p class="dashboard-task-description">
+                                {{ tarefa.descricao }}
+                            </p>
+                        {% endif %}
 
+                        <div class="dashboard-task-meta">
                             <span>
                                 <i class="bi bi-clock"></i>
                                 {{ tarefa.momento_resumo }}
@@ -296,20 +302,42 @@
                                 {{ tarefa.get_status_display }}
                             </span>
                         </div>
+
+                    </div>
+
+
+                    <div class="dashboard-task-points">
+                        <i class="bi bi-star-fill"></i>
+                        <strong>{{ tarefa.pontos_base }}</strong>
+                        <small>pontos</small>
                     </div>
 
 
                     {% if tarefa.pode_enviar_comprovante %}
-                        <a
-                            href="{% url 'enviar_foto' tarefa.id %}"
-                            class="btn btn-primary"
-                        >
-                            <i class="bi bi-camera"></i>
-                            Fazer
-                        </a>
+                        <div class="dashboard-task-action">
+                            <a
+                                href="{% url 'enviar_foto' tarefa.id %}"
+                                class="btn btn-primary"
+                            >
+                                <i class="bi bi-camera"></i>
+                                Enviar foto
+                            </a>
+                        </div>
+                    {% elif tarefa.status == "REVISAO" %}
+                        <div class="dashboard-task-action">
+                            <span class="status-pill status-review">
+                                Aguardando revisão
+                            </span>
+                        </div>
+                    {% elif tarefa.status == "APROVADA" %}
+                        <div class="dashboard-task-action">
+                            <span class="status-pill status-approved">
+                                Aprovada
+                            </span>
+                        </div>
                     {% endif %}
 
-                </div>
+                </article>
 
             {% endfor %}
 

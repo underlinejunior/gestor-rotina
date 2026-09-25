@@ -46,9 +46,7 @@ def registrar_pontos_aprovacao(
     nivel_antes = perfil.avatar_nivel
     pontos = max(0, int(pontos))
 
-    # Perfis antigos ainda podem ter XP histórico zerado.
-    # Antes de creditar novos pontos, preservamos o maior saldo
-    # positivo já conhecido como base histórica.
+
     base_historica = max(
         int(perfil.pontos_experiencia or 0),
         int(perfil.saldo_pontos or 0),
@@ -514,7 +512,6 @@ def montar_painel_habilidades(
     return painel
 
 
-
 @transaction.atomic
 def registrar_penalidade_tarefa_nao_realizada(
     tarefa,
@@ -554,8 +551,7 @@ def registrar_penalidade_tarefa_nao_realizada(
         ),
     )
 
-    # Preserva a experiência histórica antes de aplicar
-    # a penalidade ao saldo disponível.
+
     perfil.pontos_experiencia = max(
         int(perfil.pontos_experiencia or 0),
         int(perfil.saldo_pontos or 0),
@@ -759,7 +755,6 @@ def gerar_resumos_familia(
         )
 
 
-
 RECOMPENSAS_PADRAO = [
     {
         "icone": "🤗",
@@ -848,7 +843,7 @@ def resgatar_recompensa(
             f"Faltam {faltam} ponto(s) para esta recompensa."
         )
 
-    # Preserva o nível do avatar antes de gastar o saldo.
+
     perfil.pontos_experiencia = max(
         int(perfil.pontos_experiencia or 0),
         int(perfil.saldo_pontos or 0),

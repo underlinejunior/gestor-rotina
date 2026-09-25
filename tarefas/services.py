@@ -1,3 +1,4 @@
+from contextlib import suppress
 from datetime import timedelta
 import json
 import logging
@@ -11,7 +12,7 @@ from django.utils import timezone
 try:
     from google import genai
     from google.genai import types as genai_types
-except ImportError:  # Mantém o restante do sistema funcionando sem a IA.
+except ImportError:
     genai = None
     genai_types = None
 
@@ -285,13 +286,11 @@ Retorne EXCLUSIVAMENTE um array JSON válido neste formato:
             modelo,
         )
         raise ErroSugestaoIA(
-            f"Falha ao consultar o Gemini ({modelo}): {exc}"
+            "Não foi possível gerar sugestões com a IA neste momento."
         ) from exc
     finally:
-        try:
+        with suppress(Exception):
             client.close()
-        except Exception:
-            pass
 
     dados = _extrair_json_ia(getattr(response, "text", ""))
     sugestoes = _normalizar_sugestoes_ia(dados, skills_validas)
@@ -426,7 +425,6 @@ def encerrar_tarefas_antigas(
         quantidade += 1
 
     return quantidade
-
 
 
 def processar_lembretes(

@@ -1,83 +1,456 @@
 {% extends "base_app.html" %}
 
-{% block title %}Concluir tarefa | Minha Rotina{% endblock %}
+{% block title %}Enviar foto da tarefa | Rotina Conecta{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .mission-proof-page {
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    .mission-proof-back {
+        margin-bottom: 14px;
+    }
+
+    .mission-proof-card {
+        overflow: hidden;
+        border: 1px solid #e6e8ef;
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(31, 41, 55, .05);
+    }
+
+    .mission-proof-summary {
+        padding: 22px 24px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 18px;
+        background:
+            radial-gradient(circle at top right, rgba(124, 58, 237, .08), transparent 38%),
+            linear-gradient(135deg, #fbfaff, #f7f7ff);
+    }
+
+    .mission-proof-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 5px;
+        color: #6657d7;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .mission-proof-title {
+        margin: 0;
+        color: #202938;
+        font-size: clamp(1.55rem, 4vw, 2.25rem);
+        font-weight: 900;
+        line-height: 1.08;
+    }
+
+    .mission-proof-description {
+        margin: 7px 0 0;
+        color: #687183;
+        font-size: 14px;
+        line-height: 1.45;
+    }
+
+    .mission-proof-points {
+        min-width: 118px;
+        padding: 10px 13px;
+        display: grid;
+        grid-template-columns: auto auto;
+        grid-template-areas:
+            "icon number"
+            "icon caption";
+        align-items: center;
+        justify-content: center;
+        column-gap: 7px;
+        border: 1px solid #f1dda0;
+        border-radius: 15px;
+        color: #755800;
+        background: #fff8d8;
+    }
+
+    .mission-proof-points i {
+        grid-area: icon;
+        color: #d7a600;
+        font-size: 18px;
+    }
+
+    .mission-proof-points strong {
+        grid-area: number;
+        font-size: 19px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .mission-proof-points small {
+        grid-area: caption;
+        margin-top: 3px;
+        color: #896d18;
+        font-size: 8px;
+        font-weight: 850;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .mission-proof-steps {
+        padding: 14px 24px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        border-top: 1px solid #f0f1f5;
+        border-bottom: 1px solid #f0f1f5;
+        background: #fff;
+    }
+
+    .mission-proof-step {
+        position: relative;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #8b90a0;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .mission-proof-step:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        left: 38px;
+        right: 6px;
+        top: 15px;
+        height: 2px;
+        background: #e6e7ee;
+        z-index: 0;
+    }
+
+    .mission-proof-step-number {
+        position: relative;
+        z-index: 1;
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #dedfe8;
+        border-radius: 50%;
+        background: #fff;
+        font-weight: 900;
+    }
+
+    .mission-proof-step.done {
+        color: #16894d;
+    }
+
+    .mission-proof-step.done .mission-proof-step-number {
+        border-color: #16a05c;
+        color: #fff;
+        background: #16a05c;
+    }
+
+    .mission-proof-step.active {
+        color: #4f46e5;
+    }
+
+    .mission-proof-step.active .mission-proof-step-number {
+        border-color: #4f46e5;
+        color: #fff;
+        background: #4f46e5;
+        box-shadow: 0 0 0 5px #eeecff;
+    }
+
+    .mission-proof-body {
+        padding: 26px 24px 24px;
+        text-align: center;
+    }
+
+    .mission-proof-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        color: #4f46e5;
+        background: #f1efff;
+        font-size: 28px;
+    }
+
+    .mission-proof-body h2 {
+        margin: 0;
+        color: #202938;
+        font-size: 24px;
+        font-weight: 900;
+    }
+
+    .mission-proof-help {
+        max-width: 520px;
+        margin: 7px auto 18px;
+        color: #6f7787;
+        font-size: 14px;
+    }
+
+    .mission-camera-label {
+        min-height: 72px;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 2px dashed #b9b2ff;
+        border-radius: 17px;
+        color: #4f46e5;
+        background: #faf9ff;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 850;
+    }
+
+    .mission-camera-label i {
+        font-size: 22px;
+    }
+
+    .mission-camera-input {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
+
+    .mission-file-name {
+        min-height: 22px;
+        margin-top: 8px;
+        color: #667085;
+        font-size: 12px;
+        font-weight: 650;
+    }
+
+    .mission-submit {
+        min-height: 50px;
+        margin-top: 10px;
+        font-weight: 800;
+    }
+
+    .mission-proof-note {
+        margin-top: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        color: #757d8c;
+        font-size: 12px;
+    }
+
+    @media (max-width: 575px) {
+        .mission-proof-card {
+            border-radius: 18px;
+        }
+
+        .mission-proof-summary {
+            padding: 18px;
+            gap: 10px;
+        }
+
+        .mission-proof-title {
+            font-size: 1.8rem;
+        }
+
+        .mission-proof-description {
+            font-size: 13px;
+        }
+
+        .mission-proof-points {
+            min-width: 82px;
+            padding: 8px;
+        }
+
+        .mission-proof-points strong {
+            font-size: 16px;
+        }
+
+        .mission-proof-points small {
+            font-size: 7px;
+        }
+
+        .mission-proof-steps {
+            padding: 13px 16px;
+            gap: 4px;
+        }
+
+        .mission-proof-step {
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 5px;
+            text-align: center;
+            font-size: 9px;
+        }
+
+        .mission-proof-step:not(:last-child)::after {
+            left: calc(50% + 17px);
+            right: calc(-50% + 17px);
+            top: 14px;
+        }
+
+        .mission-proof-step-number {
+            width: 28px;
+            min-width: 28px;
+            height: 28px;
+        }
+
+        .mission-proof-body {
+            padding: 23px 18px 20px;
+        }
+
+        .mission-proof-body h2 {
+            font-size: 21px;
+        }
+
+        .mission-proof-help {
+            font-size: 13px;
+        }
+    }
+</style>
+{% endblock %}
+
 
 {% block app_content %}
 
-<div class="camera-page">
-    <div class="mb-4">
-        <a href="javascript:history.back()" class="back-link">
+<div class="mission-proof-page">
+
+    <div class="mission-proof-back">
+        <a href="{% url 'minhas_tarefas' %}" class="back-link">
             <i class="bi bi-arrow-left"></i>
-            Voltar
+            Voltar para minhas tarefas
         </a>
     </div>
 
-    <div class="camera-card">
-        <div class="camera-task-info">
-            <span class="task-points-large">
+    <section class="mission-proof-card">
+
+        <div class="mission-proof-summary">
+            <div>
+                <span class="mission-proof-label">🎯 Missão</span>
+
+                <h1 class="mission-proof-title">
+                    {{ tarefa.titulo }}
+                </h1>
+
+                {% if tarefa.descricao %}
+                    <p class="mission-proof-description">
+                        {{ tarefa.descricao }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="mission-proof-points">
                 <i class="bi bi-star-fill"></i>
-                {{ tarefa.pontos_base }} pts
-            </span>
-
-            <h1 class="h3 fw-bold mt-3">{{ tarefa.titulo }}</h1>
-
-            {% if tarefa.descricao %}
-                <p class="text-muted">{{ tarefa.descricao }}</p>
-            {% endif %}
+                <strong>{{ tarefa.pontos_base }}</strong>
+                <small>pontos após aprovação</small>
+            </div>
         </div>
 
-        <div class="camera-proof-box">
-            <div class="camera-proof-icon">
+        <div class="mission-proof-steps">
+            <div class="mission-proof-step done">
+                <span class="mission-proof-step-number">
+                    <i class="bi bi-check-lg"></i>
+                </span>
+                <span>Fazer</span>
+            </div>
+
+            <div class="mission-proof-step active">
+                <span class="mission-proof-step-number">2</span>
+                <span>Enviar foto</span>
+            </div>
+
+            <div class="mission-proof-step">
+                <span class="mission-proof-step-number">3</span>
+                <span>Revisão</span>
+            </div>
+        </div>
+
+        <div class="mission-proof-body">
+            <div class="mission-proof-icon">
                 <i class="bi bi-camera-fill"></i>
             </div>
 
-            <h2 class="h5 fw-bold">Mostre como ficou</h2>
+            <h2>Mostre como ficou!</h2>
 
-            <p class="text-muted">
-                Tire uma foto do resultado. Os pontos só serão liberados depois da revisão do Tutor.
+            <p class="mission-proof-help">
+                Tire uma foto bem clara do resultado da tarefa.
+                O tutor vai conferir antes de liberar os pontos.
             </p>
 
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <label for="{{ form.foto.id_for_label }}" class="camera-button">
+                <label
+                    for="{{ form.foto.id_for_label }}"
+                    class="mission-camera-label"
+                >
                     <i class="bi bi-camera"></i>
-                    Abrir câmera
+                    <span>Abrir câmera ou escolher uma foto</span>
                 </label>
 
-                {{ form.foto }}
+                <div class="mission-camera-input">
+                    {{ form.foto }}
+                </div>
 
-                <div id="nome-arquivo" class="small text-muted mt-2"></div>
+                <div id="nome-arquivo" class="mission-file-name"></div>
 
                 {% for error in form.foto.errors %}
-                    <div class="text-danger small mt-2">{{ error }}</div>
+                    <div class="text-danger small mt-2">
+                        {{ error }}
+                    </div>
                 {% endfor %}
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">
+                <button
+                    type="submit"
+                    class="btn btn-primary btn-lg w-100 mission-submit"
+                >
                     <i class="bi bi-send"></i>
-                    Enviar para revisão
+                    Enviar para o tutor
                 </button>
             </form>
+
+            <div class="mission-proof-note">
+                <i class="bi bi-shield-check"></i>
+                Seus pontos aparecem depois que o tutor conferir a foto.
+            </div>
         </div>
-    </div>
+
+    </section>
 </div>
 
 {% endblock %}
 
+
 {% block extra_js %}
+{{ block.super }}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("id_foto");
     const nome = document.getElementById("nome-arquivo");
 
-    if (!input || !nome) {
-        return;
-    }
+    if (!input || !nome) return;
 
     input.addEventListener("change", function () {
         nome.textContent =
             input.files && input.files.length
-            ? "Foto pronta para enviar."
+            ? "✓ Foto selecionada: " + input.files[0].name
             : "";
     });
 });

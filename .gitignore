@@ -1,28 +1,16 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
+.env
+.env.local
 .venv/
 venv/
-
-# Django / dados locais
-*.sqlite3
-db.sqlite3
-media/
-staticfiles/
-
-# Segredos e configuração local
-.env
-.env.*
-!.env.example
-
-# IDE / SO
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Testes / cobertura
+__pycache__/
+*.py[cod]
+.pytest_cache/
 .coverage
 htmlcov/
-.pytest_cache/
+media/
+staticfiles/
+*.sqlite3
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -575,9 +575,8 @@ def privacidade_excluir_conta(request):
     logout(request)
 
     if familias_compartilhadas:
-        # Registros históricos compartilhados podem possuir FK PROTECT para
-        # quem criou uma rotina/recompensa. Nessa situação o usuário é
-        # anonimizado e desativado, preservando a integridade do histórico.
+
+
         usuario.username = f"excluido_{usuario.pk}_{secrets.token_hex(4)}"
         usuario.first_name = ""
         usuario.last_name = ""
@@ -918,7 +917,6 @@ def crianca_editar(
     )
 
 
-
 def _gerar_codigo_convite():
     for _ in range(20):
         codigo = str(
@@ -1141,7 +1139,7 @@ def familia_entrar_codigo(
                 "familia_configuracao"
             )
 
-    # Remove as famílias vazias criadas automaticamente no primeiro login.
+
     for familia_atual in outras_familias:
         familia_atual.tutores.remove(
             request.user

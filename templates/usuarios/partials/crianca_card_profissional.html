@@ -1,0 +1,151 @@
+{# Card profissional unificado da criança #}
+<article class="child-pro-card">
+
+    <div class="child-pro-card__top">
+
+        <div class="child-pro-card__avatar-box">
+            <div class="child-pro-card__avatar">
+                {{ crianca.avatar_emoji|default:"🧒" }}
+            </div>
+
+            <div class="child-pro-card__level">
+                Nv.{{ crianca.avatar_nivel|default:"1" }}
+            </div>
+        </div>
+
+
+        <div class="child-pro-card__main">
+
+            <div class="child-pro-card__title-row">
+                <div>
+                    <h2 class="child-pro-card__name">
+                        {{ crianca.nome_exibicao|default:crianca.nome }}
+                    </h2>
+
+                    <p class="child-pro-card__subtitle">
+                        {{ crianca.avatar_titulo_nivel|default:"Explorador" }}
+                        · {{ crianca.saldo_pontos|default:0 }} pontos
+                    </p>
+                </div>
+            </div>
+
+            <div class="child-pro-card__progress">
+                <div
+                    class="child-pro-card__progress-bar"
+                    style="width: {{ crianca.avatar_progresso_percentual|default:0 }}%;"
+                ></div>
+            </div>
+
+            {% if crianca.usuario %}
+                <span class="child-pro-card__access">
+                    <i class="bi bi-phone"></i>
+                    Acesso próprio
+                </span>
+            {% endif %}
+
+            <div class="child-pro-card__meta">
+                <span class="child-pro-card__meta-item">
+                    <i class="bi bi-check2-circle"></i>
+                    {{ crianca.tarefas_feitas|default:3 }} feitas
+                </span>
+
+                <span class="child-pro-card__meta-item">
+                    <i class="bi bi-x-circle"></i>
+                    {{ crianca.tarefas_nao_realizadas|default:0 }} não realizadas
+                </span>
+
+                <span class="child-pro-card__meta-item">
+                    🔥 {{ crianca.sequencia_atual|default:0 }} em sequência
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="child-pro-card__score">
+            <span class="child-pro-card__score-value">
+                {{ crianca.progresso_geral|default:100 }}%
+            </span>
+            <span class="child-pro-card__score-label">
+                Desempenho
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="child-pro-card__actions">
+
+        <a
+            href="{% url 'tarefas_crianca_tutor' crianca.id %}"
+            class="child-pro-action child-pro-action--today"
+        >
+            <span class="child-pro-action__icon">
+                <i class="bi bi-check2-square"></i>
+            </span>
+
+            <span class="child-pro-action__content">
+                <span class="child-pro-action__label">Hoje</span>
+                <span class="child-pro-action__hint">tarefas do dia</span>
+            </span>
+        </a>
+
+        <a
+            href="{% url 'historico_crianca_tutor' crianca.id %}"
+            class="child-pro-action child-pro-action--history"
+        >
+            <span class="child-pro-action__icon">
+                <i class="bi bi-clock-history"></i>
+            </span>
+
+            <span class="child-pro-action__content">
+                <span class="child-pro-action__label">Histórico</span>
+                <span class="child-pro-action__hint">tarefas passadas</span>
+            </span>
+        </a>
+
+        <a
+            href="{% url 'painel_habilidades_crianca' crianca.id %}"
+            class="child-pro-action child-pro-action--skills"
+        >
+            <span class="child-pro-action__icon">
+                <i class="bi bi-graph-up-arrow"></i>
+            </span>
+
+            <span class="child-pro-action__content">
+                <span class="child-pro-action__label">Skills</span>
+                <span class="child-pro-action__hint">evolução por skill</span>
+            </span>
+        </a>
+
+        <a
+            href="{% url 'conquistas_crianca_tutor' crianca.id %}"
+            class="child-pro-action child-pro-action--achievements"
+        >
+            <span class="child-pro-action__icon">
+                <i class="bi bi-trophy"></i>
+            </span>
+
+            <span class="child-pro-action__content">
+                <span class="child-pro-action__label">Conquistas</span>
+                <span class="child-pro-action__hint">níveis e medalhas</span>
+            </span>
+        </a>
+
+        <a
+            href="{% url 'relatorio_semanal_crianca' crianca.id %}"
+            class="child-pro-action child-pro-action--report"
+        >
+            <span class="child-pro-action__icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </span>
+
+            <span class="child-pro-action__content">
+                <span class="child-pro-action__label">Relatório</span>
+                <span class="child-pro-action__hint">resumo semanal</span>
+            </span>
+        </a>
+
+    </div>
+
+</article>

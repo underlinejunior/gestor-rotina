@@ -1,7 +1,59 @@
 {% extends "base.html" %}
 {% load gamificacao_tags %}
 
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .app-menu-link.menu-active {
+        color: var(--cor-primaria);
+        background: linear-gradient(
+            90deg,
+            rgba(79, 70, 229, .11),
+            rgba(124, 58, 237, .055)
+        );
+        font-weight: 800;
+        box-shadow: inset 3px 0 0 var(--cor-primaria);
+    }
+
+    .app-menu-link.menu-active i {
+        color: var(--cor-primaria);
+    }
+
+    .mobile-nav a {
+        position: relative;
+    }
+
+    .mobile-nav a.menu-active {
+        color: var(--cor-primaria);
+        font-weight: 800;
+        background: linear-gradient(
+            180deg,
+            rgba(79, 70, 229, .065),
+            transparent 78%
+        );
+    }
+
+    .mobile-nav a.menu-active::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 38px;
+        height: 3px;
+        border-radius: 0 0 999px 999px;
+        background: var(--cor-primaria);
+        transform: translateX(-50%);
+    }
+
+    .mobile-nav a.menu-active i {
+        color: var(--cor-primaria);
+    }
+</style>
+{% endblock %}
+
+
 {% block content %}
+{% with rota=request.resolver_match.url_name %}
 
 <div class="app-layout">
 
@@ -16,7 +68,7 @@
                     <i class="bi bi-check2"></i>
                 </span>
 
-                <span>Minha Rotina</span>
+                <span>Rotina Conecta</span>
             </a>
 
 
@@ -24,7 +76,8 @@
 
                 <a
                     href="{% url 'inicio' %}"
-                    class="app-menu-link"
+                    class="app-menu-link{% if rota == 'inicio' %} menu-active{% endif %}"
+                    {% if rota == 'inicio' %}aria-current="page"{% endif %}
                 >
                     <i class="bi bi-house"></i>
                     Início
@@ -34,7 +87,7 @@
 
                     <a
                         href="{% url 'criancas_listar' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'criancas_listar' or rota == 'crianca_criar' or rota == 'crianca_editar' or rota == 'tarefas_crianca_tutor' or rota == 'historico_crianca_tutor' or rota == 'relatorio_semanal_crianca' or rota == 'habilidades_crianca_tutor' or rota == 'conquistas_crianca_tutor' or rota == 'enviar_foto' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-people"></i>
                         Crianças
@@ -42,7 +95,7 @@
 
                     <a
                         href="{% url 'rotinas_listar' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'rotinas_listar' or rota == 'rotina_criar' or rota == 'sugestoes_tarefas' or rota == 'rotina_editar' or rota == 'rotina_alternar' or rota == 'rotina_excluir' or rota == 'tarefa_bonus_criar' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-list-check"></i>
                         Rotinas
@@ -50,7 +103,7 @@
 
                     <a
                         href="{% url 'revisoes_listar' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'revisoes_listar' or rota == 'revisao_detalhe' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-camera"></i>
                         Revisões
@@ -58,7 +111,7 @@
 
                     <a
                         href="{% url 'loja_recompensas' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'loja_recompensas' or rota == 'recompensa_criar' or rota == 'recompensa_editar' or rota == 'recompensa_alternar' or rota == 'recompensa_resgatar' or rota == 'resgates_recompensas' or rota == 'resgate_entregar' or rota == 'resgate_cancelar' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-gift"></i>
                         Recompensas
@@ -66,7 +119,7 @@
 
                     <a
                         href="{% url 'familia_configuracao' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'familia_configuracao' or rota == 'convite_tutor_criar' or rota == 'familia_entrar_codigo' or rota == 'convite_tutor_cancelar' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-person-hearts"></i>
                         Família
@@ -74,7 +127,7 @@
 
                     <a
                         href="{% url 'privacidade_central' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'privacidade_central' or rota == 'privacidade_politica' or rota == 'privacidade_aceite' or rota == 'privacidade_exportar' or rota == 'privacidade_apagar_evidencias' or rota == 'privacidade_excluir_conta' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-shield-lock"></i>
                         Privacidade
@@ -84,7 +137,7 @@
 
                     <a
                         href="{% url 'minhas_tarefas' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'minhas_tarefas' or rota == 'enviar_foto' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-check2-square"></i>
                         Minhas tarefas
@@ -92,7 +145,7 @@
 
                     <a
                         href="{% url 'meu_historico' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'meu_historico' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-clock-history"></i>
                         Meu histórico
@@ -100,7 +153,7 @@
 
                     <a
                         href="{% url 'minhas_habilidades' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'minhas_habilidades' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-graph-up-arrow"></i>
                         Minhas habilidades
@@ -108,7 +161,7 @@
 
                     <a
                         href="{% url 'loja_recompensas' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'loja_recompensas' or rota == 'recompensa_resgatar' or rota == 'resgates_recompensas' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-gift"></i>
                         Recompensas
@@ -116,7 +169,7 @@
 
                     <a
                         href="{% url 'minhas_conquistas' %}"
-                        class="app-menu-link"
+                        class="app-menu-link{% if rota == 'minhas_conquistas' %} menu-active{% endif %}"
                     >
                         <i class="bi bi-trophy"></i>
                         Conquistas
@@ -126,7 +179,7 @@
 
                 <a
                     href="{% url 'notificacoes_central' %}"
-                    class="app-menu-link"
+                    class="app-menu-link{% if rota == 'notificacoes_central' or rota == 'notificacao_abrir' or rota == 'notificacoes_marcar_todas' %} menu-active{% endif %}"
                 >
                     <i class="bi bi-bell"></i>
                     Notificações
@@ -159,7 +212,7 @@
                     <i class="bi bi-check2"></i>
                 </span>
 
-                <span>Minha Rotina</span>
+                <span>Rotina Conecta</span>
             </a>
 
 
@@ -224,46 +277,70 @@
 
 <nav class="mobile-nav d-lg-none">
 
-    <a href="{% url 'inicio' %}">
+    <a
+        href="{% url 'inicio' %}"
+        class="{% if rota == 'inicio' %}menu-active{% endif %}"
+    >
         <i class="bi bi-house"></i>
         <span>Início</span>
     </a>
 
     {% if request.user.tipo == "TUTOR" %}
 
-        <a href="{% url 'criancas_listar' %}">
+        <a
+            href="{% url 'criancas_listar' %}"
+            class="{% if rota == 'criancas_listar' or rota == 'crianca_criar' or rota == 'crianca_editar' or rota == 'tarefas_crianca_tutor' or rota == 'historico_crianca_tutor' or rota == 'relatorio_semanal_crianca' or rota == 'habilidades_crianca_tutor' or rota == 'conquistas_crianca_tutor' or rota == 'enviar_foto' %}menu-active{% endif %}"
+        >
             <i class="bi bi-people"></i>
             <span>Crianças</span>
         </a>
 
-        <a href="{% url 'rotinas_listar' %}">
+        <a
+            href="{% url 'rotinas_listar' %}"
+            class="{% if rota == 'rotinas_listar' or rota == 'rotina_criar' or rota == 'sugestoes_tarefas' or rota == 'rotina_editar' or rota == 'rotina_alternar' or rota == 'rotina_excluir' or rota == 'tarefa_bonus_criar' %}menu-active{% endif %}"
+        >
             <i class="bi bi-list-check"></i>
             <span>Rotinas</span>
         </a>
 
-        <a href="{% url 'loja_recompensas' %}">
+        <a
+            href="{% url 'loja_recompensas' %}"
+            class="{% if rota == 'loja_recompensas' or rota == 'recompensa_criar' or rota == 'recompensa_editar' or rota == 'recompensa_alternar' or rota == 'recompensa_resgatar' or rota == 'resgates_recompensas' or rota == 'resgate_entregar' or rota == 'resgate_cancelar' %}menu-active{% endif %}"
+        >
             <i class="bi bi-gift"></i>
             <span>Prêmios</span>
         </a>
 
     {% else %}
 
-        <a href="{% url 'minhas_tarefas' %}">
+        <a
+            href="{% url 'minhas_tarefas' %}"
+            class="{% if rota == 'minhas_tarefas' or rota == 'enviar_foto' %}menu-active{% endif %}"
+        >
             <i class="bi bi-check2-square"></i>
             <span>Tarefas</span>
         </a>
 
-        <a href="{% url 'meu_historico' %}">
+        <a
+            href="{% url 'meu_historico' %}"
+            class="{% if rota == 'meu_historico' %}menu-active{% endif %}"
+        >
             <i class="bi bi-clock-history"></i>
             <span>Histórico</span>
         </a>
 
-        <a href="{% url 'minhas_habilidades' %}">
+        <a
+            href="{% url 'minhas_habilidades' %}"
+            class="{% if rota == 'minhas_habilidades' %}menu-active{% endif %}"
+        >
             <i class="bi bi-graph-up-arrow"></i>
             <span>Skills</span>
         </a>
 
-        <a href="{% url 'loja_recompensas' %}">
+        <a
+            href="{% url 'loja_recompensas' %}"
+            class="{% if rota == 'loja_recompensas' or rota == 'recompensa_resgatar' or rota == 'resgates_recompensas' %}menu-active{% endif %}"
+        >
             <i class="bi bi-gift"></i>
             <span>Prêmios</span>
         </a>
@@ -381,6 +458,7 @@
 </div>
 {% endif %}
 
+{% endwith %}
 {% endblock %}
 
 

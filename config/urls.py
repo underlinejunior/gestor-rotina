@@ -9,6 +9,3 @@ urlpatterns = [
     path("", include("tarefas.urls")),
     path("", include("gamificacao.urls")),
 ]
-
-# Deliberadamente não existe rota pública para MEDIA_ROOT. Evidências
-# fotográficas são servidas somente por endpoint autenticado e autorizado.

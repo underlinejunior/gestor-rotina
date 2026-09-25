@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Relatório semanal - {{ perfil.nome_exibicao }} | Minha Rotina{% endblock %}
+{% block title %}Relatório semanal - {{ perfil.nome_exibicao }} | Rotina Conecta{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -8,9 +8,9 @@
         --report-primary: #4f46e5;
         --report-primary-2: #7c3aed;
         --report-primary-soft: #eef2ff;
-        --report-text: #23262f;
-        --report-muted: #717784;
-        --report-border: #e5e7eb;
+        --report-text: #252833;
+        --report-muted: #6f7685;
+        --report-border: #e4e7ec;
         --report-bg: #f4f5f8;
         --report-success: #15803d;
         --report-success-bg: #dcfce7;
@@ -34,7 +34,7 @@
     }
 
     .report-toolbar {
-        margin-bottom: 12px;
+        margin-bottom: 14px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -49,11 +49,7 @@
         flex-wrap: wrap;
     }
 
-    /*
-     * A pré-visualização já assume proporção horizontal.
-     * No PDF/impressão o @page fixa A4 paisagem.
-     */
-    .report-paper {
+    .report-page {
         width: 100%;
         min-height: 760px;
         padding: 22px 24px;
@@ -63,9 +59,9 @@
         box-shadow: 0 16px 44px rgba(31, 41, 55, .08);
     }
 
-    /* =====================================================
-       Cabeçalho: criança como elemento principal
-       ===================================================== */
+    .report-page + .report-page {
+        margin-top: 18px;
+    }
 
     .report-header {
         display: grid;
@@ -80,7 +76,7 @@
         display: flex;
         align-items: center;
         gap: 9px;
-        min-width: 170px;
+        min-width: 165px;
     }
 
     .report-brand-mark {
@@ -110,7 +106,7 @@
 
     .report-brand h1 {
         font-size: 15px;
-        font-weight: 800;
+        font-weight: 850;
     }
 
     .report-brand p {
@@ -126,12 +122,7 @@
         gap: 12px;
         padding: 8px 18px;
         border-radius: 16px;
-        background: linear-gradient(
-            135deg,
-            #f5f3ff,
-            #eef2ff
-        );
-        text-align: left;
+        background: linear-gradient(135deg, #f5f3ff, #eef2ff);
     }
 
     .report-child-avatar {
@@ -161,7 +152,7 @@
         margin-top: 5px;
         color: var(--report-muted);
         font-size: 9px;
-        font-weight: 600;
+        font-weight: 650;
     }
 
     .report-header-right {
@@ -184,277 +175,392 @@
         font-size: 8px;
     }
 
-    /* =====================================================
-       Período + resumo compacto
-       ===================================================== */
-
-    .report-topline {
-        margin-top: 12px;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 12px;
-        align-items: center;
-    }
-
-    .report-period {
-        padding: 9px 12px;
-        border-radius: 12px;
-        background: #f8f8fb;
-    }
-
-    .report-period strong,
-    .report-period span {
-        display: block;
-    }
-
-    .report-period strong {
-        font-size: 11px;
-    }
-
-    .report-period span {
-        margin-top: 1px;
-        color: var(--report-muted);
-        font-size: 8px;
-    }
-
-    .report-summary-line {
+    .page-title-row {
+        margin: 14px 0 10px;
         display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 6px;
-        flex-wrap: wrap;
-        color: var(--report-muted);
-        font-size: 8px;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
     }
 
-    .report-summary-pill {
-        padding: 5px 8px;
-        border: 1px solid var(--report-border);
-        border-radius: 999px;
-        background: #fff;
+    .page-title-row h2 {
+        margin: 0;
+        color: #302d67;
+        font-size: 19px;
+        font-weight: 900;
+    }
+
+    .page-title-row p {
+        margin: 3px 0 0;
+        color: var(--report-muted);
+        font-size: 9px;
+    }
+
+    .page-period {
+        padding: 7px 10px;
+        border-radius: 10px;
+        background: #f8f8fb;
+        font-size: 9px;
+        font-weight: 800;
         white-space: nowrap;
     }
 
-    /* =====================================================
-       KPIs: somente quatro indicadores principais
-       ===================================================== */
-
-    .report-kpis {
-        margin-top: 10px;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 7px;
-    }
-
-    .report-kpi {
-        min-width: 0;
-        padding: 9px 11px;
+    .weekly-table-wrap {
+        overflow-x: auto;
         border: 1px solid var(--report-border);
         border-radius: 12px;
+    }
+
+    .weekly-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
         background: #fff;
     }
 
-    .report-kpi small,
-    .report-kpi strong {
-        display: block;
+    .weekly-table th,
+    .weekly-table td {
+        border-right: 1px solid #edf0f3;
+        border-bottom: 1px solid #edf0f3;
+        vertical-align: middle;
     }
 
-    .report-kpi small {
-        color: var(--report-muted);
+    .weekly-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .weekly-table th:last-child,
+    .weekly-table td:last-child {
+        border-right: 0;
+    }
+
+    .weekly-table thead th {
+        padding: 7px 4px;
+        background: #f8f9fb;
+        color: #4e5562;
         font-size: 7px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
-    .report-kpi strong {
-        margin-top: 2px;
-        font-size: 17px;
-        line-height: 1.1;
-    }
-
-    .report-kpi.highlight {
-        border-color: #c7d2fe;
-        background: #f8f7ff;
-    }
-
-    .report-kpi.highlight strong {
-        color: var(--report-primary);
-    }
-
-    /* =====================================================
-       Quadro semanal simplificado
-       ===================================================== */
-
-    .report-section {
-        margin-top: 14px;
-    }
-
-    .report-section-title {
-        margin-bottom: 7px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-    }
-
-    .report-section-title h3 {
-        margin: 0;
-        font-size: 12px;
-        font-weight: 850;
-    }
-
-    .report-section-title p {
-        margin: 0;
-        color: var(--report-muted);
-        font-size: 7.5px;
-    }
-
-    .week-grid {
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 5px;
-    }
-
-    .week-day {
-        min-width: 0;
-        overflow: hidden;
-        border: 1px solid var(--report-border);
-        border-radius: 10px;
-        background: #fff;
-    }
-
-    .week-day.is-today {
-        border-color: #a5b4fc;
-        box-shadow: inset 0 0 0 1px #c7d2fe;
-    }
-
-    .week-day-header {
-        padding: 6px;
-        border-bottom: 1px solid var(--report-border);
-        background: #fafafa;
+        font-weight: 900;
         text-align: center;
+        text-transform: uppercase;
+        letter-spacing: .02em;
     }
 
-    .week-day.is-today .week-day-header {
-        background: var(--report-primary-soft);
+    .weekly-table .task-col {
+        width: 27%;
+        padding-left: 9px;
+        text-align: left;
     }
 
-    .week-day-header strong,
-    .week-day-header span {
+    .weekly-table .moment-col {
+        width: 10%;
+    }
+
+    .weekly-table .day-col {
+        width: 7%;
+    }
+
+    .weekly-table .points-col {
+        width: 7%;
+    }
+
+    .day-head strong,
+    .day-head span {
         display: block;
     }
 
-    .week-day-header strong {
+    .day-head strong {
+        color: #343946;
         font-size: 8px;
     }
 
-    .week-day-header span {
+    .day-head span {
         margin-top: 1px;
         color: var(--report-muted);
-        font-size: 7px;
+        font-size: 6px;
+        font-weight: 700;
+        text-transform: none;
     }
 
-    .week-day-body {
-        padding: 5px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+    .day-head.is-today {
+        background: var(--report-primary-soft);
     }
 
-    .report-task {
-        padding: 6px;
-        border: 1px solid #edf0f3;
-        border-radius: 8px;
-        break-inside: avoid;
+    .weekly-table tbody td {
+        padding: 6px 4px;
+        text-align: center;
+        font-size: 7.3px;
     }
 
-    .report-task-title {
-        font-size: 7.5px;
-        font-weight: 800;
-        line-height: 1.2;
+    .weekly-table tbody td.task-name {
+        padding: 6px 9px;
+        text-align: left;
     }
 
-    .report-task-line {
-        margin-top: 3px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 4px;
-    }
-
-    .report-task-meta {
-        min-width: 0;
+    .task-name strong {
+        display: block;
         overflow: hidden;
-        color: var(--report-muted);
-        font-size: 6.5px;
+        font-size: 8px;
+        line-height: 1.15;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .report-status {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 4px;
-        border-radius: 999px;
-        font-size: 5.8px;
-        font-weight: 850;
-        white-space: nowrap;
+    .task-name span {
+        display: block;
+        margin-top: 2px;
+        color: var(--report-muted);
+        font-size: 6px;
+        font-weight: 700;
     }
 
-    .report-status.approved {
+    .moment-cell {
+        color: #59606d;
+        font-size: 6.7px !important;
+        font-weight: 750;
+    }
+
+    .points-cell {
+        color: #6a5c16;
+        font-weight: 900;
+    }
+
+    .status-cell {
+        padding: 4px !important;
+    }
+
+    .status-mark {
+        width: 25px;
+        height: 25px;
+        margin: 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 950;
+    }
+
+    .status-mark.approved {
         color: var(--report-success);
         background: var(--report-success-bg);
     }
 
-    .report-status.missed,
-    .report-status.rejected {
+    .status-mark.review {
+        color: var(--report-warning);
+        background: var(--report-warning-bg);
+        font-size: 10px;
+    }
+
+    .status-mark.missed {
         color: var(--report-danger);
         background: var(--report-danger-bg);
     }
 
-    .report-status.review {
-        color: var(--report-warning);
-        background: var(--report-warning-bg);
-    }
-
-    .report-status.pending,
-    .report-status.planned {
+    .status-mark.pending {
         color: var(--report-info);
         background: var(--report-info-bg);
     }
 
-    .week-empty {
-        padding: 12px 4px;
-        color: #a0a4ad;
-        text-align: center;
-        font-size: 6.5px;
+    .status-mark.not-planned {
+        color: #9aa0aa;
+        background: #f5f6f8;
     }
 
-    /* =====================================================
-       Rodapé analítico: compacto
-       ===================================================== */
+    .report-empty-row {
+        padding: 24px !important;
+        color: var(--report-muted);
+        text-align: center !important;
+        font-size: 9px !important;
+    }
 
-    .report-bottom-grid {
+    .week-legend {
+        margin-top: 9px;
+        display: flex;
+        align-items: center;
+        gap: 6px 14px;
+        flex-wrap: wrap;
+        color: var(--report-muted);
+        font-size: 7px;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .legend-symbol {
+        width: 17px;
+        height: 17px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 5px;
+        background: #f5f6f8;
+        font-weight: 900;
+    }
+
+    .page-one-note {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--report-muted);
+        font-size: 7px;
+    }
+
+    .balance-grid {
         margin-top: 12px;
         display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
-        gap: 8px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 7px;
+    }
+
+    .balance-card {
+        min-width: 0;
+        padding: 10px 11px;
+        border: 1px solid var(--report-border);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .balance-card small,
+    .balance-card strong {
+        display: block;
+    }
+
+    .balance-card small {
+        color: var(--report-muted);
+        font-size: 6.7px;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: .035em;
+    }
+
+    .balance-card strong {
+        margin-top: 3px;
+        font-size: 16px;
+        line-height: 1.05;
+    }
+
+    .balance-card.final {
+        border-color: #c7d2fe;
+        background: #f8f7ff;
+    }
+
+    .balance-card.final strong {
+        color: var(--report-primary);
+    }
+
+    .balance-card.positive strong {
+        color: var(--report-success);
+    }
+
+    .balance-card.negative strong {
+        color: var(--report-danger);
+    }
+
+    .adjustment-note {
+        margin-top: 6px;
+        color: var(--report-muted);
+        font-size: 7px;
+        text-align: right;
+    }
+
+    .progress-grid {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+        gap: 9px;
     }
 
     .report-panel {
-        padding: 9px 10px;
+        min-width: 0;
+        padding: 11px 12px;
         border: 1px solid var(--report-border);
-        border-radius: 11px;
+        border-radius: 12px;
         background: #fff;
         break-inside: avoid;
     }
 
-    .report-panel h4 {
-        margin: 0 0 7px;
-        font-size: 9px;
-        font-weight: 850;
+    .report-panel h3 {
+        margin: 0 0 8px;
+        font-size: 10px;
+        font-weight: 900;
+    }
+
+    .achievement-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .achievement {
+        min-width: 0;
+        padding: 7px 8px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 9px;
+        background: #fffbeb;
+    }
+
+    .achievement-icon {
+        flex-shrink: 0;
+        font-size: 17px;
+    }
+
+    .achievement strong {
+        display: block;
+        overflow: hidden;
+        font-size: 7.3px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .achievement span {
+        display: block;
+        margin-top: 1px;
+        color: #8a7440;
+        font-size: 5.8px;
+    }
+
+    .penalty-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .penalty-table th,
+    .penalty-table td {
+        padding: 5px 4px;
+        border-bottom: 1px solid #eef0f3;
+        font-size: 6.7px;
+        text-align: left;
+    }
+
+    .penalty-table th {
+        color: var(--report-muted);
+        font-size: 5.8px;
+        text-transform: uppercase;
+    }
+
+    .penalty-table td:last-child,
+    .penalty-table th:last-child {
+        text-align: right;
+    }
+
+    .penalty-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .penalty-points {
+        color: var(--report-danger);
+        font-weight: 900;
+    }
+
+    .skills-panel {
+        margin-top: 9px;
     }
 
     .skills-inline {
@@ -464,35 +570,55 @@
     }
 
     .skill-inline {
-        padding: 4px 6px;
+        padding: 5px 7px;
         border-radius: 999px;
         color: #534b67;
         background: #f5f3ff;
         font-size: 7px;
-        font-weight: 700;
+        font-weight: 750;
     }
 
     .skill-inline strong {
         color: var(--report-primary);
     }
 
-    .achievement-inline-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
+    .summary-grid {
+        margin-top: 9px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 7px;
     }
 
-    .achievement-inline {
-        padding: 4px 6px;
-        border-radius: 8px;
-        background: #fffbeb;
-        font-size: 7px;
-        font-weight: 700;
+    .summary-card {
+        padding: 9px 10px;
+        border: 1px solid var(--report-border);
+        border-radius: 11px;
+        background: #fff;
     }
 
-    .report-empty-note {
-        margin: 0;
+    .summary-card small,
+    .summary-card strong {
+        display: block;
+    }
+
+    .summary-card small {
         color: var(--report-muted);
+        font-size: 6px;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+
+    .summary-card strong {
+        margin-top: 2px;
+        font-size: 15px;
+    }
+
+    .empty-note {
+        margin: 0;
+        padding: 12px;
+        color: var(--report-muted);
+        border-radius: 9px;
+        background: #f8f9fb;
         font-size: 7px;
     }
 
@@ -507,9 +633,156 @@
         font-size: 6.5px;
     }
 
-    /* =====================================================
-       Responsivo
-       ===================================================== */
+    .report-brand h1 {
+        font-size: 18px;
+    }
+
+    .report-brand p {
+        font-size: 11px;
+    }
+
+    .report-child-name {
+        font-size: 31px;
+    }
+
+    .report-child-meta {
+        font-size: 12px;
+    }
+
+    .report-header-right strong {
+        font-size: 13px;
+    }
+
+    .report-header-right span {
+        font-size: 10.5px;
+    }
+
+    .page-title-row h2 {
+        font-size: 24px;
+    }
+
+    .page-title-row p,
+    .page-period {
+        font-size: 12px;
+    }
+
+    .weekly-table thead th {
+        padding: 10px 6px;
+        font-size: 10px;
+    }
+
+    .day-head strong {
+        font-size: 11px;
+    }
+
+    .day-head span {
+        font-size: 9px;
+    }
+
+    .weekly-table tbody td {
+        padding: 9px 6px;
+        font-size: 10.5px;
+    }
+
+    .weekly-table tbody td.task-name {
+        padding: 9px 11px;
+    }
+
+    .task-name strong {
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    .task-name span {
+        font-size: 9px;
+    }
+
+    .moment-cell {
+        font-size: 9.5px !important;
+    }
+
+    .status-mark {
+        width: 29px;
+        height: 29px;
+        font-size: 14px;
+    }
+
+    .status-mark.review {
+        font-size: 12px;
+    }
+
+    .report-empty-row {
+        font-size: 11px !important;
+    }
+
+    .week-legend {
+        margin-top: 12px;
+        gap: 8px 18px;
+        font-size: 10px;
+    }
+
+    .legend-symbol {
+        width: 21px;
+        height: 21px;
+    }
+
+    .page-one-note {
+        font-size: 9.5px;
+    }
+
+    .balance-card small {
+        font-size: 9.5px;
+    }
+
+    .balance-card strong {
+        font-size: 19px;
+    }
+
+    .adjustment-note {
+        font-size: 9.5px;
+    }
+
+    .report-panel h3 {
+        font-size: 13px;
+    }
+
+    .achievement strong {
+        font-size: 10px;
+    }
+
+    .achievement span {
+        font-size: 8.5px;
+    }
+
+    .penalty-table th,
+    .penalty-table td {
+        padding: 7px 5px;
+        font-size: 9.5px;
+    }
+
+    .penalty-table th {
+        font-size: 8.5px;
+    }
+
+    .skill-inline {
+        font-size: 9.5px;
+    }
+
+    .summary-card small {
+        font-size: 9px;
+    }
+
+    .summary-card strong {
+        font-size: 18px;
+    }
+
+    .empty-note {
+        font-size: 10px;
+    }
+
+    .report-footer {
+        font-size: 9px;
+    }
 
     @media (max-width: 991px) {
         .report-header {
@@ -526,17 +799,16 @@
             justify-content: flex-start;
         }
 
-        .report-topline {
+        .weekly-table {
+            min-width: 900px;
+        }
+
+        .balance-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .progress-grid {
             grid-template-columns: 1fr;
-        }
-
-        .report-summary-line {
-            justify-content: flex-start;
-        }
-
-        .week-grid {
-            overflow-x: auto;
-            grid-template-columns: repeat(7, minmax(145px, 1fr));
         }
     }
 
@@ -545,7 +817,7 @@
             padding: 10px;
         }
 
-        .report-paper {
+        .report-page {
             min-height: 0;
             padding: 14px;
             border-radius: 14px;
@@ -555,18 +827,19 @@
             font-size: 23px;
         }
 
-        .report-kpis {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+        .page-title-row {
+            align-items: flex-start;
+            flex-direction: column;
         }
 
-        .report-bottom-grid {
+        .achievement-list {
             grid-template-columns: 1fr;
         }
-    }
 
-    /* =====================================================
-       Impressão / PDF — A4 horizontal
-       ===================================================== */
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
 
     @media print {
         @page {
@@ -593,13 +866,19 @@
             padding: 0;
         }
 
-        .report-paper {
+        .report-page {
             width: 100%;
             min-height: 0;
+            margin: 0 !important;
             padding: 0;
             border: 0;
             border-radius: 0;
             box-shadow: none;
+        }
+
+        .report-page.page-break {
+            break-after: page;
+            page-break-after: always;
         }
 
         .report-header {
@@ -607,30 +886,173 @@
         }
 
         .report-child-name {
-            font-size: 24px;
+            font-size: 20pt;
         }
 
-        .report-topline {
-            grid-template-columns: minmax(0, 1fr) auto;
+        .report-brand h1 {
+            font-size: 11pt;
         }
 
-        .report-kpis {
+        .report-brand p {
+            font-size: 7.5pt;
+        }
+
+        .report-child-meta {
+            font-size: 8.5pt;
+        }
+
+        .report-header-right strong {
+            font-size: 9pt;
+        }
+
+        .report-header-right span {
+            font-size: 7.5pt;
+        }
+
+        .page-title-row h2 {
+            font-size: 15pt;
+        }
+
+        .page-title-row p,
+        .page-period {
+            font-size: 8.5pt;
+        }
+
+        .weekly-table thead th {
+            padding: 6pt 3pt;
+            font-size: 7.5pt;
+        }
+
+        .day-head strong {
+            font-size: 8pt;
+        }
+
+        .day-head span {
+            font-size: 6.8pt;
+        }
+
+        .weekly-table tbody td {
+            padding: 5.5pt 3pt;
+            font-size: 8pt;
+        }
+
+        .weekly-table tbody td.task-name {
+            padding: 5.5pt 6pt;
+        }
+
+        .task-name strong {
+            font-size: 8.5pt;
+        }
+
+        .task-name span {
+            font-size: 7pt;
+        }
+
+        .moment-cell {
+            font-size: 7.5pt !important;
+        }
+
+        .status-mark {
+            width: 20pt;
+            height: 20pt;
+            font-size: 10pt;
+        }
+
+        .status-mark.review {
+            font-size: 8.5pt;
+        }
+
+        .week-legend {
+            font-size: 7.5pt;
+        }
+
+        .legend-symbol {
+            width: 15pt;
+            height: 15pt;
+        }
+
+        .page-one-note,
+        .report-footer {
+            font-size: 7pt;
+        }
+
+        .balance-card small {
+            font-size: 7.5pt;
+        }
+
+        .balance-card strong {
+            font-size: 13pt;
+        }
+
+        .adjustment-note {
+            font-size: 7pt;
+        }
+
+        .report-panel h3 {
+            font-size: 9.5pt;
+        }
+
+        .achievement strong {
+            font-size: 7.5pt;
+        }
+
+        .achievement span {
+            font-size: 6.5pt;
+        }
+
+        .penalty-table th,
+        .penalty-table td {
+            font-size: 7.3pt;
+        }
+
+        .penalty-table th {
+            font-size: 6.5pt;
+        }
+
+        .skill-inline {
+            font-size: 7.3pt;
+        }
+
+        .summary-card small {
+            font-size: 6.8pt;
+        }
+
+        .summary-card strong {
+            font-size: 12pt;
+        }
+
+        .empty-note {
+            font-size: 7.5pt;
+        }
+
+        .weekly-table-wrap {
+            overflow: visible;
+        }
+
+        .weekly-table {
+            min-width: 0;
+        }
+
+        .balance-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .progress-grid {
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+        }
+
+        .achievement-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .summary-grid {
             grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
-        .week-grid {
-            overflow: visible;
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-        }
-
-        .report-bottom-grid {
-            grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
-        }
-
-        .report-section,
         .report-panel,
-        .week-day,
-        .report-task {
+        .balance-card,
+        .summary-card,
+        .weekly-table tr {
             break-inside: avoid;
         }
 
@@ -693,18 +1115,16 @@
     </div>
 
 
-    <main class="report-paper">
+    <main class="report-page page-break">
 
         <header class="report-header">
 
             <div class="report-brand">
-                <div class="report-brand-mark">
-                    ✓
-                </div>
+                <div class="report-brand-mark">✓</div>
 
                 <div>
-                    <h1>Minha Rotina</h1>
-                    <p>Relatório semanal</p>
+                    <h1>Rotina Conecta</h1>
+                    <p>Quadro semanal</p>
                 </div>
             </div>
 
@@ -723,8 +1143,182 @@
                         {% if idade is not None %}
                             {{ idade }} ano{{ idade|pluralize }} ·
                         {% endif %}
-                        {{ perfil.avatar_titulo_nivel }} ·
-                        {{ perfil.pontos_evolucao }} XP
+                        {{ perfil.avatar_titulo_nivel }}
+                    </p>
+                </div>
+            </div>
+
+
+            <div class="report-header-right">
+                <strong>{{ familia.nome }}</strong>
+
+                <span>
+                    {{ inicio|date:"d/m/Y" }} a {{ fim|date:"d/m/Y" }}
+                </span>
+            </div>
+
+        </header>
+
+
+        <div class="page-title-row">
+            <div>
+                <h2>Minha semana</h2>
+                <p>
+                    Acompanhe as tarefas de cada dia e marque seu progresso.
+                </p>
+            </div>
+
+            <div class="page-period">
+                {{ total_planejado }} tarefa{{ total_planejado|pluralize }}
+                programada{{ total_planejado|pluralize }}
+            </div>
+        </div>
+
+
+        <div class="weekly-table-wrap">
+            <table class="weekly-table">
+                <thead>
+                    <tr>
+                        <th class="task-col">Tarefa</th>
+                        <th class="moment-col">Momento</th>
+
+                        {% for dia in cabecalho_dias %}
+                            <th class="day-col day-head {% if dia.hoje %}is-today{% endif %}">
+                                <strong>{{ dia.nome }}</strong>
+                                <span>{{ dia.data|date:"d/m" }}</span>
+                            </th>
+                        {% endfor %}
+
+                        <th class="points-col">⭐</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for linha in linhas_quadro %}
+                        <tr>
+                            <td class="task-name">
+                                <strong>{{ linha.titulo }}</strong>
+
+                                {% if linha.bonus %}
+                                    <span>Tarefa bônus</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="moment-cell">
+                                {{ linha.momento }}
+                            </td>
+
+                            {% for celula in linha.dias %}
+                                <td
+                                    class="status-cell"
+                                    title="{{ celula.label }}"
+                                >
+                                    <span class="status-mark {{ celula.classe }}">
+                                        {{ celula.simbolo }}
+                                    </span>
+                                </td>
+                            {% endfor %}
+
+                            <td class="points-cell">
+                                {{ linha.pontos }}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td
+                                class="report-empty-row"
+                                colspan="10"
+                            >
+                                Nenhuma tarefa programada para esta semana.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="week-legend">
+            <span class="legend-item">
+                <span class="legend-symbol">□</span>
+                A fazer
+            </span>
+
+            <span class="legend-item">
+                <span class="legend-symbol">✓</span>
+                Concluída
+            </span>
+
+            <span class="legend-item">
+                <span class="legend-symbol">⏳</span>
+                Em revisão
+            </span>
+
+            <span class="legend-item">
+                <span class="legend-symbol">✕</span>
+                Não realizada
+            </span>
+
+            <span class="legend-item">
+                <span class="legend-symbol">—</span>
+                Não programada
+            </span>
+        </div>
+
+
+        <div class="page-one-note">
+            <span>
+                Use este quadro para acompanhar a rotina ao longo da semana.
+            </span>
+
+            <span>
+                Página 1 de 2
+            </span>
+        </div>
+
+
+        <footer class="report-footer">
+            <span>
+                Responsável(is):
+                {% for tutor in responsaveis %}
+                    {{ tutor.get_full_name|default:tutor.username }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </span>
+
+            <span>
+                Rotina Conecta · quadro semanal
+            </span>
+        </footer>
+
+    </main>
+
+
+    <main class="report-page">
+
+        <header class="report-header">
+
+            <div class="report-brand">
+                <div class="report-brand-mark">★</div>
+
+                <div>
+                    <h1>Rotina Conecta</h1>
+                    <p>Meu progresso</p>
+                </div>
+            </div>
+
+
+            <div class="report-child-hero">
+                <div class="report-child-avatar">
+                    {{ perfil.avatar_emoji }}
+                </div>
+
+                <div>
+                    <h2 class="report-child-name">
+                        {{ perfil.nome_exibicao }}
+                    </h2>
+
+                    <p class="report-child-meta">
+                        {{ inicio|date:"d/m/Y" }} a {{ fim|date:"d/m/Y" }}
                     </p>
                 </div>
             </div>
@@ -741,195 +1335,189 @@
         </header>
 
 
-        <div class="report-topline">
-
-            <div class="report-period">
-                <strong>
-                    {{ inicio|date:"d/m/Y" }} a {{ fim|date:"d/m/Y" }}
-                </strong>
-
-                <span>
-                    Acompanhamento semanal de rotina
-                </span>
-            </div>
-
-
-            <div class="report-summary-line">
-                <span class="report-summary-pill">
-                    ⭐ +{{ pontos_ganhos }} ganhos
-                </span>
-
-                <span class="report-summary-pill">
-                    {% if penalidades %}-{{ penalidades }}{% else %}0{% endif %}
-                    penalidades
-                </span>
-
-                <span class="report-summary-pill">
-                    🔥 {{ sequencia_atual }} em sequência
-                </span>
-
-                <span class="report-summary-pill">
-                    {{ em_revisao }} revisão · {{ pendentes }} abertas
-                </span>
-            </div>
-
-        </div>
-
-
-        <section class="report-kpis">
-
-            <div class="report-kpi highlight">
-                <small>Conclusão</small>
-                <strong>{{ taxa_conclusao }}%</strong>
-            </div>
-
-            <div class="report-kpi">
-                <small>Aprovadas</small>
-                <strong>{{ aprovadas }}</strong>
-            </div>
-
-            <div class="report-kpi">
-                <small>Não realizadas</small>
-                <strong>{{ nao_realizadas }}</strong>
-            </div>
-
-            <div class="report-kpi">
-                <small>Saldo atual</small>
-                <strong>⭐ {{ perfil.saldo_pontos }}</strong>
-            </div>
-
-        </section>
-
-
-        <section class="report-section">
-
-            <div class="report-section-title">
-                <h3>Quadro semanal</h3>
-
+        <div class="page-title-row">
+            <div>
+                <h2>Meu progresso</h2>
                 <p>
-                    {{ total_planejado }} tarefa{{ total_planejado|pluralize }}
-                    · resultado da semana:
-                    {% if pontos_liquidos >= 0 %}+{% endif %}{{ pontos_liquidos }} pts
+                    Pontos, conquistas, habilidades e resultados acumulados.
                 </p>
             </div>
 
-
-            <div class="week-grid">
-
-                {% for dia in dias %}
-                    <section class="week-day {% if dia.hoje %}is-today{% endif %}">
-
-                        <header class="week-day-header">
-                            <strong>{{ dia.nome }}</strong>
-                            <span>{{ dia.data|date:"d/m" }}</span>
-                        </header>
+            <div class="page-period">
+                🔥 {{ sequencia_atual }}
+                dia{{ sequencia_atual|pluralize }} em sequência
+            </div>
+        </div>
 
 
-                        <div class="week-day-body">
+        <section class="balance-grid">
 
-                            {% for item in dia.itens %}
+            <div class="balance-card">
+                <small>Saldo anterior</small>
+                <strong>⭐ {{ saldo_anterior }}</strong>
+            </div>
 
-                                <article class="report-task">
+            <div class="balance-card positive">
+                <small>Ganhei</small>
+                <strong>+{{ pontos_ganhos }}</strong>
+            </div>
 
-                                    <div class="report-task-title">
-                                        {{ item.titulo }}
-                                    </div>
+            <div class="balance-card negative">
+                <small>Penalidades</small>
+                <strong>-{{ penalidades }}</strong>
+            </div>
+
+            <div class="balance-card negative">
+                <small>Recompensas</small>
+                <strong>-{{ resgates }}</strong>
+            </div>
+
+            <div class="balance-card final">
+                <small>Saldo ao fim da semana</small>
+                <strong>⭐ {{ saldo_final }}</strong>
+            </div>
+
+        </section>
+
+        {% if ajustes %}
+            <div class="adjustment-note">
+                Ajustes manuais no período:
+                {% if ajustes > 0 %}+{% endif %}{{ ajustes }} ponto{{ ajustes|pluralize }}.
+            </div>
+        {% endif %}
 
 
-                                    <div class="report-task-line">
+        <section class="progress-grid">
 
-                                        <div class="report-task-meta">
-                                            ⭐ {{ item.pontos }}
-                                            · {{ item.momento }}
-                                            {% if item.bonus %}
-                                                · bônus
-                                            {% endif %}
-                                        </div>
+            <div class="report-panel">
+                <h3>🏆 Conquistas até agora</h3>
 
-                                        <span class="report-status {{ item.status_class }}">
-                                            {{ item.status_label }}
-                                        </span>
+                {% if conquistas_ate_agora %}
+                    <div class="achievement-list">
+                        {% for registro in conquistas_ate_agora %}
+                            <div class="achievement">
+                                <span class="achievement-icon">
+                                    {{ registro.conquista.icone }}
+                                </span>
 
-                                    </div>
+                                <div class="min-w-0">
+                                    <strong>
+                                        {{ registro.conquista.nome }}
+                                    </strong>
 
-                                </article>
-
-                            {% empty %}
-
-                                <div class="week-empty">
-                                    Sem tarefas
+                                    <span>
+                                        Conquistada em
+                                        {{ registro.desbloqueada_em|date:"d/m/Y" }}
+                                    </span>
                                 </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-note">
+                        As primeiras conquistas aparecerão aqui conforme
+                        as tarefas forem sendo concluídas.
+                    </p>
+                {% endif %}
+            </div>
 
+
+            <div class="report-panel">
+                <h3>📌 Últimas tarefas não realizadas</h3>
+
+                {% if ultimas_penalidades %}
+                    <table class="penalty-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tarefa</th>
+                                <th>Pontos</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for movimento in ultimas_penalidades %}
+                                <tr>
+                                    <td>
+                                        {{ movimento.tarefa.data_referencia|date:"d/m" }}
+                                    </td>
+
+                                    <td>
+                                        {{ movimento.tarefa.titulo }}
+                                    </td>
+
+                                    <td class="penalty-points">
+                                        {{ movimento.pontos }}
+                                    </td>
+                                </tr>
                             {% endfor %}
-
-                        </div>
-
-                    </section>
-                {% endfor %}
-
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="empty-note">
+                        Nenhuma tarefa não realizada registrada até esta semana.
+                    </p>
+                {% endif %}
             </div>
 
         </section>
 
 
-        <section class="report-bottom-grid">
+        <section class="report-panel skills-panel">
+            <h3>🌱 Habilidades praticadas nesta semana</h3>
 
-            <div class="report-panel">
-                <h4>Habilidades praticadas</h4>
+            {% if skills_semana %}
+                <div class="skills-inline">
+                    {% for item in skills_semana %}
+                        <span class="skill-inline">
+                            {{ item.skill__icone }}
+                            {{ item.skill__nome }}
+                            <strong>+{{ item.xp }} XP</strong>
+                        </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-note">
+                    Nenhum XP de habilidade foi registrado nesta semana.
+                </p>
+            {% endif %}
+        </section>
 
-                {% if skills_semana %}
-                    <div class="skills-inline">
-                        {% for item in skills_semana %}
-                            <span class="skill-inline">
-                                {{ item.skill__icone }}
-                                {{ item.skill__nome }}
-                                <strong>+{{ item.xp }} XP</strong>
-                            </span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="report-empty-note">
-                        Nenhum XP de habilidade registrado nesta semana.
-                    </p>
-                {% endif %}
+
+        <section class="summary-grid">
+
+            <div class="summary-card">
+                <small>Concluídas</small>
+                <strong>✓ {{ aprovadas }}</strong>
             </div>
 
+            <div class="summary-card">
+                <small>Não realizadas</small>
+                <strong>✕ {{ nao_realizadas }}</strong>
+            </div>
 
-            <div class="report-panel">
-                <h4>Conquistas da semana</h4>
+            <div class="summary-card">
+                <small>Em revisão</small>
+                <strong>⏳ {{ em_revisao }}</strong>
+            </div>
 
-                {% if conquistas_semana %}
-                    <div class="achievement-inline-list">
-                        {% for registro in conquistas_semana %}
-                            <span class="achievement-inline">
-                                {{ registro.conquista.icone }}
-                                {{ registro.conquista.nome }}
-                            </span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="report-empty-note">
-                        Nenhuma nova conquista nesta semana.
-                    </p>
-                {% endif %}
+            <div class="summary-card">
+                <small>Conclusão</small>
+                <strong>{{ taxa_conclusao }}%</strong>
             </div>
 
         </section>
 
 
         <footer class="report-footer">
-
             <span>
-                Responsável(is):
-                {% for tutor in responsaveis %}
-                    {{ tutor.get_full_name|default:tutor.username }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
+                {{ pendentes }} tarefa{{ pendentes|pluralize }}
+                ainda aberta{{ pendentes|pluralize }} nesta semana.
             </span>
 
             <span>
-                Minha Rotina · relatório semanal
+                Página 2 de 2 · Rotina Conecta
             </span>
-
         </footer>
 
     </main>

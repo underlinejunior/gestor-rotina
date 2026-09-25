@@ -1,13 +1,13 @@
 from datetime import date, datetime, time, timedelta
 import tempfile
+from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from gamificacao.models import (
-    InstanciaTarefaSkill,
     MoldeTarefaSkill,
     MovimentoPontos,
     NotificacaoSistema,
@@ -16,6 +16,9 @@ from gamificacao.models import (
 from tarefas.forms import EnvioComprovanteForm
 from tarefas.models import InstanciaTarefa, MoldeTarefa, PeriodoTarefa
 from tarefas.services import (
+    ConfiguracaoIAAusente,
+    _extrair_json_ia,
+    _normalizar_sugestoes_ia,
     aprovar_tarefa,
     encerrar_tarefas_antigas,
     enviar_comprovante,
@@ -33,6 +36,49 @@ GIF_1X1 = (
     b"\x00\x01\x00\x01\x00\x00\x02\x02D"
     b"\x01\x00;"
 )
+
+
+class SugestoesIATests(SimpleTestCase):
+    def test_extrair_json_aceita_cerca_markdown(self):
+        dados = _extrair_json_ia(
+            '```json\n[{"titulo": "Arrumar a cama"}]\n```'
+        )
+        self.assertEqual(dados[0]["titulo"], "Arrumar a cama")
+
+    def test_normalizar_sugestoes_descarta_skill_invalida(self):
+        sugestoes = _normalizar_sugestoes_ia(
+            [
+                {
+                    "icone": "🛏️",
+                    "titulo": "Arrumar a cama",
+                    "descricao": "Organizar a cama.",
+                    "pontos": 12,
+                    "skills": [
+                        {"slug": "organizacao", "impacto": 3},
+                        {"slug": "inexistente", "impacto": 3},
+                    ],
+                }
+            ],
+            [
+                {
+                    "slug": "organizacao",
+                    "nome": "Organização",
+                }
+            ],
+        )
+
+        self.assertEqual(len(sugestoes), 1)
+        self.assertEqual(
+            sugestoes[0]["skills"],
+            [{"slug": "organizacao", "impacto": 3}],
+        )
+
+    @patch.dict("os.environ", {"GEMINI_API_KEY": ""})
+    def test_sugestao_ia_sem_chave_falha_de_forma_controlada(self):
+        from tarefas.services import gerar_sugestao_rotina
+
+        with self.assertRaises(ConfiguracaoIAAusente):
+            gerar_sugestao_rotina(idade_crianca=8)
 
 
 class BaseTarefasTestCase(TestCase):
@@ -108,7 +154,7 @@ class RF03RotinasTests(BaseTarefasTestCase):
         self.assertTrue(molde.deve_gerar_em(date(2026, 8, 25)))
 
     def test_rf03_molde_semanal_respeita_dias_configurados(self):
-        # 0=segunda e 2=quarta
+
         molde = self.criar_molde(
             frequencia=MoldeTarefa.Frequencia.SEMANAL,
             dias_semana="0,2",
@@ -470,7 +516,7 @@ class RF10NotificacoesEPenalidadeTests(BaseTarefasTestCase):
         )
         primeira = MovimentoPontos.objects.get(tarefa=tarefa)
 
-        # A tarefa já foi encerrada e não volta a entrar na consulta.
+
         encerrar_tarefas_antigas(
             familia=self.familia,
             hoje=timezone.localdate(),

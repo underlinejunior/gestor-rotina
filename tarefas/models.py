@@ -218,7 +218,7 @@ class InstanciaTarefa(models.Model):
         default=Origem.MOLDE,
     )
 
-    # Snapshot para preservar o histórico.
+
     titulo = models.CharField(max_length=120)
     descricao = models.TextField(blank=True)
     pontos_base = models.PositiveSmallIntegerField(default=10)

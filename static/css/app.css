@@ -42,11 +42,6 @@ a {
     min-width: 0;
 }
 
-
-/* =========================================================
-   Bootstrap / elementos gerais
-   ========================================================= */
-
 .btn {
     border-radius: 12px;
     font-weight: 600;
@@ -93,11 +88,6 @@ a {
 .text-muted-custom {
     color: var(--cor-texto-secundario);
 }
-
-
-/* =========================================================
-   Autenticação
-   ========================================================= */
 
 .auth-page {
     min-height: 100vh;
@@ -163,11 +153,6 @@ a {
     background: var(--cor-borda);
     flex: 1;
 }
-
-
-/* =========================================================
-   Layout do app
-   ========================================================= */
 
 .app-layout {
     min-height: 100vh;
@@ -312,11 +297,6 @@ a {
     color: #9ca3af;
 }
 
-
-/* =========================================================
-   Hero
-   ========================================================= */
-
 .dashboard-hero {
     position: relative;
     overflow: hidden;
@@ -374,11 +354,6 @@ a {
     background: rgba(255, 255, 255, 0.16);
 }
 
-
-/* =========================================================
-   Cards e métricas
-   ========================================================= */
-
 .metric-card,
 .content-card,
 .child-status-card {
@@ -421,11 +396,6 @@ a {
     font-size: 14px;
     margin-top: 4px;
 }
-
-
-/* =========================================================
-   Crianças - tutor
-   ========================================================= */
 
 .child-card,
 .child-list-item {
@@ -480,11 +450,6 @@ a {
     color: #6b7280;
 }
 
-
-/* =========================================================
-   Empty state
-   ========================================================= */
-
 .empty-state {
     padding: 48px 20px;
     text-align: center;
@@ -507,11 +472,6 @@ a {
     padding-top: 54px;
     padding-bottom: 54px;
 }
-
-
-/* =========================================================
-   Página / formulários
-   ========================================================= */
 
 .page-heading {
     display: flex;
@@ -548,11 +508,6 @@ a {
     justify-content: flex-end;
     gap: 10px;
 }
-
-
-/* =========================================================
-   Acesso infantil
-   ========================================================= */
 
 .access-option {
     background: #f8f9ff;
@@ -592,11 +547,6 @@ a {
     justify-content: center;
     font-size: 20px;
 }
-
-
-/* =========================================================
-   Dashboard da criança
-   ========================================================= */
 
 .points-strip {
     display: flex;
@@ -669,11 +619,6 @@ a {
     color: #047857;
 }
 
-
-/* =========================================================
-   Navegação mobile
-   ========================================================= */
-
 .mobile-nav {
     position: fixed;
     bottom: 0;
@@ -714,11 +659,6 @@ a {
 .mobile-nav-disabled {
     opacity: 0.38;
 }
-
-
-/* =========================================================
-   Responsividade
-   ========================================================= */
 
 @media (min-width: 992px) {
     .app-main {
@@ -822,11 +762,6 @@ a {
     }
 }
 
-
-/* =========================================================
-   ETAPA: AVATARES, ROTINAS E REVISÕES
-   ========================================================= */
-
 .mobile-brand {
     display: flex;
     align-items: center;
@@ -864,9 +799,6 @@ a {
     transform: translateY(-2px);
     box-shadow: 0 12px 34px rgba(31, 41, 55, 0.08);
 }
-
-
-/* Avatares evolutivos */
 
 .evolving-avatar {
     position: relative;
@@ -1026,9 +958,6 @@ a {
     gap: 6px;
 }
 
-
-/* Ações rápidas */
-
 .quick-actions {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1080,9 +1009,6 @@ a {
     background: #eff6ff;
     color: #1d4ed8;
 }
-
-
-/* Rotinas */
 
 .routine-grid {
     display: grid;
@@ -1231,9 +1157,6 @@ a {
     font-size: 22px;
 }
 
-
-/* Tarefas */
-
 .task-list {
     display: flex;
     flex-direction: column;
@@ -1332,9 +1255,6 @@ a {
     color: #047857;
 }
 
-
-/* Câmera */
-
 .camera-page {
     max-width: 760px;
     margin: 0 auto;
@@ -1399,9 +1319,6 @@ a {
     font-size: 17px;
     font-weight: 800;
 }
-
-
-/* Revisões */
 
 .review-count {
     padding: 7px 11px;
@@ -1525,9 +1442,6 @@ a {
     gap: 10px;
 }
 
-
-/* Responsividade adicional */
-
 @media (max-width: 1100px) {
     .review-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1611,11 +1525,6 @@ a {
         display: none;
     }
 }
-
-
-/* =========================================================
-   Indicadores semanais
-   ========================================================= */
 
 .weekly-summary {
     padding: 20px;
@@ -1719,11 +1628,6 @@ a {
     justify-content: space-between;
     gap: 14px;
 }
-
-
-/* =========================================================
-   Histórico
-   ========================================================= */
 
 .history-hero {
     padding: 20px;
@@ -1927,19 +1831,9 @@ a {
     font-weight: 800;
 }
 
-
-/* =========================================================
-   Status não realizada
-   ========================================================= */
-
 .task-status-nao_realizada {
     border-left: 4px solid #ef4444;
 }
-
-
-/* =========================================================
-   Responsividade do histórico/indicadores
-   ========================================================= */
 
 @media (max-width: 991px) {
     .history-layout {
@@ -2008,11 +1902,6 @@ a {
         font-size: 23px;
     }
 }
-
-
-/* =========================================================
-   Celebrações / primeiro acesso / mudança de nível
-   ========================================================= */
 
 .celebration-overlay {
     position: fixed;
@@ -2444,11 +2333,6 @@ a {
     }
 }
 
-
-/* =========================================================
-   Sino / dropdown de notificações
-   ========================================================= */
-
 .notification-bell-btn {
     position: relative;
     color: #4b5563;
@@ -2627,11 +2511,6 @@ a {
     background: #f3f4f6;
     color: #4b5563;
 }
-
-
-/* =========================================================
-   Central de notificações
-   ========================================================= */
 
 .notification-filter-bar {
     display: inline-flex;
@@ -2814,11 +2693,6 @@ a {
     }
 }
 
-
-/* =========================================================
-   PWA / instalação
-   ========================================================= */
-
 body {
     padding-top: env(safe-area-inset-top);
 }
@@ -2992,11 +2866,6 @@ body {
     }
 }
 
-
-/* =========================================================
-   Login Google
-   ========================================================= */
-
 .btn-google {
     position: relative;
     min-height: 52px;
@@ -3101,11 +2970,6 @@ body {
         #f97316
     );
 }
-
-
-/* =========================================================
-   Sugestões por idade
-   ========================================================= */
 
 .form-page-wide {
     max-width: 940px;
@@ -3218,11 +3082,6 @@ body {
     font-size: 12px;
 }
 
-
-/* =========================================================
-   Seletor de habilidades
-   ========================================================= */
-
 .skills-picker {
     padding: 18px;
     border: 1px solid #e6e7ec;
@@ -3332,11 +3191,6 @@ body {
     background: #4f46e5;
 }
 
-
-/* =========================================================
-   Skills visíveis nas tarefas
-   ========================================================= */
-
 .task-skill-pills,
 .routine-skills {
     display: flex;
@@ -3377,11 +3231,6 @@ body {
     background: #faf8ff;
     border: 1px solid #e9ddff;
 }
-
-
-/* =========================================================
-   Painel de habilidades
-   ========================================================= */
 
 .skill-disclaimer {
     padding: 12px 14px;
@@ -3616,11 +3465,6 @@ body {
     background: #f3e8ff;
 }
 
-
-/* =========================================================
-   Responsividade Skills
-   ========================================================= */
-
 @media (max-width: 991px) {
     .skills-overview-grid {
         grid-template-columns: 1fr;
@@ -3680,11 +3524,6 @@ body {
         width: 100%;
     }
 }
-
-
-/* =========================================================
-   Ajustes: replicação, sugestões com ícones e penalidade
-   ========================================================= */
 
 .replicate-option {
     padding: 16px;
@@ -3767,11 +3606,6 @@ body {
         font-size: 20px;
     }
 }
-
-
-/* =========================================================
-   Campo Tarefa com opções pré-definidas
-   ========================================================= */
 
 .predefined-task-picker {
     border: 1px solid #e4e5ea;
@@ -3917,11 +3751,6 @@ body {
         min-height: 64px;
     }
 }
-
-
-/* =========================================================
-   V2 — Recompensas, conquistas, família e horários
-   ========================================================= */
 
 .reward-hero {
     padding: 22px;
@@ -4088,9 +3917,6 @@ body {
     display: flex;
     flex-direction: column;
 }
-
-
-/* Conquistas e streak */
 
 .streak-grid {
     display: grid;
@@ -4259,9 +4085,6 @@ body {
     font-weight: 700;
 }
 
-
-/* Família e responsáveis */
-
 .family-grid {
     display: grid;
     grid-template-columns:
@@ -4335,9 +4158,6 @@ body {
     letter-spacing: .12em;
 }
 
-
-/* Momento da rotina */
-
 .task-timing-card {
     padding: 16px;
     border: 1px solid #dbeafe;
@@ -4349,9 +4169,6 @@ body {
             #ffffff
         );
 }
-
-
-/* Novos tipos de notificação */
 
 .notification-achievement {
     color: #a16207;
@@ -4367,7 +4184,6 @@ body {
     color: #1d4ed8;
     background: #dbeafe;
 }
-
 
 @media (max-width: 991px) {
     .reward-grid {
@@ -4413,11 +4229,6 @@ body {
         grid-template-columns: 1fr;
     }
 }
-
-
-/* =========================================================
-   V2.1 — Destaques de resgates e conquistas
-   ========================================================= */
 
 .reward-spotlight,
 .achievement-spotlight {
@@ -4511,11 +4322,6 @@ body {
         font-size: 28px;
     }
 }
-
-
-/* =========================================================
-   Login — Google + mostrar/ocultar senha
-   ========================================================= */
 
 .password-field {
     position: relative;
@@ -4656,10 +4462,6 @@ body {
     line-height: 1.4;
 }
 
-/* =========================================================
-   Wizard de rotinas — fluxo simples e progressivo
-   ========================================================= */
-
 .routine-wizard-card {
     padding: 22px;
 }
@@ -4707,6 +4509,86 @@ body {
 
 .routine-wizard-step.active {
     display: block;
+}
+
+.wizard-selected-task {
+    margin: -4px 0 20px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    border: 1px solid #e0e4f2;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fafaff, #f6f7ff);
+}
+
+.wizard-selected-task-icon {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #4f46e5;
+    background: #eef2ff;
+    font-size: 17px;
+}
+
+.wizard-selected-task-body {
+    min-width: 0;
+    flex: 1;
+}
+
+.wizard-selected-task-label,
+.wizard-selected-task-body strong,
+.wizard-selected-task-body p {
+    display: block;
+}
+
+.wizard-selected-task-label {
+    margin-bottom: 2px;
+    color: #7b8190;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.wizard-selected-task-body strong {
+    color: #252b38;
+    font-size: 13px;
+    font-weight: 850;
+    line-height: 1.3;
+}
+
+.wizard-selected-task-body p {
+    margin: 3px 0 0;
+    color: #626a78;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.wizard-selected-task-body p.is-empty {
+    color: #9298a3;
+    font-style: italic;
+}
+
+.wizard-selected-task-skills {
+    margin-top: 7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.wizard-selected-task-skill {
+    padding: 3px 7px;
+    border: 1px solid #e1e5f5;
+    border-radius: 999px;
+    color: #57518a;
+    background: #fff;
+    font-size: 8px;
+    font-weight: 750;
 }
 
 .wizard-section-title {
@@ -4939,6 +4821,18 @@ body {
         padding: 17px;
     }
 
+    .wizard-selected-task {
+        padding: 11px 12px;
+    }
+
+    .wizard-selected-task-body strong {
+        font-size: 12px;
+    }
+
+    .wizard-selected-task-body p {
+        font-size: 9.5px;
+    }
+
     .wizard-skills-grid {
         grid-template-columns: 1fr;
     }
@@ -4951,10 +4845,6 @@ body {
         flex: 1;
     }
 }
-
-/* =========================================================
-   Rotina — origem da tarefa, equilíbrio de Skills e cards
-   ========================================================= */
 
 .skill-emphasis-box {
     margin-bottom: 18px;
@@ -5367,11 +5257,6 @@ body {
     }
 }
 
-/* =========================================================
-   Rotina wizard V2 — responsivo, fontes de sugestão e ícones
-   ========================================================= */
-
-/* Mantém a etapa arejada em desktop sem esticar demais o conteúdo. */
 .routine-wizard-card {
     overflow: hidden;
 }
@@ -5438,7 +5323,6 @@ body {
     font-size: 9px;
 }
 
-/* Os três modos permanecem visíveis ao mesmo tempo. */
 .task-source-switcher {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5522,7 +5406,6 @@ body {
     font-size: 9px;
 }
 
-/* Cards de tarefas: duas colunas deixam título e skills legíveis. */
 .wizard-task-list,
 .wizard-ai-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5542,7 +5425,6 @@ body {
     overflow: hidden;
 }
 
-/* O emoji ocupa visualmente a altura das duas linhas do card. */
 .wizard-task-icon {
     width: 58px;
     min-width: 58px;
@@ -5621,7 +5503,6 @@ body {
     transform: translateY(-50%);
 }
 
-/* Diferencia a origem sem transformar o card inteiro em uma mancha de cor. */
 .wizard-task-option.origin-system {
     border-color: #dedcf1;
     background: linear-gradient(90deg, #fcfbff 0, #fff 26%);
@@ -5644,7 +5525,6 @@ body {
     background: #f5fcfe;
 }
 
-/* Tablet */
 @media (max-width: 900px) {
     .task-source-button {
         min-height: 64px;
@@ -5669,7 +5549,6 @@ body {
     }
 }
 
-/* Celular: os três modos continuam simultaneamente visíveis. */
 @media (max-width: 767px) {
     .routine-wizard-card {
         padding: 14px;
@@ -5693,7 +5572,7 @@ body {
         border-radius: 13px;
     }
 
-    /* No celular, todas as Skills devem ficar visíveis sem depender de rolagem horizontal. */
+    
     .skill-emphasis-options {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5717,7 +5596,7 @@ body {
         text-align: left;
     }
 
-    /* O modo automático funciona como cabeçalho/opção geral e ocupa a linha inteira. */
+    
     .skill-emphasis-chip[data-emphasis-auto="true"] {
         grid-column: 1 / -1;
         width: max-content;
@@ -5860,12 +5739,6 @@ body {
     }
 }
 
-/* =========================================================
-   Tipografia V3 — escala unificada e legibilidade
-   Objetivo: evitar textos excessivamente pequenos e manter
-   a mesma hierarquia visual entre desktop, tablet e celular.
-   ========================================================= */
-
 :root {
     --font-body: 16px;
     --font-control: 15px;
@@ -5882,7 +5755,6 @@ body {
     line-height: 1.5;
 }
 
-/* Controles e textos auxiliares seguem uma escala comum. */
 .form-control,
 .form-select,
 .btn {
@@ -5926,7 +5798,6 @@ small,
     font-size: var(--font-small);
 }
 
-/* Badges continuam compactos, mas nunca microscópicos. */
 .soon-badge,
 .avatar-level-badge,
 .access-badge,
@@ -5943,7 +5814,6 @@ small,
     font-size: var(--font-badge);
 }
 
-/* Histórico, notificações e cartões informativos. */
 .weekday-chip span,
 .review-count,
 .completion-ring span,
@@ -5982,7 +5852,6 @@ small,
     font-size: 11px;
 }
 
-/* Sugestões, tarefas e Skills. */
 .suggestion-category,
 .suggestion-points,
 .suggestion-skill-pill,
@@ -6014,10 +5883,6 @@ small,
 .kid-game-card strong {
     font-size: var(--font-small);
 }
-
-/* =========================================================
-   Wizard de rotina — tipografia coerente em todas as etapas
-   ========================================================= */
 
 .routine-wizard-head h1 {
     font-size: clamp(1.55rem, 3vw, 1.9rem);
@@ -6102,11 +5967,6 @@ small,
     font-size: 11px;
     line-height: 1.2;
 }
-
-/* =========================================================
-   Mobile — mantém leitura confortável sem aumentar demais
-   a altura das telas.
-   ========================================================= */
 
 @media (max-width: 767px) {
     .app-content {
@@ -6212,11 +6072,6 @@ small,
         font-size: 9px;
     }
 }
-
-/* =========================================================
-   Rotina — status das Skills de ênfase no responsivo
-   Evita que "PRIORIDADE" / "MUITO USADA" invadam o card vizinho.
-   ========================================================= */
 
 @media (max-width: 767px) {
     .skill-emphasis-chip:not([data-emphasis-auto="true"]) {

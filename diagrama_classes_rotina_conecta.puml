@@ -1,0 +1,341 @@
+@startuml
+title Diagrama de Classes — Gestor Gamificado de Rotinas Infantis
+
+left to right direction
+scale max 1350 width
+
+skinparam monochrome true
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype polyline
+skinparam nodesep 22
+skinparam ranksep 26
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam ArrowThickness 1
+skinparam packageTitleAlignment center
+
+hide circle
+hide empty members
+
+
+package "1. Autenticação e Núcleo Familiar" as CORE {
+
+    class Familia {
+        + nome: String
+        + criada_em: DateTime
+    }
+
+    class PerfilCrianca {
+        + nome: String
+        + data_nascimento: Date [0..1]
+        + acesso_proprio: Boolean
+        + avatar_tipo: AvatarTipo
+        + saldo_pontos: Integer
+        + pontos_experiencia: Integer
+        --
+        + /nome_exibicao: String
+        + /avatar_emoji: String
+        + /avatar_nivel: Integer
+        + /avatar_titulo_nivel: String
+        + /pontos_para_proximo_nivel: Integer
+        + /avatar_progresso_percentual: Integer
+    }
+
+    class ConviteTutor {
+        + codigo: String
+        + criado_por: Usuario
+        + usado_por: Usuario [0..1]
+        + expira_em: DateTime
+        + ativo: Boolean
+        --
+        + /expirado: Boolean
+        + /disponivel: Boolean
+    }
+
+    class Usuario {
+        + tipo: TipoUsuario
+        + boas_vindas_exibidas: Boolean
+        + privacidade_aceita_em: DateTime [0..1]
+        + privacidade_versao: String
+        --
+        + /privacidade_pendente: Boolean
+    }
+
+    abstract class AbstractUser <<Django>> {
+        + username: String
+        + password: String {hash}
+        + email: String
+        + first_name: String
+        + last_name: String
+        + is_active: Boolean
+        + last_login: DateTime [0..1]
+    }
+
+    Familia -[hidden]right-> PerfilCrianca
+    Familia -[hidden]down-> Usuario
+    PerfilCrianca -[hidden]left-> ConviteTutor
+    Usuario -[hidden]down-> AbstractUser
+}
+
+AbstractUser <|-- Usuario
+Usuario "0..*" -- "0..*" Familia : tutores
+Familia "1" *-- "0..*" PerfilCrianca : crianças
+Usuario "0..1" -- "0..1" PerfilCrianca : conta
+Familia "1" -- "0..*" ConviteTutor : convites
+
+
+package "2. Planejamento e Execução de Tarefas" as TASKS {
+
+    class SugestaoTarefa {
+        + icone: String
+        + titulo: String
+        + categoria: CategoriaSugestao
+        + idade_minima: Integer
+        + idade_maxima: Integer
+        + pontos_sugeridos: Integer
+        + frequencia_sugerida: Frequencia
+        + ativa: Boolean
+        --
+        + /dias_semana_lista: List<Integer>
+    }
+
+    class MoldeTarefa {
+        + titulo: String
+        + descricao: String
+        + pontos_base: Integer
+        + frequencia: Frequencia
+        + dias_semana: String
+        + periodo: PeriodoTarefa
+        + horario: Time [0..1]
+        + lembrete_ativo: Boolean
+        + ativa: Boolean
+        + criado_por: Usuario
+        --
+        + /frequencia_resumo: String
+        + /momento_resumo: String
+        + /horario_lembrete: Time [0..1]
+        + deve_gerar_em(data: Date): Boolean
+    }
+
+    class InstanciaTarefa {
+        + criada_por: Usuario [0..1]
+        + revisada_por: Usuario [0..1]
+        + origem: OrigemTarefa
+        + titulo: String
+        + pontos_base: Integer
+        + periodo: PeriodoTarefa
+        + horario: Time [0..1]
+        + data_referencia: Date
+        + status: StatusTarefa
+        + foto: Image [0..1]
+        + enviada_em: DateTime [0..1]
+        + feedback_tutor: String
+        + pontos_concedidos: Integer [0..1]
+        --
+        + /procrastinou: Boolean
+        + /momento_resumo: String
+        + /pode_enviar_comprovante: Boolean
+        + /finalizada: Boolean
+    }
+
+    SugestaoTarefa -[hidden]down-> MoldeTarefa
+    MoldeTarefa -[hidden]down-> InstanciaTarefa
+}
+
+Familia "1" -- "0..*" MoldeTarefa : possui
+PerfilCrianca "1" -- "0..*" MoldeTarefa : recebe
+Familia "1" -- "0..*" InstanciaTarefa : possui
+PerfilCrianca "1" -- "0..*" InstanciaTarefa : executa
+MoldeTarefa "0..1" -- "0..*" InstanciaTarefa : gera
+
+
+package "3. Habilidades e Desenvolvimento" as SKILLS {
+
+    class Skill {
+        + nome: String
+        + slug: String
+        + icone: String
+        + descricao: String
+        + ativa: Boolean
+        + ordem: Integer
+        --
+        + {static} xp_por_impacto(impacto: Integer): Integer
+        + {static} simbolo_impacto(impacto: Integer): String
+    }
+
+    class SugestaoTarefaSkill {
+        + impacto: ImpactoSkill
+    }
+
+    class MoldeTarefaSkill {
+        + impacto: ImpactoSkill
+        --
+        + /impacto_simbolo: String
+    }
+
+    class InstanciaTarefaSkill {
+        + nome_snapshot: String
+        + icone_snapshot: String
+        + impacto: ImpactoSkill
+        + xp_planejado: Integer
+        --
+        + /impacto_simbolo: String
+    }
+
+    class ProgressoSkill {
+        + xp_total: Integer
+        + atualizado_em: DateTime
+        --
+        + /nivel_atual: Integer
+        + /titulo_nivel: String
+        + /progresso_percentual: Integer
+        + /xp_para_proximo_nivel: Integer
+    }
+
+    class MovimentoSkill {
+        + xp: Integer
+        + nivel_antes: Integer
+        + nivel_depois: Integer
+        + criado_em: DateTime
+        --
+        + /houve_evolucao: Boolean
+    }
+
+    SugestaoTarefaSkill -[hidden]right-> MoldeTarefaSkill
+    MoldeTarefaSkill -[hidden]right-> InstanciaTarefaSkill
+    MoldeTarefaSkill -[hidden]down-> Skill
+    Skill -[hidden]down-> ProgressoSkill
+    ProgressoSkill -[hidden]right-> MovimentoSkill
+}
+
+SugestaoTarefa "1" -- "0..*" SugestaoTarefaSkill
+Skill "1" -- "0..*" SugestaoTarefaSkill
+
+MoldeTarefa "1" -- "0..*" MoldeTarefaSkill
+Skill "1" -- "0..*" MoldeTarefaSkill
+
+InstanciaTarefa "1" -- "0..*" InstanciaTarefaSkill
+Skill "1" -- "0..*" InstanciaTarefaSkill
+
+PerfilCrianca "1" -- "0..*" ProgressoSkill : desenvolve
+Skill "1" -- "0..*" ProgressoSkill
+
+PerfilCrianca "1" -- "0..*" MovimentoSkill
+Skill "1" -- "0..*" MovimentoSkill
+InstanciaTarefa "0..1" -- "0..*" MovimentoSkill : gera XP
+
+
+package "4. Pontuação e Comunicação" as POINTS {
+
+    class MovimentoPontos {
+        + registrado_por: Usuario [0..1]
+        + tipo: TipoMovimentoPontos
+        + pontos: Integer
+        + saldo_apos: Integer
+        + nivel_antes: Integer
+        + nivel_depois: Integer
+        + criado_em: DateTime
+        --
+        + /houve_evolucao: Boolean
+    }
+
+    class NotificacaoSistema {
+        + usuario_destino: Usuario
+        + tipo: TipoNotificacao
+        + titulo: String
+        + mensagem: String
+        + nivel_anterior: Integer [0..1]
+        + nivel_novo: Integer [0..1]
+        + visualizada: Boolean
+        + criada_em: DateTime
+        --
+        + /icone_bootstrap: String
+        + /classe_visual: String
+        + to_evento(): Dictionary
+    }
+
+    MovimentoPontos -[hidden]right-> NotificacaoSistema
+}
+
+PerfilCrianca "1" -- "0..*" MovimentoPontos : saldo
+InstanciaTarefa "0..1" -- "0..1" MovimentoPontos : gera
+
+PerfilCrianca "0..1" -- "0..*" NotificacaoSistema : recebe
+InstanciaTarefa "0..1" -- "0..*" NotificacaoSistema : referência
+Skill "0..1" -- "0..*" NotificacaoSistema : referência
+
+
+package "5. Recompensas e Conquistas" as REWARDS {
+
+    class Recompensa {
+        + criada_por: Usuario
+        + titulo: String
+        + descricao: String
+        + icone: String
+        + custo_pontos: Integer
+        + categoria: CategoriaRecompensa
+        + ativa: Boolean
+    }
+
+    class ResgateRecompensa {
+        + titulo_snapshot: String
+        + icone_snapshot: String
+        + custo_snapshot: Integer
+        + status: StatusResgate
+        + solicitado_em: DateTime
+        + concluido_em: DateTime [0..1]
+    }
+
+    class Conquista {
+        + slug: String
+        + nome: String
+        + descricao: String
+        + icone: String
+        + ativa: Boolean
+    }
+
+    class ConquistaCrianca {
+        + desbloqueada_em: DateTime
+    }
+
+    Recompensa -[hidden]down-> ResgateRecompensa
+    Recompensa -[hidden]right-> Conquista
+    Conquista -[hidden]down-> ConquistaCrianca
+}
+
+Familia "1" -- "0..*" Recompensa : oferece
+PerfilCrianca "1" -- "0..*" ResgateRecompensa : solicita
+Recompensa "0..1" -- "0..*" ResgateRecompensa : item
+
+PerfilCrianca "1" -- "0..*" ConquistaCrianca : desbloqueia
+Conquista "1" -- "0..*" ConquistaCrianca : conquista
+
+MovimentoPontos "0..1" -- "0..1" ResgateRecompensa : débito
+
+
+TASKS -[hidden]right-> SKILLS
+
+CORE -[hidden]right-> POINTS
+
+REWARDS -[hidden]right-> POINTS
+
+TASKS -[hidden]down-> CORE
+SKILLS -[hidden]down-> POINTS
+POINTS -[hidden]down-> REWARDS
+
+PerfilCrianca -[hidden]right-> MovimentoPontos
+InstanciaTarefa -[hidden]right-> NotificacaoSistema
+PerfilCrianca -[hidden]down-> Recompensa
+
+note bottom of POINTS
+Os tipos enumerados são mantidos nos atributos
+(TipoUsuario, AvatarTipo, Frequencia, PeriodoTarefa,
+OrigemTarefa, StatusTarefa, CategoriaSugestao,
+ImpactoSkill, TipoMovimentoPontos, TipoNotificacao,
+CategoriaRecompensa e StatusResgate), mas seus valores
+foram omitidos para melhorar a legibilidade em A4.
+end note
+
+@enduml

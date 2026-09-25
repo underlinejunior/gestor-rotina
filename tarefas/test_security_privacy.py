@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
@@ -21,7 +21,7 @@ def imagem_jpeg_bytes():
     return buffer.getvalue()
 
 
-class PrivateEvidenceSecurityTests(TestCase):
+class PrivateEvidenceSecurityTests(TransactionTestCase):
     def setUp(self):
         self.temp_media = TemporaryDirectory()
         self.media_override = override_settings(MEDIA_ROOT=self.temp_media.name)
@@ -63,8 +63,6 @@ class PrivateEvidenceSecurityTests(TestCase):
         )
 
     def tearDown(self):
-        # Garante que qualquer FieldFile aberto pelo próprio objeto de teste
-        # seja fechado antes de remover o MEDIA_ROOT temporário no Windows.
         try:
             self.tarefa.foto.close()
         except (AttributeError, ValueError):
@@ -74,21 +72,8 @@ class PrivateEvidenceSecurityTests(TestCase):
         self.temp_media.cleanup()
 
     @staticmethod
-    def _consumir_e_fechar_file_response(resposta):
-        """Consome o streaming e fecha o arquivo antes do tearDown.
-
-        O Django Test Client mantém FileResponse como resposta de streaming.
-        No Windows, o arquivo não pode ser removido pelo TemporaryDirectory
-        enquanto o iterator de streaming ainda mantém o handle aberto.
-        Consumir o conteúdo dispara o fechamento do wrapper do Test Client;
-        o close() no finally deixa a liberação explícita e idempotente.
-        """
-        try:
-            if getattr(resposta, "streaming", False):
-                return b"".join(resposta.streaming_content)
-            return resposta.content
-        finally:
-            resposta.close()
+    def _ler_e_fechar_arquivo(resposta):
+        return b"".join(resposta.streaming_content)
 
     def test_evidencia_exige_autenticacao(self):
         resposta = self.client.get(
@@ -107,7 +92,7 @@ class PrivateEvidenceSecurityTests(TestCase):
         self.assertIn("no-store", resposta["Cache-Control"])
         self.assertEqual(resposta["X-Content-Type-Options"], "nosniff")
 
-        conteudo = self._consumir_e_fechar_file_response(resposta)
+        conteudo = self._ler_e_fechar_arquivo(resposta)
         self.assertGreater(len(conteudo), 0)
 
     def test_crianca_acessa_somente_a_propria_evidencia(self):
@@ -117,7 +102,7 @@ class PrivateEvidenceSecurityTests(TestCase):
         )
         self.assertEqual(resposta.status_code, 200)
 
-        conteudo = self._consumir_e_fechar_file_response(resposta)
+        conteudo = self._ler_e_fechar_arquivo(resposta)
         self.assertGreater(len(conteudo), 0)
 
     def test_tutor_de_outra_familia_nao_acessa_evidencia(self):

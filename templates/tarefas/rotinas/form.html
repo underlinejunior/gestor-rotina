@@ -1,6 +1,6 @@
 {% extends "base_app.html" %}
 
-{% block title %}{{ titulo }} | Minha Rotina{% endblock %}
+{% block title %}{{ titulo }} | Rotina Conecta{% endblock %}
 
 {% block app_content %}
 <div class="form-page form-page-wide">
@@ -204,6 +204,18 @@
             </section>
 
             <section class="routine-wizard-step" data-step="3">
+                <div class="wizard-selected-task" data-selected-task-summary>
+                    <span class="wizard-selected-task-icon" aria-hidden="true">
+                        <i class="bi bi-check2-circle"></i>
+                    </span>
+                    <div class="wizard-selected-task-body">
+                        <span class="wizard-selected-task-label">Tarefa selecionada</span>
+                        <strong data-selected-task-title></strong>
+                        <p data-selected-task-description></p>
+                        <div class="wizard-selected-task-skills" data-selected-task-skills></div>
+                    </div>
+                </div>
+
                 <div class="wizard-section-title">
                     <h2>Quando fazer?</h2>
                 </div>
@@ -268,6 +280,18 @@
             </section>
 
             <section class="routine-wizard-step" data-step="4">
+                <div class="wizard-selected-task" data-selected-task-summary>
+                    <span class="wizard-selected-task-icon" aria-hidden="true">
+                        <i class="bi bi-check2-circle"></i>
+                    </span>
+                    <div class="wizard-selected-task-body">
+                        <span class="wizard-selected-task-label">Tarefa selecionada</span>
+                        <strong data-selected-task-title></strong>
+                        <p data-selected-task-description></p>
+                        <div class="wizard-selected-task-skills" data-selected-task-skills></div>
+                    </div>
+                </div>
+
                 {% include "gamificacao/habilidades/_seletor_skills.html" %}
 
                 <label class="wizard-switch-row mt-4" for="{{ form.ativa.id_for_label }}">
@@ -350,6 +374,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (currentStep === 2 && currentSource === "system") {
             carregarSugestoes(6);
         }
+        if (currentStep >= 3) atualizarResumoTarefa();
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -402,6 +427,48 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-wizard-back]").forEach(function (button) {
         button.addEventListener("click", function () { showStep(currentStep - 1); });
     });
+
+    function atualizarResumoTarefa() {
+        const tituloAtual = titulo ? titulo.value.trim() : "";
+        const descricaoAtual = descricao ? descricao.value.trim() : "";
+        const skillsAtivas = [];
+
+        document.querySelectorAll(".wizard-skill-row").forEach(function (card) {
+            const input = card.querySelector('input[id^="skill-impact-"]');
+            if (!input || Number(input.value) <= 0) return;
+            const nome = card.querySelector(".wizard-skill-name strong");
+            const icone = card.querySelector(".wizard-skill-name span");
+            if (nome) {
+                skillsAtivas.push({
+                    nome: nome.textContent.trim(),
+                    icone: icone ? icone.textContent.trim() : ""
+                });
+            }
+        });
+
+        document.querySelectorAll("[data-selected-task-summary]").forEach(function (resumo) {
+            const tituloResumo = resumo.querySelector("[data-selected-task-title]");
+            const descricaoResumo = resumo.querySelector("[data-selected-task-description]");
+            const skillsResumo = resumo.querySelector("[data-selected-task-skills]");
+
+            if (tituloResumo) tituloResumo.textContent = tituloAtual || "Tarefa ainda não informada";
+            if (descricaoResumo) {
+                descricaoResumo.textContent = descricaoAtual || "Sem descrição adicional.";
+                descricaoResumo.classList.toggle("is-empty", !descricaoAtual);
+            }
+
+            if (skillsResumo) {
+                skillsResumo.innerHTML = "";
+                skillsAtivas.forEach(function (skill) {
+                    const chip = document.createElement("span");
+                    chip.className = "wizard-selected-task-skill";
+                    chip.textContent = (skill.icone ? skill.icone + " " : "") + skill.nome;
+                    skillsResumo.appendChild(chip);
+                });
+                skillsResumo.classList.toggle("d-none", !skillsAtivas.length);
+            }
+        });
+    }
 
     function contextoDaRotina() {
         const contextos = {
@@ -527,6 +594,7 @@ document.addEventListener("DOMContentLoaded", function () {
             button.classList.toggle("active", Number(button.dataset.impact) === Number(impacto));
         });
         if (card) card.classList.toggle("has-impact", Number(impacto) > 0);
+        atualizarResumoTarefa();
     }
 
     function limparSkills() {
@@ -587,6 +655,7 @@ document.addEventListener("DOMContentLoaded", function () {
         aplicarSkills(item.skills || []);
         atualizarDias();
         marcarTarefaSelecionada(origem === "ia" ? item.id : "catalogo-" + item.id);
+        atualizarResumoTarefa();
         stepAlert(2, "");
     }
 
@@ -779,8 +848,11 @@ document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll(".wizard-task-option.active").forEach(function (button) {
                 button.classList.remove("active");
             });
+            atualizarResumoTarefa();
         });
     }
+
+    if (descricao) descricao.addEventListener("input", atualizarResumoTarefa);
 
     if (form) {
         form.addEventListener("submit", function (event) {
@@ -797,6 +869,7 @@ document.addEventListener("DOMContentLoaded", function () {
     atualizarDias();
     atualizarHorario();
     atualizarBotoesEnfase();
+    atualizarResumoTarefa();
     selectSource(currentSource);
 
     const firstErrorStep = steps.find(function (step) {

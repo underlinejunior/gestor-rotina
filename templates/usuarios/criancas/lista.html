@@ -1,6 +1,15 @@
 {% extends "base_app.html" %}
+{% load static %}
 
-{% block title %}Crianças | Minha Rotina{% endblock %}
+{% block title %}Crianças | Rotina Conecta{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link
+    rel="stylesheet"
+    href="{% static 'css/child_summary_card.css' %}?v=20260924-delivery"
+>
+{% endblock %}
 
 {% block app_content %}
 
@@ -22,6 +31,7 @@
         class="btn btn-primary"
     >
         <i class="bi bi-plus-lg"></i>
+
         <span class="d-none d-sm-inline">
             Nova criança
         </span>
@@ -34,104 +44,13 @@
 
     {% if criancas %}
 
-        {% for perfil in criancas %}
+        <div class="children-unified-list">
 
-            <div class="child-list-item">
+            {% for perfil in criancas %}
+                {% include "usuarios/partials/crianca_card_resumo.html" with perfil=perfil %}
+            {% endfor %}
 
-                {% include "usuarios/partials/avatar.html" with perfil=perfil %}
-
-
-                <div class="flex-grow-1 min-w-0">
-
-                    <div class="fw-bold text-truncate">
-                        {{ perfil.nome_exibicao }}
-                    </div>
-
-                    <div class="small text-muted">
-                        {{ perfil.avatar_titulo_nivel }}
-                        · {{ perfil.saldo_pontos }} pontos
-                    </div>
-
-
-                    <div class="avatar-progress mt-2">
-                        <div
-                            class="avatar-progress-bar"
-                            style="width: {{ perfil.avatar_progresso_percentual }}%;"
-                        ></div>
-                    </div>
-
-
-                    <div class="mt-2">
-
-                        {% if perfil.acesso_proprio %}
-                            <span class="access-badge access-own">
-                                <i class="bi bi-phone"></i>
-                                Acesso próprio
-                            </span>
-                        {% else %}
-                            <span class="access-badge access-tutor">
-                                <i class="bi bi-person-check"></i>
-                                Somente Tutor
-                            </span>
-                        {% endif %}
-
-                    </div>
-
-                </div>
-
-
-                <div class="child-actions">
-
-                    <a
-                        href="{% url 'tarefas_crianca_tutor' perfil.id %}"
-                        class="btn btn-light btn-icon"
-                        title="Tarefas de hoje"
-                        aria-label="Tarefas de {{ perfil.nome_exibicao }}"
-                    >
-                        <i class="bi bi-check2-square"></i>
-                    </a>
-
-                    <a
-                        href="{% url 'habilidades_crianca_tutor' perfil.id %}"
-                        class="btn btn-light btn-icon"
-                        title="Habilidades"
-                        aria-label="Habilidades de {{ perfil.nome_exibicao }}"
-                    >
-                        <i class="bi bi-graph-up-arrow"></i>
-                    </a>
-
-                    <a
-                        href="{% url 'historico_crianca_tutor' perfil.id %}"
-                        class="btn btn-light btn-icon"
-                        title="Histórico"
-                        aria-label="Histórico de {{ perfil.nome_exibicao }}"
-                    >
-                        <i class="bi bi-clock-history"></i>
-                    </a>
-
-                    <a
-                        href="{% url 'relatorio_semanal_crianca' perfil.id %}"
-                        class="btn btn-light btn-icon"
-                        title="Relatório semanal / PDF"
-                        aria-label="Relatório semanal de {{ perfil.nome_exibicao }}"
-                    >
-                        <i class="bi bi-file-earmark-pdf"></i>
-                    </a>
-
-                    <a
-                        href="{% url 'crianca_editar' perfil.id %}"
-                        class="btn btn-light btn-icon"
-                        title="Editar perfil"
-                        aria-label="Editar {{ perfil.nome_exibicao }}"
-                    >
-                        <i class="bi bi-pencil"></i>
-                    </a>
-
-                </div>
-
-            </div>
-
-        {% endfor %}
+        </div>
 
     {% else %}
 

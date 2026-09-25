@@ -36,7 +36,7 @@ python manage.py test -v 2
 | RF02 | Gestão e vínculo de perfis infantis | `test_rf02_perfil_pode_existir_sem_login_proprio`; `test_rf02_formulario_cria_usuario_infantil_quando_acesso_proprio_ativo`; testes de convite e isolamento entre famílias |
 | RF03 | Cadastro e comportamento dos moldes de tarefas | Testes de recorrência diária/semanal, horário/lembrete e replicação para todas as crianças |
 | RF04 | Tarefas bônus | `RF04RF06GeracaoESnapshotTests.test_rf04_tutor_cria_tarefa_bonus` |
-| RF05 | Sugestões por IA | **Ainda não implementado; não possui teste de aceite** |
+| RF05 | Sugestões por IA | Testes de interpretação do JSON, filtragem de Skills inválidas e falha controlada quando a chave Gemini não está configurada |
 | RF06 | Geração automática das tarefas do dia | `test_rf06_geracao_diaria_e_idempotente_e_copia_snapshot` |
 | RF07 | Visualização das tarefas pela criança | `test_rf07_crianca_visualiza_somente_as_proprias_tarefas` |
 | RF08 | Registro de conclusão por foto | `test_rf08_envio_de_evidencia_move_tarefa_para_revisao` |
@@ -88,7 +88,7 @@ Essas questões exigiriam métodos de pesquisa específicos e permanecem fora do
 
 ## Segurança, privacidade e LGPD — validação técnica
 
-A atualização de segurança acrescenta **15 testes automatizados**, elevando a suíte prevista de 36 para **51 testes** quando todos os módulos são descobertos pelo Django.
+A atualização de segurança acrescenta **15 testes automatizados**, elevando a suíte automatizada para **54 testes** quando todos os módulos são descobertos pelo Django.
 
 | Aspecto | Evidência automatizada |
 |---|---|

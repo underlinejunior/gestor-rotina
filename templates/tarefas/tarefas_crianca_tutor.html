@@ -1,161 +1,402 @@
 {% extends "base_app.html" %}
 
-{% block title %}Tarefas de {{ perfil.nome_exibicao }} | Minha Rotina{% endblock %}
+{% block title %}Tarefas de {{ perfil.nome_exibicao }} | Rotina Conecta{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .tutor-tasks-page {
+        width: 100%;
+    }
+
+    .tutor-task-list {
+        display: grid;
+        gap: 14px;
+    }
+
+    .tutor-task-card {
+        width: 100%;
+        padding: 17px 18px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid var(--cor-borda);
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 6px 20px rgba(31, 41, 55, .035);
+        overflow: hidden;
+    }
+
+    .tutor-task-content {
+        min-width: 0;
+    }
+
+    .tutor-task-topline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .tutor-task-title {
+        margin: 0;
+        color: var(--cor-texto);
+        font-size: 18px;
+        font-weight: 900;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .tutor-task-description {
+        margin: 6px 0 0;
+        max-width: 760px;
+        color: var(--cor-texto-secundario);
+        font-size: 13px;
+        line-height: 1.45;
+        overflow-wrap: break-word;
+    }
+
+    .tutor-task-skills {
+        margin-top: 9px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .tutor-task-skill {
+        padding: 5px 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid #e6e3f5;
+        border-radius: 999px;
+        color: #5d5870;
+        background: #faf9ff;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.1;
+    }
+
+    .tutor-task-status-row {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+    }
+
+    .tutor-task-status {
+        padding: 4px 8px;
+        border-radius: 999px;
+        color: #626a79;
+        background: #f3f4f6;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .tutor-task-points {
+        min-width: 92px;
+        padding: 8px 10px;
+        display: inline-grid;
+        grid-template-columns: auto auto;
+        grid-template-areas:
+            "icon number"
+            "icon label";
+        align-items: center;
+        justify-content: center;
+        column-gap: 6px;
+        border: 1px solid #f0dfa7;
+        border-radius: 13px;
+        color: #7a5c00;
+        background: #fff9df;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .tutor-task-points i {
+        grid-area: icon;
+        color: #d2a000;
+        font-size: 15px;
+    }
+
+    .tutor-task-points strong {
+        grid-area: number;
+        color: #6d5200;
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+    .tutor-task-points small {
+        grid-area: label;
+        margin-top: 2px;
+        color: #907522;
+        font-size: 7.5px;
+        font-weight: 850;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .tutor-task-action {
+        min-width: 152px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .tutor-task-action .btn {
+        min-height: 44px;
+        padding: 10px 15px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        white-space: nowrap;
+        font-weight: 800;
+    }
+
+    .tutor-task-action .status-pill {
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    @media (max-width: 900px) {
+        .tutor-task-card {
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: start;
+        }
+
+        .tutor-task-action {
+            grid-column: 1 / -1;
+            width: 100%;
+            min-width: 0;
+            justify-content: stretch;
+        }
+
+        .tutor-task-action .btn,
+        .tutor-task-action .status-pill {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .page-heading {
+            gap: 12px;
+        }
+
+        .page-heading > div:last-child {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .tutor-task-card {
+            padding: 14px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            border-radius: 18px;
+        }
+
+        .tutor-task-title {
+            font-size: 17px;
+        }
+
+        .tutor-task-description {
+            font-size: 12.5px;
+        }
+
+        .tutor-task-points {
+            min-width: 72px;
+            padding: 7px;
+        }
+
+        .tutor-task-points strong {
+            font-size: 14px;
+        }
+
+        .tutor-task-points small {
+            font-size: 6.8px;
+        }
+
+        .tutor-task-action {
+            grid-column: 1 / -1;
+        }
+
+        .tutor-task-action .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
 
 {% block app_content %}
 
-<div class="page-heading">
+<div class="tutor-tasks-page">
 
-    <div>
-        <a
-            href="{% url 'criancas_listar' %}"
-            class="back-link mb-2"
-        >
-            <i class="bi bi-arrow-left"></i>
-            Crianças
-        </a>
+    <div class="page-heading">
 
-        <h1 class="h3 fw-bold mb-1">
-            Tarefas de {{ perfil.nome_exibicao }}
-        </h1>
+        <div>
+            <a
+                href="{% url 'criancas_listar' %}"
+                class="back-link mb-2"
+            >
+                <i class="bi bi-arrow-left"></i>
+                Crianças
+            </a>
 
-        <p class="text-muted mb-0">
-            {{ hoje|date:"d/m/Y" }} · O Tutor pode registrar a conclusão pelo próprio celular.
-        </p>
+            <h1 class="h3 fw-bold mb-1">
+                Tarefas de {{ perfil.nome_exibicao }}
+            </h1>
+
+            <p class="text-muted mb-0">
+                {{ hoje|date:"d/m/Y" }} · Registre a conclusão enviando a foto da tarefa.
+            </p>
+        </div>
+
+
+        <div class="d-flex align-items-center gap-2">
+            <a
+                href="{% url 'historico_crianca_tutor' perfil.id %}"
+                class="btn btn-light"
+            >
+                <i class="bi bi-clock-history"></i>
+                Histórico
+            </a>
+
+            {% include "usuarios/partials/avatar.html" with perfil=perfil %}
+        </div>
+
     </div>
 
 
-    <div class="d-flex align-items-center gap-2">
-        <a
-            href="{% url 'historico_crianca_tutor' perfil.id %}"
-            class="btn btn-light"
-        >
-            <i class="bi bi-clock-history"></i>
-            Histórico
-        </a>
+    {% if tarefas %}
 
-        {% include "usuarios/partials/avatar.html" with perfil=perfil %}
-    </div>
+        <div class="tutor-task-list">
 
-</div>
+            {% for tarefa in tarefas %}
+
+                <article class="tutor-task-card">
+
+                    <div class="tutor-task-content">
+
+                        <div class="tutor-task-topline">
+
+                            <h2 class="tutor-task-title">
+                                {{ tarefa.titulo }}
+                            </h2>
+
+                            {% if tarefa.origem == "BONUS" %}
+                                <span class="bonus-pill">
+                                    Bônus
+                                </span>
+                            {% endif %}
+
+                        </div>
 
 
-{% if tarefas %}
+                        {% if tarefa.descricao %}
+                            <p class="tutor-task-description">
+                                {{ tarefa.descricao }}
+                            </p>
+                        {% endif %}
 
-    <div class="task-list">
 
-        {% for tarefa in tarefas %}
+                        {% if tarefa.skills_snapshot.all %}
+                            <div class="tutor-task-skills">
+                                {% for skill in tarefa.skills_snapshot.all %}
+                                    <span class="tutor-task-skill">
+                                        {{ skill.icone_snapshot }}
+                                        {{ skill.nome_snapshot }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
 
-            <article class="task-card task-status-{{ tarefa.status|lower }}">
 
-                <div class="task-main">
+                        <div class="tutor-task-status-row">
+                            <span class="tutor-task-status">
+                                {{ tarefa.get_status_display }}
+                            </span>
+                        </div>
 
-                    <div class="d-flex flex-wrap align-items-center gap-2">
+                    </div>
 
-                        <h2 class="h5 fw-bold mb-0">
-                            {{ tarefa.titulo }}
-                        </h2>
 
-                        {% if tarefa.origem == "BONUS" %}
-                            <span class="bonus-pill">
-                                Bônus
+                    <div class="tutor-task-points">
+                        <i class="bi bi-star-fill"></i>
+                        <strong>{{ tarefa.pontos_base }}</strong>
+                        <small>pontos</small>
+                    </div>
+
+
+                    <div class="tutor-task-action">
+
+                        {% if tarefa.pode_enviar_comprovante %}
+                            <a
+                                href="{% url 'enviar_foto' tarefa.id %}"
+                                class="btn btn-primary"
+                            >
+                                {% if tarefa.status == "REJEITADA" %}
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    Tentar novamente
+                                {% else %}
+                                    <i class="bi bi-camera"></i>
+                                    Enviar foto
+                                {% endif %}
+                            </a>
+
+                        {% elif tarefa.status == "REVISAO" %}
+                            <a
+                                href="{% url 'revisao_detalhe' tarefa.id %}"
+                                class="btn btn-light"
+                            >
+                                <i class="bi bi-eye"></i>
+                                Revisar
+                            </a>
+
+                        {% elif tarefa.status == "APROVADA" %}
+                            <span class="status-pill status-approved">
+                                <i class="bi bi-check2-circle me-1"></i>
+                                Aprovada
                             </span>
                         {% endif %}
 
                     </div>
 
+                </article>
 
-                    {% if tarefa.descricao %}
-                        <p class="text-muted small mt-2 mb-2">
-                            {{ tarefa.descricao }}
-                        </p>
-                    {% endif %}
+            {% endfor %}
 
-
-                    {% if tarefa.skills_snapshot.all %}
-                        <div class="task-skill-pills task-skill-pills-inline mb-2">
-                            {% for skill in tarefa.skills_snapshot.all %}
-                                <span class="task-skill-pill">
-                                    {{ skill.icone_snapshot }}
-                                    {{ skill.nome_snapshot }}
-                                </span>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-
-                    <div class="task-meta">
-                        <span>
-                            <i class="bi bi-star-fill"></i>
-                            {{ tarefa.pontos_base }} pts
-                        </span>
-
-                        <span>
-                            {{ tarefa.get_status_display }}
-                        </span>
-                    </div>
-
-                </div>
-
-
-                <div class="task-action">
-
-                    {% if tarefa.pode_enviar_comprovante %}
-                        <a
-                            href="{% url 'enviar_foto' tarefa.id %}"
-                            class="btn btn-primary"
-                        >
-                            <i class="bi bi-camera"></i>
-                            Registrar conclusão
-                        </a>
-
-                    {% elif tarefa.status == "REVISAO" %}
-                        <a
-                            href="{% url 'revisao_detalhe' tarefa.id %}"
-                            class="btn btn-light"
-                        >
-                            Revisar
-                        </a>
-
-                    {% elif tarefa.status == "APROVADA" %}
-                        <span class="status-pill status-approved">
-                            Aprovada
-                        </span>
-                    {% endif %}
-
-                </div>
-
-            </article>
-
-        {% endfor %}
-
-    </div>
-
-{% else %}
-
-    <div class="content-card">
-        <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="bi bi-calendar-check"></i>
-            </div>
-
-            <h2 class="h5 fw-bold">
-                Nenhuma tarefa para hoje
-            </h2>
-
-            <p class="text-muted">
-                Crie uma rotina ou lance uma tarefa bônus.
-            </p>
-
-            <a
-                href="{% url 'rotina_criar' %}"
-                class="btn btn-primary"
-            >
-                Criar rotina
-            </a>
         </div>
-    </div>
 
-{% endif %}
+    {% else %}
+
+        <div class="content-card">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+
+                <h2 class="h5 fw-bold">
+                    Nenhuma tarefa para hoje
+                </h2>
+
+                <p class="text-muted">
+                    Crie uma rotina ou lance uma tarefa bônus.
+                </p>
+
+                <a
+                    href="{% url 'rotina_criar' %}"
+                    class="btn btn-primary"
+                >
+                    Criar rotina
+                </a>
+            </div>
+        </div>
+
+    {% endif %}
+
+</div>
 
 {% endblock %}

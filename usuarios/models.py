@@ -20,9 +20,7 @@ class Usuario(AbstractUser):
         verbose_name="Boas-vindas já exibidas",
     )
 
-    # Registro da versão da política apresentada ao Tutor. O objetivo é
-    # demonstrar ciência/autorização no protótipo, sem transformar este campo
-    # em alegação automática de conformidade jurídica integral.
+
     privacidade_aceita_em = models.DateTimeField(
         null=True,
         blank=True,
@@ -120,12 +118,10 @@ class PerfilCrianca(models.Model):
         verbose_name="Avatar",
     )
 
-    # Saldo disponível: pode subir por aprovações, cair por penalidades
-    # e ser gasto em recompensas.
+
     saldo_pontos = models.IntegerField(default=0)
 
-    # XP histórico do avatar: cresce com tarefas aprovadas e não é
-    # reduzido quando a criança gasta pontos na loja.
+
     pontos_experiencia = models.PositiveIntegerField(
         default=0,
         verbose_name="XP histórico do avatar",
