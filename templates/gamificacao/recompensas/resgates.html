@@ -78,7 +78,7 @@
                         </strong>
 
                         <div class="small text-muted">
-                            {{ resgate.crianca.nome_exibicao }}
+                            {{ resgate.crianca.nome_exibicao }}{% if resgate.escolha_assistida %} <span class="badge bg-light text-dark border">Registrado pelo tutor</span>{% endif %}
                             · ⭐ {{ resgate.custo_snapshot }}
                             · {{ resgate.solicitado_em|date:"d/m/Y H:i" }}
                         </div>

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import PerfilCrianca, Usuario
+from .models import PerfilInfantil, Usuario
 
 
 class BootstrapFormMixin:
@@ -119,7 +119,7 @@ class CriancaForm(
     )
 
     class Meta:
-        model = PerfilCrianca
+        model = PerfilInfantil
         fields = (
             "nome",
             "data_nascimento",
@@ -274,7 +274,7 @@ class CriancaForm(
         return perfil
 
 
-class CodigoConviteTutorForm(
+class CodigoConviteResponsavelForm(
     BootstrapFormMixin,
     forms.Form,
 ):

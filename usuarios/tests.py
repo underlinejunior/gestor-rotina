@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from usuarios.forms import CriancaForm
-from usuarios.models import ConviteTutor, Familia, PerfilCrianca, Usuario
+from usuarios.models import ConviteResponsavel, Familia, PerfilInfantil, Usuario
 
 
 class RF01AutenticacaoEPerfisTests(TestCase):
@@ -36,7 +36,7 @@ class RF01AutenticacaoEPerfisTests(TestCase):
             first_name="Ana",
             tipo=Usuario.Tipo.CRIANCA,
         )
-        PerfilCrianca.objects.create(
+        PerfilInfantil.objects.create(
             familia=self.familia,
             nome="Ana",
             usuario=usuario_crianca,
@@ -51,7 +51,7 @@ class RF01AutenticacaoEPerfisTests(TestCase):
         self.assertTrue(autenticado)
 
     def test_rf02_perfil_pode_existir_sem_login_proprio(self):
-        perfil = PerfilCrianca.objects.create(
+        perfil = PerfilInfantil.objects.create(
             familia=self.familia,
             nome="Bia",
             acesso_proprio=False,
@@ -66,7 +66,7 @@ class RF01AutenticacaoEPerfisTests(TestCase):
             data={
                 "nome": "Caio",
                 "data_nascimento": "2017-05-10",
-                "avatar_tipo": PerfilCrianca.AvatarTipo.ROBO,
+                "avatar_tipo": PerfilInfantil.AvatarTipo.ROBO,
                 "acesso_proprio": "on",
                 "usuario_acesso": "caio.rotina",
                 "senha": "SenhaCaio123",
@@ -107,13 +107,13 @@ class RF02FamiliaEPermissoesTests(TestCase):
         self.familia_vazia_b = Familia.objects.create(nome="Família de Tutor B")
         self.familia_vazia_b.tutores.add(self.tutor_b)
 
-        self.crianca = PerfilCrianca.objects.create(
+        self.crianca = PerfilInfantil.objects.create(
             familia=self.familia,
             nome="Criança Teste",
         )
 
     def test_rf02_convite_permite_segundo_responsavel_na_mesma_familia(self):
-        convite = ConviteTutor.objects.create(
+        convite = ConviteResponsavel.objects.create(
             familia=self.familia,
             codigo="123456",
             criado_por=self.tutor_a,
@@ -143,7 +143,7 @@ class RF02FamiliaEPermissoesTests(TestCase):
         )
 
     def test_rf02_convite_expirado_nao_pode_ser_usado(self):
-        convite = ConviteTutor.objects.create(
+        convite = ConviteResponsavel.objects.create(
             familia=self.familia,
             codigo="654321",
             criado_por=self.tutor_a,

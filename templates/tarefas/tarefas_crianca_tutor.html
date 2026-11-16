@@ -64,7 +64,7 @@
         gap: 6px;
     }
 
-    .tutor-task-skill {
+    .tutor-task-habilidade {
         padding: 5px 8px;
         display: inline-flex;
         align-items: center;
@@ -250,7 +250,7 @@
             </h1>
 
             <p class="text-muted mb-0">
-                {{ hoje|date:"d/m/Y" }} · Registre a conclusão enviando a foto da tarefa.
+                {{ hoje|date:"d/m/Y" }} · {% if not perfil.acesso_proprio %}Você pode registrar as atividades por esta criança e enviar a evidência para revisão.{% else %}Registre a conclusão enviando a foto da tarefa.{% endif %}
             </p>
         </div>
 
@@ -302,12 +302,12 @@
                         {% endif %}
 
 
-                        {% if tarefa.skills_snapshot.all %}
+                        {% if tarefa.habilidades_tarefa.all %}
                             <div class="tutor-task-skills">
-                                {% for skill in tarefa.skills_snapshot.all %}
-                                    <span class="tutor-task-skill">
-                                        {{ skill.icone_snapshot }}
-                                        {{ skill.nome_snapshot }}
+                                {% for habilidade in tarefa.habilidades_tarefa.all %}
+                                    <span class="tutor-task-habilidade">
+                                        {{ habilidade.icone_snapshot }}
+                                        {{ habilidade.nome_snapshot }}
                                     </span>
                                 {% endfor %}
                             </div>

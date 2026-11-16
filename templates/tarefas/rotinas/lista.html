@@ -8,7 +8,7 @@
     <div>
         <h1 class="h3 fw-bold mb-1">Rotinas</h1>
         <p class="text-muted mb-0">
-            Crie moldes diários ou semanais para gerar tarefas automaticamente.
+            Crie rotinas diárias ou semanais para gerar tarefas automaticamente.
         </p>
     </div>
 
@@ -25,24 +25,43 @@
     </div>
 </div>
 
-{% if moldes %}
+<form method="get" class="content-card mb-3 p-3" aria-label="Filtrar rotinas">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-5"><label class="form-label small fw-bold" for="filtro-crianca">Criança</label>
+      <select class="form-select" name="crianca" id="filtro-crianca">
+        <option value="">Todas as crianças</option>
+        {% for c in criancas %}<option value="{{ c.id }}" {% if crianca_selecionada == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-5"><label class="form-label small fw-bold" for="filtro-habilidade">Habilidade</label>
+      <select class="form-select" name="habilidade" id="filtro-habilidade">
+        <option value="">Todas as habilidades</option>
+        {% for h in habilidades_filtro %}<option value="{{ h.id }}" {% if habilidade_selecionada == h.id|stringformat:'s' %}selected{% endif %}>{{ h.icone }} {{ h.nome }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-2 d-flex gap-1"><button class="btn btn-primary flex-grow-1" type="submit">Filtrar</button><a class="btn btn-light" href="{% url 'rotinas_listar' %}" title="Limpar filtros">✕</a></div>
+  </div>
+</form>
+<style>
+.routine-skills {gap: 5px 8px!important;}
+.routine-skills .task-habilidade-pill {font-size: .76rem; padding: 3px 6px; display: inline-flex; align-items:center; gap:3px;}
+</style>
+{% if rotinas %}
     <div class="routine-grid">
-        {% for molde in moldes %}
-            <article class="routine-card {% if not molde.ativa %}routine-inactive{% endif %}">
+        {% for rotina in rotinas %}
+            <article class="routine-card {% if not rotina.ativa %}routine-inactive{% endif %}">
                 <div class="routine-top">
                     <div>
                         <span class="routine-child">
-                            {{ molde.crianca.avatar_emoji }}
-                            {{ molde.crianca.nome_exibicao }}
+                            {{ rotina.crianca.avatar_emoji }}
+                            {{ rotina.crianca.nome_exibicao }}
                         </span>
 
                         <h2 class="h5 fw-bold mt-2 mb-1">
-                            {{ molde.titulo }}
+                            {{ rotina.titulo }}
                         </h2>
 
-                        {% if molde.descricao %}
+                        {% if rotina.descricao %}
                             <p class="text-muted small mb-0">
-                                {{ molde.descricao|truncatechars:110 }}
+                                {{ rotina.descricao|truncatechars:110 }}
                             </p>
                         {% endif %}
                     </div>
@@ -50,7 +69,7 @@
                     <div class="routine-score-box">
                         <span class="routine-points">
                             <i class="bi bi-star-fill"></i>
-                            {{ molde.pontos_base }}
+                            {{ rotina.pontos_base }}
                         </span>
 
                         <small
@@ -63,13 +82,13 @@
                     </div>
                 </div>
 
-                {% if molde.skills_associadas.all %}
+                {% if rotina.habilidades_associadas.all %}
                     <div class="routine-skills mb-3">
-                        {% for associacao in molde.skills_associadas.all %}
-                            <span class="task-skill-pill">
-                                {{ associacao.skill.icone }}
-                                {{ associacao.skill.nome }}
-                                {{ associacao.impacto_simbolo }}
+                        {% for associacao in rotina.habilidades_associadas.all %}
+                            <span class="task-habilidade-pill">
+                                {{ associacao.habilidade.icone }}
+                                {{ associacao.habilidade.nome }}
+                                <span class="badge rounded-pill bg-light text-dark border">{{ associacao.intensidade }}</span>
                             </span>
                         {% endfor %}
                     </div>
@@ -79,22 +98,22 @@
                 <div class="routine-info">
                     <span>
                         <i class="bi bi-arrow-repeat"></i>
-                        {{ molde.frequencia_resumo }}
+                        {{ rotina.frequencia_resumo }}
                     </span>
 
                     <span>
                         <i class="bi bi-clock"></i>
-                        {{ molde.momento_resumo }}
+                        {{ rotina.momento_resumo }}
                     </span>
 
-                    {% if molde.lembrete_ativo %}
+                    {% if rotina.lembrete_ativo %}
                         <span>
                             <i class="bi bi-bell"></i>
                             Lembrete
                         </span>
                     {% endif %}
 
-                    {% if molde.ativa %}
+                    {% if rotina.ativa %}
                         <span class="status-pill status-active">Ativa</span>
                     {% else %}
                         <span class="status-pill status-inactive">Pausada</span>
@@ -103,21 +122,21 @@
 
                 <div class="routine-actions">
                     <a
-                        href="{% url 'rotina_editar' molde.id %}"
+                        href="{% url 'rotina_editar' rotina.id %}"
                         class="btn btn-light flex-grow-1"
                     >
                         <i class="bi bi-pencil"></i>
                         Editar
                     </a>
 
-                    <form method="post" action="{% url 'rotina_alternar' molde.id %}">
+                    <form method="post" action="{% url 'rotina_alternar' rotina.id %}">
                         {% csrf_token %}
                         <button
                             type="submit"
                             class="btn btn-light"
-                            title="{% if molde.ativa %}Pausar{% else %}Ativar{% endif %}"
+                            title="{% if rotina.ativa %}Pausar{% else %}Ativar{% endif %}"
                         >
-                            {% if molde.ativa %}
+                            {% if rotina.ativa %}
                                 <i class="bi bi-pause-circle"></i>
                             {% else %}
                                 <i class="bi bi-play-circle"></i>
@@ -127,7 +146,7 @@
 
                     <form
                         method="post"
-                        action="{% url 'rotina_excluir' molde.id %}"
+                        action="{% url 'rotina_excluir' rotina.id %}"
                         onsubmit="return confirm('Excluir esta rotina? As tarefas já criadas serão preservadas.');"
                     >
                         {% csrf_token %}

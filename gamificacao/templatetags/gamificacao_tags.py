@@ -29,7 +29,7 @@ def painel_notificacoes(
         .select_related(
             "crianca",
             "tarefa",
-            "skill",
+            "habilidade",
         )
     )
 

@@ -1,20 +1,20 @@
 from django.core.management.base import BaseCommand
 
 from gamificacao.catalogo import carregar_catalogo_padrao
-from tarefas.models import SugestaoTarefa
+from tarefas.models import SugestaoAtividade
 
 
 class Command(BaseCommand):
     help = "Lista as tarefas predefinidas cadastradas."
 
     def handle(self, *args, **options):
-        if not SugestaoTarefa.objects.filter(
+        if not SugestaoAtividade.objects.filter(
             ativa=True
         ).exists():
             carregar_catalogo_padrao()
 
         sugestoes = (
-            SugestaoTarefa.objects
+            SugestaoAtividade.objects
             .filter(ativa=True)
             .order_by(
                 "idade_minima",

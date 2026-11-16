@@ -1,14 +1,14 @@
 from django.contrib import admin
 
 from .models import (
-    InstanciaTarefa,
-    MoldeTarefa,
-    SugestaoTarefa,
+    TarefaAgendada,
+    RotinaPlanejada,
+    SugestaoAtividade,
 )
 
 
-@admin.register(MoldeTarefa)
-class MoldeTarefaAdmin(admin.ModelAdmin):
+@admin.register(RotinaPlanejada)
+class RotinaPlanejadaAdmin(admin.ModelAdmin):
     list_display = (
         "titulo",
         "crianca",
@@ -34,8 +34,8 @@ class MoldeTarefaAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(InstanciaTarefa)
-class InstanciaTarefaAdmin(admin.ModelAdmin):
+@admin.register(TarefaAgendada)
+class TarefaAgendadaAdmin(admin.ModelAdmin):
     list_display = (
         "titulo",
         "crianca",
@@ -63,8 +63,8 @@ class InstanciaTarefaAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(SugestaoTarefa)
-class SugestaoTarefaAdmin(admin.ModelAdmin):
+@admin.register(SugestaoAtividade)
+class SugestaoAtividadeAdmin(admin.ModelAdmin):
     list_display = (
         "icone",
         "titulo",

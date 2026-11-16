@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from usuarios.models import PerfilCrianca
+from usuarios.models import PerfilInfantil
 
 
 class Command(BaseCommand):
@@ -12,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         atualizados = 0
 
-        for perfil in PerfilCrianca.objects.all():
+        for perfil in PerfilInfantil.objects.all():
             base = max(
                 int(perfil.pontos_experiencia or 0),
                 int(perfil.saldo_pontos or 0),

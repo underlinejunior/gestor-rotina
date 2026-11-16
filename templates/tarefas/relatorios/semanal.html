@@ -569,7 +569,7 @@
         gap: 5px;
     }
 
-    .skill-inline {
+    .habilidade-inline {
         padding: 5px 7px;
         border-radius: 999px;
         color: #534b67;
@@ -578,7 +578,7 @@
         font-weight: 750;
     }
 
-    .skill-inline strong {
+    .habilidade-inline strong {
         color: var(--report-primary);
     }
 
@@ -764,7 +764,7 @@
         font-size: 8.5px;
     }
 
-    .skill-inline {
+    .habilidade-inline {
         font-size: 9.5px;
     }
 
@@ -1009,7 +1009,7 @@
             font-size: 6.5pt;
         }
 
-        .skill-inline {
+        .habilidade-inline {
             font-size: 7.3pt;
         }
 
@@ -1469,9 +1469,9 @@
             {% if skills_semana %}
                 <div class="skills-inline">
                     {% for item in skills_semana %}
-                        <span class="skill-inline">
-                            {{ item.skill__icone }}
-                            {{ item.skill__nome }}
+                        <span class="habilidade-inline">
+                            {{ item.habilidade__icone }}
+                            {{ item.habilidade__nome }}
                             <strong>+{{ item.xp }} XP</strong>
                         </span>
                     {% endfor %}

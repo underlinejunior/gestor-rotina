@@ -1,15 +1,17 @@
+import uuid
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
-from usuarios.models import PerfilCrianca
+from usuarios.models import PerfilInfantil
 
 
-class Skill(models.Model):
-    class Impacto(models.IntegerChoices):
-        LEVE = 1, "Leve"
-        MEDIO = 2, "Médio"
-        FORTE = 3, "Forte"
+class Habilidade(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    class Intensidade(models.IntegerChoices):
+        BAIXA = 1, "Baixa"
+        MEDIA = 2, "Média"
+        ALTA = 3, "Alta"
 
     nome = models.CharField(max_length=80, unique=True)
     slug = models.SlugField(max_length=80, unique=True)
@@ -27,26 +29,26 @@ class Skill(models.Model):
         return f"{self.icone} {self.nome}"
 
     @classmethod
-    def xp_por_impacto(cls, impacto):
+    def calcular_experiencia(cls, intensidade):
         return {
-            cls.Impacto.LEVE: 3,
-            cls.Impacto.MEDIO: 6,
-            cls.Impacto.FORTE: 10,
-        }.get(int(impacto), 0)
+            cls.Intensidade.BAIXA: 3,
+            cls.Intensidade.MEDIA: 6,
+            cls.Intensidade.ALTA: 10,
+        }.get(int(intensidade), 0)
 
     @classmethod
-    def simbolo_impacto(cls, impacto):
+    def simbolo_intensidade(cls, intensidade):
         return {
-            cls.Impacto.LEVE: "+",
-            cls.Impacto.MEDIO: "++",
-            cls.Impacto.FORTE: "+++",
-        }.get(int(impacto), "")
+            cls.Intensidade.BAIXA: "1",
+            cls.Intensidade.MEDIA: "2",
+            cls.Intensidade.ALTA: "3",
+        }.get(int(intensidade), "")
 
 
-XP_MAX_SKILL = 250
+XP_MAX_HABILIDADE = 250
 
 
-def dados_nivel_skill(xp):
+def dados_nivel_habilidade(xp):
     """
     Escala compacta de evolução das Skills.
 
@@ -56,7 +58,7 @@ def dados_nivel_skill(xp):
     no nível 5.
     """
     xp_real = max(0, int(xp or 0))
-    xp_considerado = min(xp_real, XP_MAX_SKILL)
+    xp_considerado = min(xp_real, XP_MAX_HABILIDADE)
 
     niveis = (
         (1, 0, 50, "Descobrindo"),
@@ -83,7 +85,7 @@ def dados_nivel_skill(xp):
                 "faltam": max(0, fim - xp_considerado),
                 "xp_exibido": xp_considerado,
                 "xp_real": xp_real,
-                "xp_maximo": XP_MAX_SKILL,
+                "xp_maximo": XP_MAX_HABILIDADE,
                 "concluido": False,
             }
 
@@ -94,125 +96,156 @@ def dados_nivel_skill(xp):
         "proximo": None,
         "percentual": 100,
         "faltam": 0,
-        "xp_exibido": XP_MAX_SKILL,
+        "xp_exibido": XP_MAX_HABILIDADE,
         "xp_real": xp_real,
-        "xp_maximo": XP_MAX_SKILL,
+        "xp_maximo": XP_MAX_HABILIDADE,
         "concluido": True,
     }
 
 
-class MoldeTarefaSkill(models.Model):
-    molde = models.ForeignKey(
-        "tarefas.MoldeTarefa",
+class RotinaHabilidade(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    rotina = models.ForeignKey(
+        "tarefas.RotinaPlanejada",
         on_delete=models.CASCADE,
-        related_name="skills_associadas",
+        related_name="habilidades_associadas",
     )
-    skill = models.ForeignKey(
-        Skill,
+    habilidade = models.ForeignKey(
+        Habilidade,
         on_delete=models.PROTECT,
-        related_name="moldes_associados",
+        related_name="rotinas_associadas",
     )
-    impacto = models.PositiveSmallIntegerField(
-        choices=Skill.Impacto.choices,
-        default=Skill.Impacto.MEDIO,
+    intensidade = models.PositiveSmallIntegerField(
+        choices=Habilidade.Intensidade.choices,
+        default=Habilidade.Intensidade.MEDIA,
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=("molde", "skill"),
-                name="molde_skill_unica",
+                fields=("rotina", "habilidade"),
+                name="rotina_habilidade_unica",
             )
         ]
 
     @property
-    def impacto_simbolo(self):
-        return Skill.simbolo_impacto(self.impacto)
+    def intensidade_simbolo(self):
+        return Habilidade.simbolo_intensidade(self.intensidade)
 
 
-class InstanciaTarefaSkill(models.Model):
+class TarefaHabilidade(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tarefa = models.ForeignKey(
-        "tarefas.InstanciaTarefa",
+        "tarefas.TarefaAgendada",
         on_delete=models.CASCADE,
-        related_name="skills_snapshot",
+        related_name="habilidades_tarefa",
     )
-    skill = models.ForeignKey(
-        Skill,
+    habilidade = models.ForeignKey(
+        Habilidade,
         on_delete=models.PROTECT,
         related_name="instancias_associadas",
     )
     nome_snapshot = models.CharField(max_length=80)
     icone_snapshot = models.CharField(max_length=8, default="✨")
-    impacto = models.PositiveSmallIntegerField(
-        choices=Skill.Impacto.choices,
+    intensidade = models.PositiveSmallIntegerField(
+        choices=Habilidade.Intensidade.choices,
     )
-    xp_planejado = models.PositiveSmallIntegerField(default=0)
+    experiencia_prevista = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=("tarefa", "skill"),
-                name="instancia_skill_unica",
+                fields=("tarefa", "habilidade"),
+                name="tarefa_habilidade_unica",
             )
         ]
 
+    def calcular_experiencia_prevista(self):
+        return Habilidade.calcular_experiencia(self.intensidade)
+
     @property
-    def impacto_simbolo(self):
-        return Skill.simbolo_impacto(self.impacto)
+    def intensidade_simbolo(self):
+        return Habilidade.simbolo_intensidade(self.intensidade)
 
 
-class SugestaoTarefaSkill(models.Model):
+class SugestaoHabilidade(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sugestao = models.ForeignKey(
-        "tarefas.SugestaoTarefa",
+        "tarefas.SugestaoAtividade",
         on_delete=models.CASCADE,
-        related_name="skills_associadas",
+        related_name="habilidades_associadas",
     )
-    skill = models.ForeignKey(
-        Skill,
+    habilidade = models.ForeignKey(
+        Habilidade,
         on_delete=models.PROTECT,
         related_name="sugestoes_associadas",
     )
-    impacto = models.PositiveSmallIntegerField(
-        choices=Skill.Impacto.choices,
-        default=Skill.Impacto.MEDIO,
+    intensidade = models.PositiveSmallIntegerField(
+        choices=Habilidade.Intensidade.choices,
+        default=Habilidade.Intensidade.MEDIA,
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=("sugestao", "skill"),
-                name="sugestao_skill_unica",
+                fields=("sugestao", "habilidade"),
+                name="sugestao_habilidade_unica",
             )
         ]
 
 
-class ProgressoSkill(models.Model):
+class ProgressoHabilidade(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     crianca = models.ForeignKey(
-        PerfilCrianca,
+        PerfilInfantil,
         on_delete=models.CASCADE,
-        related_name="progressos_skills",
+        related_name="progressos_habilidades",
     )
-    skill = models.ForeignKey(
-        Skill,
+    habilidade = models.ForeignKey(
+        Habilidade,
         on_delete=models.PROTECT,
         related_name="progressos",
     )
-    xp_total = models.PositiveIntegerField(default=0)
+    experiencia_acumulada = models.PositiveIntegerField(default=0)
     atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=("crianca", "skill"),
-                name="progresso_skill_crianca_unico",
+                fields=("crianca", "habilidade"),
+                name="progresso_habilidade_crianca_unico",
             )
         ]
         verbose_name = "Progresso de habilidade"
         verbose_name_plural = "Progressos de habilidades"
 
+    def adicionar_experiencia(self, xp, *, tarefa):
+        """Credita XP apenas pela tarefa aprovada, com rastreio e idempotência.
+
+        O parâmetro tarefa é obrigatório: não há crédito avulso de XP.
+        """
+        from tarefas.models import TarefaAgendada
+        if tarefa.status != TarefaAgendada.Status.APROVADA or tarefa.crianca_id != self.crianca_id:
+            raise ValueError("XP só pode ser concedido por tarefa aprovada da criança.")
+        snapshot = tarefa.habilidades_tarefa.filter(habilidade_id=self.habilidade_id).first()
+        if snapshot is None or int(xp) != snapshot.experiencia_prevista:
+            raise ValueError("XP diferente do previsto para a habilidade desta tarefa.")
+        if self.habilidade.slug == "constancia":
+            raise ValueError("Constância é medida por dias consecutivos, não por XP.")
+        from .services import registrar_xp_habilidades_aprovacao
+        registrar_xp_habilidades_aprovacao(tarefa)
+        self.refresh_from_db()
+        return self.experiencia_acumulada
+
+    def consultar_nivel(self):
+        return self.nivel_atual
+
+    def calcular_progresso(self):
+        return self.progresso_percentual
+
     @property
     def dados_nivel(self):
-        return dados_nivel_skill(self.xp_total)
+        return dados_nivel_habilidade(self.experiencia_acumulada)
 
     @property
     def nivel_atual(self):
@@ -231,21 +264,22 @@ class ProgressoSkill(models.Model):
         return self.dados_nivel["faltam"]
 
 
-class MovimentoSkill(models.Model):
+class MovimentacaoHabilidade(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     crianca = models.ForeignKey(
-        PerfilCrianca,
+        PerfilInfantil,
         on_delete=models.CASCADE,
-        related_name="movimentos_skills",
+        related_name="movimentos_habilidades",
     )
-    skill = models.ForeignKey(
-        Skill,
+    habilidade = models.ForeignKey(
+        Habilidade,
         on_delete=models.PROTECT,
         related_name="movimentos",
     )
     tarefa = models.ForeignKey(
-        "tarefas.InstanciaTarefa",
+        "tarefas.TarefaAgendada",
         on_delete=models.SET_NULL,
-        related_name="movimentos_skills",
+        related_name="movimentos_habilidades",
         null=True,
         blank=True,
     )
@@ -258,9 +292,9 @@ class MovimentoSkill(models.Model):
         ordering = ("-criado_em",)
         constraints = [
             models.UniqueConstraint(
-                fields=("tarefa", "skill"),
+                fields=("tarefa", "habilidade"),
                 condition=Q(tarefa__isnull=False),
-                name="movimento_skill_tarefa_unico",
+                name="movimentacao_habilidade_tarefa_unica",
             )
         ]
         verbose_name = "Movimento de habilidade"
@@ -271,7 +305,8 @@ class MovimentoSkill(models.Model):
         return self.nivel_depois > self.nivel_antes
 
 
-class MovimentoPontos(models.Model):
+class MovimentacaoPontos(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Tipo(models.TextChoices):
         APROVACAO = "APROVACAO", "Aprovação de tarefa"
         PENALIDADE = "PENALIDADE", "Tarefa não realizada"
@@ -279,14 +314,23 @@ class MovimentoPontos(models.Model):
         AJUSTE = "AJUSTE", "Ajuste manual"
 
     crianca = models.ForeignKey(
-        PerfilCrianca,
+        PerfilInfantil,
         on_delete=models.CASCADE,
         related_name="movimentos_pontos",
     )
     tarefa = models.OneToOneField(
-        "tarefas.InstanciaTarefa",
+        "tarefas.TarefaAgendada",
         on_delete=models.SET_NULL,
-        related_name="movimento_pontos",
+        related_name="movimentacao_pontos",
+        null=True,
+        blank=True,
+    )
+    # Permite rastrear tanto o débito do resgate quanto sua restituição.
+    # Diferentemente de tarefa, um resgate pode ter mais de um movimento.
+    resgate = models.ForeignKey(
+        "gamificacao.SolicitacaoResgate",
+        on_delete=models.SET_NULL,
+        related_name="movimentacoes",
         null=True,
         blank=True,
     )
@@ -296,7 +340,7 @@ class MovimentoPontos(models.Model):
         default=Tipo.APROVACAO,
     )
     pontos = models.IntegerField()
-    saldo_apos = models.IntegerField(default=0)
+    saldo_resultante = models.IntegerField(default=0)
     nivel_antes = models.PositiveSmallIntegerField(default=1)
     nivel_depois = models.PositiveSmallIntegerField(default=1)
     registrado_por = models.ForeignKey(
@@ -313,12 +357,21 @@ class MovimentoPontos(models.Model):
         verbose_name = "Movimento de pontos"
         verbose_name_plural = "Movimentos de pontos"
 
+    def consultar_pontos(self):
+        """Retorna a variação registrada (positiva ou negativa)."""
+        return self.pontos
+
+    def consultar_saldo(self):
+        """Retorna o saldo após esta movimentação, sem recalcular o histórico."""
+        return self.saldo_resultante
+
     @property
     def houve_evolucao(self):
         return self.nivel_depois > self.nivel_antes
 
 
 class NotificacaoSistema(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Tipo(models.TextChoices):
         NIVEL_AVATAR = "NIVEL_AVATAR", "Mudança de nível do avatar"
         NIVEL_HABILIDADE = "NIVEL_HABILIDADE", "Mudança de nível de habilidade"
@@ -335,21 +388,21 @@ class NotificacaoSistema(models.Model):
         related_name="notificacoes_sistema",
     )
     crianca = models.ForeignKey(
-        PerfilCrianca,
+        PerfilInfantil,
         on_delete=models.CASCADE,
         related_name="notificacoes_sistema",
         null=True,
         blank=True,
     )
     tarefa = models.ForeignKey(
-        "tarefas.InstanciaTarefa",
+        "tarefas.TarefaAgendada",
         on_delete=models.SET_NULL,
         related_name="notificacoes_sistema",
         null=True,
         blank=True,
     )
-    skill = models.ForeignKey(
-        Skill,
+    habilidade = models.ForeignKey(
+        Habilidade,
         on_delete=models.SET_NULL,
         related_name="notificacoes_sistema",
         null=True,
@@ -403,7 +456,7 @@ class NotificacaoSistema(models.Model):
     def classe_visual(self):
         return {
             self.Tipo.NIVEL_AVATAR: "notification-level",
-            self.Tipo.NIVEL_HABILIDADE: "notification-skill",
+            self.Tipo.NIVEL_HABILIDADE: "notification-habilidade",
             self.Tipo.CONQUISTA: "notification-achievement",
             self.Tipo.RECOMPENSA: "notification-reward",
             self.Tipo.LEMBRETE_TAREFA: "notification-reminder",
@@ -497,6 +550,7 @@ class NotificacaoSistema(models.Model):
 
 
 class Recompensa(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Categoria(models.TextChoices):
         EXPERIENCIA = "EXPERIENCIA", "❤️ Momento juntos"
         PRIVILEGIO = "PRIVILEGIO", "🎉 Privilégio"
@@ -564,15 +618,64 @@ class Recompensa(models.Model):
             f"({self.custo_pontos} pts)"
         )
 
+    ICONES_CATEGORIA = {
+        Categoria.EXPERIENCIA: "❤️",
+        Categoria.PRIVILEGIO: "🎉",
+        Categoria.TEMPO: "⏱️",
+        Categoria.OUTRO: "🎁",
+    }
 
-class ResgateRecompensa(models.Model):
+    @classmethod
+    def icone_da_categoria(cls, categoria):
+        return cls.ICONES_CATEGORIA.get(categoria, "🎁")
+
+    def save(self, *args, **kwargs):
+        self.icone = self.icone_da_categoria(self.categoria)
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {"icone"}
+        return super().save(*args, **kwargs)
+
+    def esta_disponivel(self):
+        return self.ativa
+
+    def consultar_custo(self):
+        return self.custo_pontos
+
+    def alterar_recompensa(self, *, titulo=None, descricao=None, custo_pontos=None, ativa=None):
+        """Altera os dados permitidos sem mudar família ou histórico de resgates."""
+        campos = []
+        if titulo is not None:
+            titulo = titulo.strip()
+            if not titulo:
+                raise ValueError("O título da recompensa não pode ficar vazio.")
+            self.titulo = titulo
+            campos.append("titulo")
+        if descricao is not None:
+            self.descricao = descricao
+            campos.append("descricao")
+        if custo_pontos is not None:
+            custo = int(custo_pontos)
+            if custo < 0:
+                raise ValueError("O custo não pode ser negativo.")
+            self.custo_pontos = custo
+            campos.append("custo_pontos")
+        if ativa is not None:
+            self.ativa = bool(ativa)
+            campos.append("ativa")
+        if campos:
+            self.save(update_fields=campos + ["atualizada_em"])
+        return self
+
+
+class SolicitacaoResgate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Status(models.TextChoices):
         SOLICITADO = "SOLICITADO", "Solicitado"
         ENTREGUE = "ENTREGUE", "Entregue"
         CANCELADO = "CANCELADO", "Cancelado"
 
     crianca = models.ForeignKey(
-        PerfilCrianca,
+        PerfilInfantil,
         on_delete=models.CASCADE,
         related_name="resgates_recompensas",
     )
@@ -603,13 +706,22 @@ class ResgateRecompensa(models.Model):
         db_index=True,
     )
 
-    movimento_pontos = models.OneToOneField(
-        MovimentoPontos,
+    movimentacao_pontos = models.OneToOneField(
+        MovimentacaoPontos,
         on_delete=models.SET_NULL,
         related_name="resgate_recompensa",
         null=True,
         blank=True,
     )
+
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="resgates_registrados",
+        help_text="Tutor que registrou a escolha, quando feita de forma assistida.",
+    )
+    escolha_assistida = models.BooleanField(default=False)
 
     solicitado_em = models.DateTimeField(
         auto_now_add=True
@@ -631,8 +743,24 @@ class ResgateRecompensa(models.Model):
             f"{self.titulo_snapshot}"
         )
 
+    @classmethod
+    def solicitar_resgate(cls, crianca, recompensa):
+        """Usa o serviço transacional que valida família, saldo e débito."""
+        from .services import resgatar_recompensa
+        return resgatar_recompensa(perfil=crianca, recompensa=recompensa)
+
+    def confirmar_entrega(self, tutor):
+        """Não permite confirmar entrega sem autorização do tutor da família."""
+        from .services import confirmar_entrega_resgate
+        return confirmar_entrega_resgate(resgate=self, tutor=tutor)
+
+    def cancelar_resgate(self, tutor):
+        from .services import cancelar_resgate
+        return cancelar_resgate(resgate=self, tutor=tutor)
+
 
 class Conquista(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     slug = models.SlugField(
         max_length=80,
         unique=True,
@@ -671,9 +799,18 @@ class Conquista(models.Model):
         return f"{self.icone} {self.nome}"
 
 
-class ConquistaCrianca(models.Model):
+    def verificar_criterio(self, crianca):
+        """Verifica as conquistas do perfil pelo serviço central de critérios."""
+        if not self.ativa:
+            return False
+        from .services import avaliar_conquistas
+        avaliar_conquistas(crianca)
+        return ConquistaInfantil.objects.filter(crianca=crianca, conquista=self).exists()
+
+class ConquistaInfantil(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     crianca = models.ForeignKey(
-        PerfilCrianca,
+        PerfilInfantil,
         on_delete=models.CASCADE,
         related_name="conquistas_desbloqueadas",
     )
@@ -709,3 +846,8 @@ class ConquistaCrianca(models.Model):
             f"{self.crianca.nome_exibicao} — "
             f"{self.conquista.nome}"
         )
+
+    def consultar_data_desbloqueio(self):
+        return self.desbloqueada_em
+
+

@@ -3,6 +3,13 @@
 {% block title %}Recompensas | Rotina Conecta{% endblock %}
 
 {% block app_content %}
+<style>
+.reward-card-bottom {display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start;}
+.reward-card-bottom > .d-flex {flex:1 1 210px; min-width:0;}
+.reward-card-bottom .form-select {max-width:100%; font-size:.82rem;}
+.reward-card-category {font-size:.72rem;}
+.reward-card-icon {font-size:2rem;}
+</style>
 
 <section class="reward-hero mb-4">
     <div>
@@ -121,6 +128,17 @@
 {% endif %}
 
 
+<form method="get" class="content-card mb-3 p-3" aria-label="Filtrar recompensas">
+ <div class="d-flex align-items-end flex-wrap gap-2">
+  <div class="flex-grow-1"><label for="categoria-recompensa" class="form-label fw-semibold small">Categoria</label>
+  <select class="form-select" id="categoria-recompensa" name="categoria">
+   <option value="">Todas as categorias</option>
+   {% for valor, nome in categorias %}<option value="{{ valor }}" {% if categoria_selecionada == valor %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+  </select></div>
+  <button type="submit" class="btn btn-primary">Filtrar</button>
+  <a href="{% url 'loja_recompensas' %}" class="btn btn-light">Limpar</a>
+ </div>
+</form>
 <div class="reward-grid">
 
     {% for recompensa in recompensas %}
@@ -151,6 +169,7 @@
                 </strong>
 
                 {% if modo_tutor %}
+                    <div class="d-flex flex-column gap-2">
                     <div class="d-flex gap-1">
                         <a
                             href="{% url 'recompensa_editar' recompensa.id %}"
@@ -174,6 +193,20 @@
                                 <i class="bi {% if recompensa.ativa %}bi-eye-slash{% else %}bi-eye{% endif %}"></i>
                             </button>
                         </form>
+                    </div>
+                    {% if criancas_sem_acesso and recompensa.ativa %}
+                      <form method="post" action="{% url 'recompensa_resgatar' recompensa.id %}" class="d-flex flex-column gap-1 mt-1">
+                        {% csrf_token %}
+                        <label class="small fw-semibold">Escolha de criança sem login</label>
+                        <select name="crianca" class="form-select form-select-sm" required aria-label="Criança que escolheu a recompensa">
+                          <option value="">Selecione a criança</option>
+                          {% for crianca in criancas_sem_acesso %}
+                            <option value="{{ crianca.id }}">{{ crianca.nome }} · {{ crianca.saldo_pontos }} pts</option>
+                          {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Registrar resgate assistido</button>
+                      </form>
+                    {% endif %}
                     </div>
                 {% else %}
                     <form

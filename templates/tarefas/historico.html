@@ -169,12 +169,12 @@
                                             {% endif %}
                                         </div>
 
-                                        {% if tarefa.skills_snapshot.all %}
-                                            <div class="task-skill-pills task-skill-pills-compact mt-2">
-                                                {% for skill in tarefa.skills_snapshot.all %}
-                                                    <span class="task-skill-pill">
-                                                        {{ skill.icone_snapshot }}
-                                                        {{ skill.nome_snapshot }}
+                                        {% if tarefa.habilidades_tarefa.all %}
+                                            <div class="task-habilidade-pills task-habilidade-pills-compact mt-2">
+                                                {% for habilidade in tarefa.habilidades_tarefa.all %}
+                                                    <span class="task-habilidade-pill">
+                                                        {{ habilidade.icone_snapshot }}
+                                                        {{ habilidade.nome_snapshot }}
                                                     </span>
                                                 {% endfor %}
                                             </div>

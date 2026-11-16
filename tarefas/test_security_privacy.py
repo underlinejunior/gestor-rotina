@@ -11,8 +11,8 @@ from django.utils import timezone
 from PIL import Image
 
 from tarefas.forms import EnvioComprovanteForm
-from tarefas.models import InstanciaTarefa
-from usuarios.models import Familia, PerfilCrianca, Usuario
+from tarefas.models import TarefaAgendada
+from usuarios.models import Familia, PerfilInfantil, Usuario
 
 
 def imagem_jpeg_bytes():
@@ -40,21 +40,21 @@ class PrivateEvidenceSecurityTests(TransactionTestCase):
             password="SenhaCrianca123!",
             tipo=Usuario.Tipo.CRIANCA,
         )
-        self.crianca = PerfilCrianca.objects.create(
+        self.crianca = PerfilInfantil.objects.create(
             familia=self.familia,
             nome="Criança Foto",
             usuario=self.usuario_crianca,
             acesso_proprio=True,
         )
 
-        self.tarefa = InstanciaTarefa.objects.create(
+        self.tarefa = TarefaAgendada.objects.create(
             familia=self.familia,
             crianca=self.crianca,
             titulo="Guardar brinquedos",
             descricao="",
             pontos_base=10,
             data_referencia=timezone.localdate(),
-            status=InstanciaTarefa.Status.REVISAO,
+            status=TarefaAgendada.Status.REVISAO,
         )
         self.tarefa.foto.save(
             "evidencia.jpg",
@@ -127,9 +127,9 @@ class PrivateEvidenceSecurityTests(TransactionTestCase):
 
     def test_retencao_remove_foto_antiga_sem_apagar_historico(self):
         antiga = timezone.now() - timedelta(days=200)
-        InstanciaTarefa.objects.filter(pk=self.tarefa.pk).update(
+        TarefaAgendada.objects.filter(pk=self.tarefa.pk).update(
             enviada_em=antiga,
-            status=InstanciaTarefa.Status.APROVADA,
+            status=TarefaAgendada.Status.APROVADA,
         )
 
         call_command("limpar_evidencias_antigas", dias=180)
@@ -137,7 +137,7 @@ class PrivateEvidenceSecurityTests(TransactionTestCase):
         self.tarefa.refresh_from_db()
         self.assertFalse(bool(self.tarefa.foto))
         self.assertEqual(self.tarefa.titulo, "Guardar brinquedos")
-        self.assertEqual(self.tarefa.status, InstanciaTarefa.Status.APROVADA)
+        self.assertEqual(self.tarefa.status, TarefaAgendada.Status.APROVADA)
 
     def test_formulario_regrava_imagem_em_jpeg_sem_metadados(self):
         arquivo = SimpleUploadedFile(

@@ -5,10 +5,10 @@ from django import forms
 from django.core.files.base import ContentFile
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from gamificacao.models import Skill
-from usuarios.models import PerfilCrianca
+from gamificacao.models import Habilidade
+from usuarios.models import PerfilInfantil
 
-from .models import MoldeTarefa, PeriodoTarefa
+from .models import RotinaPlanejada, PeriodoTarefa
 
 
 DIAS_SEMANA = (
@@ -46,16 +46,16 @@ class BootstrapFormMixin:
                 ).strip()
 
 
-class SkillImpactMixin:
-    def obter_impactos_skills(self):
-        impactos = {}
+class HabilidadeIntensidadeMixin:
+    def obter_intensidades_habilidades(self):
+        intensidades = {}
 
-        for skill in Skill.objects.filter(
+        for habilidade in Habilidade.objects.filter(
             ativa=True
         ):
             chave = (
-                f"skill_impact_"
-                f"{skill.id}"
+                f"habilidade_intensidade_"
+                f"{habilidade.id}"
             )
 
             valor = (
@@ -72,22 +72,25 @@ class SkillImpactMixin:
                 valor = 0
 
             if valor in {
-                Skill.Impacto.LEVE,
-                Skill.Impacto.MEDIO,
-                Skill.Impacto.FORTE,
+                Habilidade.Intensidade.BAIXA,
+                Habilidade.Intensidade.MEDIA,
+                Habilidade.Intensidade.ALTA,
             }:
-                impactos[
-                    skill.id
+                intensidades[
+                    habilidade.id
                 ] = valor
 
-        return impactos
+        return intensidades
 
 
-class MoldeTarefaForm(
-    SkillImpactMixin,
+class RotinaPlanejadaForm(
+    HabilidadeIntensidadeMixin,
     BootstrapFormMixin,
     forms.ModelForm,
 ):
+    sugestao_origem_id = forms.UUIDField(
+        required=False, widget=forms.HiddenInput,
+    )
     dias_semana_selecionados = forms.MultipleChoiceField(
         label="Dias da semana",
         choices=DIAS_SEMANA,
@@ -106,7 +109,7 @@ class MoldeTarefaForm(
     )
 
     class Meta:
-        model = MoldeTarefa
+        model = RotinaPlanejada
         fields = (
             "crianca",
             "titulo",
@@ -176,7 +179,7 @@ class MoldeTarefaForm(
             self.fields[
                 "crianca"
             ].queryset = (
-                PerfilCrianca.objects
+                PerfilInfantil.objects
                 .filter(familia=familia)
                 .order_by("nome")
             )
@@ -209,7 +212,7 @@ class MoldeTarefaForm(
 
         if (
             frequencia
-            == MoldeTarefa.Frequencia.SEMANAL
+            == RotinaPlanejada.Frequencia.SEMANAL
             and not dias
         ):
             self.add_error(
@@ -264,38 +267,38 @@ class MoldeTarefaForm(
         return dados
 
     def save(self, commit=True):
-        molde = super().save(
+        rotina = super().save(
             commit=False
         )
 
         if (
-            molde.frequencia
-            == MoldeTarefa.Frequencia.SEMANAL
+            rotina.frequencia
+            == RotinaPlanejada.Frequencia.SEMANAL
         ):
             dias = self.cleaned_data.get(
                 "dias_semana_selecionados",
                 [],
             )
-            molde.dias_semana = ",".join(
+            rotina.dias_semana = ",".join(
                 sorted(dias)
             )
         else:
-            molde.dias_semana = ""
+            rotina.dias_semana = ""
 
         if commit:
-            molde.save()
+            rotina.save()
 
-        return molde
+        return rotina
 
 
 class TarefaBonusForm(
-    SkillImpactMixin,
+    HabilidadeIntensidadeMixin,
     BootstrapFormMixin,
     forms.Form,
 ):
     crianca = forms.ModelChoiceField(
         label="Criança",
-        queryset=PerfilCrianca.objects.none(),
+        queryset=PerfilInfantil.objects.none(),
     )
     titulo = forms.CharField(
         label="Tarefa",
@@ -332,7 +335,7 @@ class TarefaBonusForm(
             self.fields[
                 "crianca"
             ].queryset = (
-                PerfilCrianca.objects
+                PerfilInfantil.objects
                 .filter(familia=familia)
                 .order_by("nome")
             )

@@ -21,17 +21,17 @@ urlpatterns = [
         name="sugestoes_tarefas",
     ),
     path(
-        "rotinas/<int:molde_id>/editar/",
+        "rotinas/<uuid:rotina_id>/editar/",
         views.rotina_editar,
         name="rotina_editar",
     ),
     path(
-        "rotinas/<int:molde_id>/alternar/",
+        "rotinas/<uuid:rotina_id>/alternar/",
         views.rotina_alternar,
         name="rotina_alternar",
     ),
     path(
-        "rotinas/<int:molde_id>/excluir/",
+        "rotinas/<uuid:rotina_id>/excluir/",
         views.rotina_excluir,
         name="rotina_excluir",
     ),
@@ -39,6 +39,11 @@ urlpatterns = [
         "tarefas/bonus/nova/",
         views.tarefa_bonus_criar,
         name="tarefa_bonus_criar",
+    ),
+    path(
+        "tarefas/familia/",
+        views.tarefas_familia,
+        name="tarefas_familia",
     ),
     path(
         "minhas-tarefas/",
@@ -51,27 +56,27 @@ urlpatterns = [
         name="meu_historico",
     ),
     path(
-        "criancas/<int:perfil_id>/tarefas/",
+        "criancas/<uuid:perfil_id>/tarefas/",
         views.tarefas_crianca_tutor,
         name="tarefas_crianca_tutor",
     ),
     path(
-        "criancas/<int:perfil_id>/historico/",
+        "criancas/<uuid:perfil_id>/historico/",
         views.historico_crianca_tutor,
         name="historico_crianca_tutor",
     ),
     path(
-        "criancas/<int:perfil_id>/relatorio-semanal/",
+        "criancas/<uuid:perfil_id>/relatorio-semanal/",
         relatorio_semanal_crianca,
         name="relatorio_semanal_crianca",
     ),
     path(
-        "tarefas/<int:tarefa_id>/foto/",
+        "tarefas/<uuid:tarefa_id>/foto/",
         views.foto_tarefa_privada,
         name="foto_tarefa_privada",
     ),
     path(
-        "tarefas/<int:tarefa_id>/enviar-foto/",
+        "tarefas/<uuid:tarefa_id>/enviar-foto/",
         views.enviar_foto,
         name="enviar_foto",
     ),
@@ -81,7 +86,7 @@ urlpatterns = [
         name="revisoes_listar",
     ),
     path(
-        "revisoes/<int:tarefa_id>/",
+        "revisoes/<uuid:tarefa_id>/",
         views.revisao_detalhe,
         name="revisao_detalhe",
     ),

@@ -60,22 +60,22 @@
                 </div>
             </div>
 
-            {% if tarefa.skills_snapshot.all %}
+            {% if tarefa.habilidades_tarefa.all %}
                 <div class="task-skills-review mb-4">
 
                     <span class="hero-eyebrow">
                         Habilidades praticadas
                     </span>
 
-                    <div class="task-skill-pills mt-1">
+                    <div class="task-habilidade-pills mt-1">
 
-                        {% for skill in tarefa.skills_snapshot.all %}
-                            <span class="task-skill-pill">
-                                {{ skill.icone_snapshot }}
-                                {{ skill.nome_snapshot }}
-                                {{ skill.impacto_simbolo }}
+                        {% for habilidade in tarefa.habilidades_tarefa.all %}
+                            <span class="task-habilidade-pill">
+                                {{ habilidade.icone_snapshot }}
+                                {{ habilidade.nome_snapshot }}
+                                {{ habilidade.intensidade_simbolo }}
                                 <small>
-                                    +{{ skill.xp_planejado }} XP
+                                    +{{ habilidade.experiencia_prevista }} XP
                                 </small>
                             </span>
                         {% endfor %}

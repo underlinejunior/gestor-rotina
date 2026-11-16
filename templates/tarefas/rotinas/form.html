@@ -2,6 +2,28 @@
 
 {% block title %}{{ titulo }} | Rotina Conecta{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+<style>
+.routine-wizard-card { border-radius:24px; }
+.habilidade-emphasis-box { padding:18px; border:1px solid #e7e5f5; border-radius:18px; background:#faf9ff; margin-bottom:18px; }
+.habilidade-emphasis-head { margin-bottom:12px; }
+.habilidade-emphasis-head strong { display:block; font-size:1rem; }
+.habilidade-emphasis-head span { display:block; color:#687385; font-size:.86rem; }
+.habilidade-emphasis-options { display:flex; flex-wrap:wrap; gap:8px; }
+.habilidade-emphasis-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid #dbd9e7; border-radius:999px; background:#fff; padding:9px 13px; font-size:.85rem; transition:background .15s, border-color .15s; }
+.habilidade-emphasis-chip.active { border-color:#6655f5; background:#edeaff; color:#4534c5; font-weight:750; }
+.habilidade-balance-insight { margin-top:12px; padding:10px 12px; border-radius:12px; background:#fff; font-size:.84rem; color:#5d6273; }
+.task-source-switcher { gap:12px; }
+.task-source-button { border-radius:17px; min-height:93px; text-align:left; }
+.task-source-button:focus-visible,.habilidade-emphasis-chip:focus-visible { outline:3px solid #8b7cff;outline-offset:3px; }
+.task-source-button i { font-size:1.35rem; }
+.task-source-panel { margin-top:16px; }
+.task-source-panel-head { gap:12px; flex-wrap:wrap; }
+.wizard-task-option { border-radius:16px; }
+@media(max-width:640px) { .habilidade-emphasis-box { padding:14px; } .task-source-switcher { display:grid; grid-template-columns:1fr; } .task-source-button { min-height:68px; } }
+</style>
+{% endblock %}
 {% block app_content %}
 <div class="form-page form-page-wide">
     <div class="mb-3">
@@ -25,6 +47,7 @@
         </div>
 
         <form method="POST" id="routine-wizard-form" novalidate>
+        {{ form.sugestao_origem_id }}
             {% csrf_token %}
 
             <section class="routine-wizard-step active" data-step="1">
@@ -64,35 +87,35 @@
                     </div>
                 </div>
 
-                <div class="skill-emphasis-box">
-                    <div class="skill-emphasis-head">
+                <div class="habilidade-emphasis-box">
+                    <div class="habilidade-emphasis-head">
                         <div>
                             <strong>Ênfase nas habilidades</strong>
                             <span>O sistema pode equilibrar automaticamente ou você pode escolher até 3 Skills.</span>
                         </div>
                     </div>
 
-                    <div class="skill-emphasis-options" id="skill-emphasis-options">
-                        <button type="button" class="skill-emphasis-chip active" data-emphasis-auto="true">
-                            <span class="skill-emphasis-icon">⚖️</span>
+                    <div class="habilidade-emphasis-options" id="habilidade-emphasis-options">
+                        <button type="button" class="habilidade-emphasis-chip active" data-emphasis-auto="true">
+                            <span class="habilidade-emphasis-icon">⚖️</span>
                             <span>Equilibrar automaticamente</span>
                         </button>
 
                         {% for item in skills_disponiveis %}
                             <button
                                 type="button"
-                                class="skill-emphasis-chip"
-                                data-emphasis-skill="{{ item.skill.slug }}"
-                                data-emphasis-skill-id="{{ item.skill.id }}"
+                                class="habilidade-emphasis-chip"
+                                data-emphasis-habilidade="{{ item.habilidade.slug }}"
+                                data-emphasis-habilidade-id="{{ item.habilidade.id }}"
                             >
-                                <span class="skill-emphasis-icon">{{ item.skill.icone }}</span>
-                                <span>{{ item.skill.nome }}</span>
+                                <span class="habilidade-emphasis-icon">{{ item.habilidade.icone }}</span>
+                                <span>{{ item.habilidade.nome }}</span>
                                 <small data-emphasis-status></small>
                             </button>
                         {% endfor %}
                     </div>
 
-                    <div id="skill-balance-insight" class="skill-balance-insight" aria-live="polite">
+                    <div id="habilidade-balance-insight" class="habilidade-balance-insight" aria-live="polite">
                         Selecione uma criança para analisar o equilíbrio das Skills nas rotinas atuais.
                     </div>
                 </div>
@@ -217,7 +240,10 @@
                 </div>
 
                 <div class="wizard-section-title">
-                    <h2>Quando fazer?</h2>
+                    <div><h2>Quando fazer?</h2><span>Confira a sugestão de frequência e período. Você pode alterar tudo antes de salvar.</span></div>
+                </div>
+                <div id="suggested-schedule-hint" class="alert alert-info small py-2" role="status" hidden>
+                    <i class="bi bi-lightbulb"></i> Frequência e momento sugeridos pela atividade selecionada. Ajuste conforme a rotina da família.
                 </div>
 
                 <div class="row g-3">
@@ -339,6 +365,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const aiList = document.getElementById("lista-sugestoes-ia");
     const predefinedHelp = document.getElementById("predefined-task-help");
     const predefinedList = document.getElementById("predefined-task-list");
+    const sugestaoOrigem = document.getElementById("id_sugestao_origem_id");
     const titulo = document.getElementById("id_titulo");
     const descricao = document.getElementById("id_descricao");
     const pontos = document.getElementById("id_pontos_base");
@@ -346,8 +373,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const sourceButtons = Array.from(document.querySelectorAll("[data-task-source-button]"));
     const sourcePanels = Array.from(document.querySelectorAll("[data-task-source-panel]"));
     const autoEmphasisButton = document.querySelector("[data-emphasis-auto]");
-    const emphasisButtons = Array.from(document.querySelectorAll("[data-emphasis-skill]"));
-    const balanceInsight = document.getElementById("skill-balance-insight");
+    const emphasisButtons = Array.from(document.querySelectorAll("[data-emphasis-habilidade]"));
+    const balanceInsight = document.getElementById("habilidade-balance-insight");
 
     const suggestionUrl = "{% url 'sugestoes_tarefas' %}";
     const aiSuggestionUrl = "{% url 'api_sugerir_rotina' %}";
@@ -433,11 +460,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const descricaoAtual = descricao ? descricao.value.trim() : "";
         const skillsAtivas = [];
 
-        document.querySelectorAll(".wizard-skill-row").forEach(function (card) {
-            const input = card.querySelector('input[id^="skill-impact-"]');
+        document.querySelectorAll(".wizard-habilidade-row").forEach(function (card) {
+            const input = card.querySelector('input[id^="habilidade-intensidade-"]');
             if (!input || Number(input.value) <= 0) return;
-            const nome = card.querySelector(".wizard-skill-name strong");
-            const icone = card.querySelector(".wizard-skill-name span");
+            const nome = card.querySelector(".wizard-habilidade-name strong");
+            const icone = card.querySelector(".wizard-habilidade-name span");
             if (nome) {
                 skillsAtivas.push({
                     nome: nome.textContent.trim(),
@@ -459,10 +486,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (skillsResumo) {
                 skillsResumo.innerHTML = "";
-                skillsAtivas.forEach(function (skill) {
+                skillsAtivas.forEach(function (habilidade) {
                     const chip = document.createElement("span");
-                    chip.className = "wizard-selected-task-skill";
-                    chip.textContent = (skill.icone ? skill.icone + " " : "") + skill.nome;
+                    chip.className = "wizard-selected-task-habilidade";
+                    chip.textContent = (habilidade.icone ? habilidade.icone + " " : "") + habilidade.nome;
                     skillsResumo.appendChild(chip);
                 });
                 skillsResumo.classList.toggle("d-none", !skillsAtivas.length);
@@ -489,6 +516,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function selectSource(source) {
+        if (sugestaoOrigem && source !== "system") sugestaoOrigem.value = "";
         currentSource = source;
         sourceButtons.forEach(function (button) {
             const active = button.dataset.taskSourceButton === source;
@@ -516,7 +544,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function atualizarBotoesEnfase() {
         if (autoEmphasisButton) autoEmphasisButton.classList.toggle("active", automaticEmphasis);
         emphasisButtons.forEach(function (button) {
-            button.classList.toggle("active", selectedEmphasis.has(button.dataset.emphasisSkill));
+            button.classList.toggle("active", selectedEmphasis.has(button.dataset.emphasisHabilidade));
         });
     }
 
@@ -544,7 +572,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     emphasisButtons.forEach(function (button) {
         button.addEventListener("click", function () {
-            const slug = button.dataset.emphasisSkill;
+            const slug = button.dataset.emphasisHabilidade;
             automaticEmphasis = false;
             if (selectedEmphasis.has(slug)) {
                 selectedEmphasis.delete(slug);
@@ -567,7 +595,7 @@ document.addEventListener("DOMContentLoaded", function () {
         (diagnostico.skills || []).forEach(function (item) { porSlug[item.slug] = item; });
 
         emphasisButtons.forEach(function (button) {
-            const slug = button.dataset.emphasisSkill;
+            const slug = button.dataset.emphasisHabilidade;
             const item = porSlug[slug];
             button.classList.toggle("recommended", recommendedSlugs.has(slug));
             button.classList.toggle("overused", repetidas.has(slug));
@@ -584,47 +612,47 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function definirImpacto(skillId, impacto) {
-        const input = document.getElementById("skill-impact-" + skillId);
-        const group = document.querySelector('[data-skill-id="' + skillId + '"]');
-        const card = document.querySelector('[data-skill-card="' + skillId + '"]');
+    function definirIntensidade(skillId, intensidade) {
+        const input = document.getElementById("habilidade-intensidade-" + skillId);
+        const group = document.querySelector('[data-habilidade-id="' + skillId + '"]');
+        const card = document.querySelector('[data-habilidade-card="' + skillId + '"]');
         if (!input || !group) return;
-        input.value = impacto;
+        input.value = intensidade;
         group.querySelectorAll("button").forEach(function (button) {
-            button.classList.toggle("active", Number(button.dataset.impact) === Number(impacto));
+            button.classList.toggle("active", Number(button.dataset.intensidade) === Number(intensidade));
         });
-        if (card) card.classList.toggle("has-impact", Number(impacto) > 0);
+        if (card) card.classList.toggle("has-intensidade", Number(intensidade) > 0);
         atualizarResumoTarefa();
     }
 
     function limparSkills() {
-        document.querySelectorAll(".skill-impact-options").forEach(function (group) {
-            definirImpacto(group.dataset.skillId, 0);
+        document.querySelectorAll(".habilidade-intensidade-options").forEach(function (group) {
+            definirIntensidade(group.dataset.habilidadeId, 0);
         });
     }
     function aplicarSkills(skills) {
         limparSkills();
-        (skills || []).forEach(function (skill) { definirImpacto(skill.id, skill.impacto); });
+        (skills || []).forEach(function (habilidade) { definirIntensidade(habilidade.id, habilidade.intensidade); });
     }
 
-    document.querySelectorAll(".skill-impact-options").forEach(function (group) {
+    document.querySelectorAll(".habilidade-intensidade-options").forEach(function (group) {
         group.querySelectorAll("button").forEach(function (button) {
             button.addEventListener("click", function () {
-                definirImpacto(group.dataset.skillId, button.dataset.impact);
+                definirIntensidade(group.dataset.habilidadeId, button.dataset.intensidade);
             });
         });
-        const input = document.getElementById("skill-impact-" + group.dataset.skillId);
-        if (input) definirImpacto(group.dataset.skillId, input.value);
+        const input = document.getElementById("habilidade-intensidade-" + group.dataset.habilidadeId);
+        if (input) definirIntensidade(group.dataset.habilidadeId, input.value);
     });
 
-    function criarSkillResumo(skill) {
+    function criarSkillResumo(habilidade) {
         const span = document.createElement("span");
-        span.className = "wizard-task-skill";
+        span.className = "wizard-task-habilidade";
         const emEnfase = automaticEmphasis
-            ? recommendedSlugs.has(skill.slug)
-            : selectedEmphasis.has(skill.slug);
+            ? recommendedSlugs.has(habilidade.slug)
+            : selectedEmphasis.has(habilidade.slug);
         if (emEnfase) span.classList.add("is-emphasis");
-        span.textContent = (skill.icone || "✨") + " " + skill.nome + " " + (skill.simbolo || "");
+        span.textContent = (habilidade.icone || "✨") + " " + habilidade.nome + " " + (habilidade.simbolo || "");
         return span;
     }
 
@@ -641,11 +669,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function aplicarSugestao(item, origem) {
+        if (sugestaoOrigem) sugestaoOrigem.value = origem === "ia" ? "" : (item.id || "");
         if (titulo) titulo.value = item.titulo || "";
         if (descricao) descricao.value = item.descricao || "";
         if (pontos) pontos.value = item.pontos || 10;
         if (frequencia && item.frequencia) frequencia.value = item.frequencia;
-        if (item.dias_semana) {
+        if (periodo && item.periodo && Array.from(periodo.options).some(function (option) { return option.value === item.periodo; })) {
+            periodo.value = item.periodo;
+        }
+        const scheduleHint = document.getElementById("suggested-schedule-hint");
+        if (scheduleHint) scheduleHint.hidden = !(item.frequencia || item.periodo);
+        if (Array.isArray(item.dias_semana)) {
             limparDias();
             (item.dias_semana || []).forEach(function (dia) {
                 const checkbox = document.querySelector('input[name="dias_semana_selecionados"][value="' + dia + '"]');
@@ -654,6 +688,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         aplicarSkills(item.skills || []);
         atualizarDias();
+        atualizarHorario();
         marcarTarefaSelecionada(origem === "ia" ? item.id : "catalogo-" + item.id);
         atualizarResumoTarefa();
         stepAlert(2, "");
@@ -688,8 +723,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const skills = document.createElement("span");
         skills.className = "wizard-task-skills";
-        (item.skills || []).slice(0, 3).forEach(function (skill) {
-            skills.appendChild(criarSkillResumo(skill));
+        (item.skills || []).slice(0, 3).forEach(function (habilidade) {
+            skills.appendChild(criarSkillResumo(habilidade));
         });
         main.appendChild(skills);
 
@@ -845,6 +880,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (titulo) {
         titulo.addEventListener("input", function () {
+            if (sugestaoOrigem) sugestaoOrigem.value = "";
             document.querySelectorAll(".wizard-task-option.active").forEach(function (button) {
                 button.classList.remove("active");
             });

@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from gamificacao.services import (
     avaliar_conquistas,
 )
-from usuarios.models import PerfilCrianca
+from usuarios.models import PerfilInfantil
 
 
 class Command(BaseCommand):
@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         total = 0
 
-        for perfil in PerfilCrianca.objects.all():
+        for perfil in PerfilInfantil.objects.all():
             antes = (
                 perfil
                 .conquistas_desbloqueadas

@@ -1,0 +1,29 @@
+{% extends "base_app.html" %}
+{% block title %}Tarefas da família | Rotina Conecta{% endblock %}
+{% block app_content %}
+<div class="page-heading mb-4">
+  <div><span class="hero-eyebrow">{{ hoje|date:"d/m/Y" }}</span><h1 class="h3 fw-bold mb-1">Tarefas da família</h1><p class="text-muted mb-0">Acompanhe as atividades de todas as crianças em um só lugar.</p></div>
+  <a class="btn btn-primary" href="{% url 'rotina_criar' %}"><i class="bi bi-plus-lg"></i> Nova rotina</a>
+</div>
+<nav class="d-flex gap-2 flex-wrap mb-4" aria-label="Filtrar tarefas">
+  <a class="btn {% if not filtro_pendentes %}btn-primary{% else %}btn-light{% endif %}" href="{% url 'tarefas_familia' %}" {% if not filtro_pendentes %}aria-current="page"{% endif %}>Todas de hoje</a>
+  <a class="btn {% if filtro_pendentes %}btn-primary{% else %}btn-light{% endif %}" href="{% url 'tarefas_familia' %}?status=pendentes" {% if filtro_pendentes %}aria-current="page"{% endif %}>Pendentes</a>
+</nav>
+<div class="row g-3">
+{% for tarefa in tarefas %}
+  <div class="col-12 col-lg-6"><article class="content-card h-100 p-3">
+    <div class="d-flex align-items-start justify-content-between gap-2"><div>
+      <span class="small text-muted"><i class="bi bi-person-circle"></i> {{ tarefa.crianca.nome }}</span>
+      <h2 class="h5 fw-bold mt-2 mb-1">{{ tarefa.titulo }}</h2>
+    </div><span class="badge bg-light text-dark">{{ tarefa.get_status_display }}</span></div>
+    {% if tarefa.descricao %}<p class="small text-muted mb-2">{{ tarefa.descricao|truncatechars:140 }}</p>{% endif %}
+    <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
+      <span class="small"><i class="bi bi-star-fill text-warning"></i> {{ tarefa.pontos_base }} pontos</span>
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'tarefas_crianca_tutor' tarefa.crianca_id %}">Ver tarefas da criança <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </article></div>
+{% empty %}
+  <div class="col-12"><div class="content-card text-center p-5"><i class="bi bi-check2-circle fs-1 text-primary"></i><h2 class="h5 mt-3">Nenhuma tarefa encontrada</h2><p class="text-muted mb-0">{% if filtro_pendentes %}Não há tarefas pendentes hoje.{% else %}Ainda não há tarefas para hoje.{% endif %}</p></div></div>
+{% endfor %}
+</div>
+{% endblock %}

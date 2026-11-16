@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import (
     get_object_or_404,
@@ -8,20 +9,21 @@ from django.shortcuts import (
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from usuarios.models import PerfilCrianca, Usuario
+from usuarios.models import PerfilInfantil, Usuario
 from usuarios.views import obter_celebracao_usuario, obter_familia_tutor
 
 from .forms import RecompensaForm
 from .models import (
     Conquista,
-    ConquistaCrianca,
+    ConquistaInfantil,
     NotificacaoSistema,
     Recompensa,
-    ResgateRecompensa,
+    SolicitacaoResgate,
 )
 from .services import (
     calcular_sequencia,
     cancelar_resgate,
+    confirmar_entrega_resgate,
     garantir_recompensas_padrao,
     melhor_sequencia,
     montar_painel_habilidades,
@@ -39,8 +41,8 @@ def _render_habilidades(
 
     radar = [
         {
-            "nome": item["skill"].nome,
-            "icone": item["skill"].icone,
+            "nome": item["habilidade"].nome,
+            "icone": item["habilidade"].icone,
             "valor": item["valor_radar"],
         }
         for item in painel
@@ -99,7 +101,7 @@ def habilidades_crianca_tutor(
     )
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -116,7 +118,7 @@ def _dados_conquistas(
     desbloqueadas = {
         item.conquista_id: item
         for item in (
-            ConquistaCrianca.objects
+            ConquistaInfantil.objects
             .filter(
                 crianca=perfil
             )
@@ -240,7 +242,7 @@ def conquistas_crianca_tutor(
     )
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -263,6 +265,11 @@ def conquistas_crianca_tutor(
 def loja_recompensas(
     request,
 ):
+    categoria = request.GET.get("categoria", "").strip()
+    categorias_validas = {valor for valor, _ in Recompensa.Categoria.choices}
+    if categoria not in categorias_validas:
+        categoria = ""
+
     if request.user.tipo == Usuario.Tipo.CRIANCA:
         perfil = getattr(
             request.user,
@@ -300,8 +307,11 @@ def loja_recompensas(
             )
         )
 
+        if categoria:
+            recompensas = recompensas.filter(categoria=categoria)
+
         resgates = (
-            ResgateRecompensa.objects
+            SolicitacaoResgate.objects
             .filter(
                 crianca=perfil
             )
@@ -318,6 +328,8 @@ def loja_recompensas(
                 "recompensas": recompensas,
                 "resgates": resgates,
                 "modo_tutor": False,
+                "categoria_selecionada": categoria,
+                "categorias": Recompensa.Categoria.choices,
             },
         )
 
@@ -342,12 +354,18 @@ def loja_recompensas(
         )
     )
 
+    if categoria:
+        recompensas = recompensas.filter(categoria=categoria)
+    criancas_sem_acesso = PerfilInfantil.objects.filter(
+        familia=familia, acesso_proprio=False
+    ).order_by("nome")
+
     pendentes = (
-        ResgateRecompensa.objects
+        SolicitacaoResgate.objects
         .filter(
             crianca__familia=familia,
             status=(
-                ResgateRecompensa
+                SolicitacaoResgate
                 .Status
                 .SOLICITADO
             ),
@@ -371,6 +389,9 @@ def loja_recompensas(
             "pendentes": pendentes,
             "destaque_pendente": destaque_pendente,
             "modo_tutor": True,
+            "categoria_selecionada": categoria,
+            "categorias": Recompensa.Categoria.choices,
+            "criancas_sem_acesso": criancas_sem_acesso,
             "celebracao_evento": (
                 obter_celebracao_usuario(
                     request.user,
@@ -524,52 +545,38 @@ def recompensa_alternar(
 
 @login_required(login_url="login")
 @require_POST
-def recompensa_resgatar(
-    request,
-    recompensa_id,
-):
-    if request.user.tipo != Usuario.Tipo.CRIANCA:
-        return redirect("inicio")
-
-    perfil = getattr(
-        request.user,
-        "perfil_crianca",
-        None,
-    )
-
-    if perfil is None:
+def recompensa_resgatar(request, recompensa_id):
+    if request.user.tipo == Usuario.Tipo.CRIANCA:
+        perfil = getattr(request.user, "perfil_crianca", None)
+        if perfil is None:
+            return redirect("inicio")
+        tutor = None
+    elif request.user.tipo == Usuario.Tipo.TUTOR:
+        familia = obter_familia_tutor(request.user)
+        perfil_id = request.POST.get("crianca", "")
+        try:
+            perfil = PerfilInfantil.objects.get(
+                pk=perfil_id, familia=familia, acesso_proprio=False
+            )
+        except (PerfilInfantil.DoesNotExist, ValidationError, ValueError, TypeError):
+            messages.error(request, "Selecione uma criança sem acesso próprio da sua família.")
+            return redirect("loja_recompensas")
+        tutor = request.user
+    else:
         return redirect("inicio")
 
     recompensa = get_object_or_404(
-        Recompensa,
-        id=recompensa_id,
-        familia=perfil.familia,
-        ativa=True,
+        Recompensa, pk=recompensa_id, familia=perfil.familia, ativa=True
     )
-
     try:
         resgatar_recompensa(
-            perfil=perfil,
-            recompensa=recompensa,
+            perfil=perfil, recompensa=recompensa, tutor_solicitante=tutor
         )
     except ValueError as erro:
-        messages.error(
-            request,
-            str(erro),
-        )
+        messages.error(request, str(erro))
     else:
-        messages.success(
-            request,
-            (
-                f"{recompensa.icone} "
-                f"{recompensa.titulo} resgatada! "
-                "Agora é só aguardar o responsável."
-            ),
-        )
-
-    return redirect(
-        "loja_recompensas"
-    )
+        messages.success(request, "Solicitação registrada! Os pontos foram debitados uma vez.")
+    return redirect("loja_recompensas")
 
 
 @login_required(login_url="login")
@@ -584,7 +591,7 @@ def resgates_recompensas(
     )
 
     resgates = (
-        ResgateRecompensa.objects
+        SolicitacaoResgate.objects
         .filter(
             crianca__familia=familia
         )
@@ -605,7 +612,7 @@ def resgates_recompensas(
             "resgate_destaque": (
                 resgates.filter(
                     status=(
-                        ResgateRecompensa
+                        SolicitacaoResgate
                         .Status
                         .SOLICITADO
                     )
@@ -639,30 +646,17 @@ def resgate_entregar(
     )
 
     resgate = get_object_or_404(
-        ResgateRecompensa,
+        SolicitacaoResgate,
         id=resgate_id,
         crianca__familia=familia,
         status=(
-            ResgateRecompensa
+            SolicitacaoResgate
             .Status
             .SOLICITADO
         ),
     )
 
-    resgate.status = (
-        ResgateRecompensa
-        .Status
-        .ENTREGUE
-    )
-
-    resgate.concluido_em = timezone.now()
-
-    resgate.save(
-        update_fields=[
-            "status",
-            "concluido_em",
-        ]
-    )
+    confirmar_entrega_resgate(resgate=resgate, tutor=request.user)
 
     messages.success(
         request,
@@ -688,11 +682,11 @@ def resgate_cancelar(
     )
 
     resgate = get_object_or_404(
-        ResgateRecompensa,
+        SolicitacaoResgate,
         id=resgate_id,
         crianca__familia=familia,
         status=(
-            ResgateRecompensa
+            SolicitacaoResgate
             .Status
             .SOLICITADO
         ),
@@ -737,7 +731,7 @@ def notificacoes_central(request):
         .select_related(
             "crianca",
             "tarefa",
-            "skill",
+            "habilidade",
         )
     )
 

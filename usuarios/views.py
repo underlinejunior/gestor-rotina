@@ -3,8 +3,9 @@ import secrets
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.http import JsonResponse
@@ -14,8 +15,8 @@ from django.views.decorators.http import require_POST
 
 from gamificacao.models import NotificacaoSistema
 
-from .forms import CadastroTutorForm, CodigoConviteTutorForm, CriancaForm
-from .models import ConviteTutor, Familia, PerfilCrianca, Usuario
+from .forms import CadastroTutorForm, CodigoConviteResponsavelForm, CriancaForm
+from .models import ConviteResponsavel, Familia, PerfilInfantil, Usuario
 
 
 def obter_familia_tutor(usuario):
@@ -130,10 +131,15 @@ def login_view(request):
             request.POST.get("password") or ""
         )
 
+        # ModelBackend mantém o login local, mesmo com o Google ativado.
+        # Aceitamos nome de usuário e, para contas com e-mail único, e-mail.
+        identificador = username
+        if "@" in identificador:
+            candidatos = Usuario.objects.filter(email__iexact=identificador)
+            if candidatos.count() == 1:
+                identificador = candidatos.first().username
         usuario = authenticate(
-            request,
-            username=username,
-            password=password,
+            request, username=identificador, password=password
         )
 
         if usuario is not None:
@@ -161,6 +167,40 @@ def login_view(request):
             ),
         },
     )
+
+
+
+@login_required(login_url="login")
+def perfil_view(request):
+    return render(
+        request,
+        "usuarios/perfil.html",
+        {
+            "familia": request.user.familias_como_tutor.first() if request.user.tipo == Usuario.Tipo.TUTOR else None,
+            "perfil_infantil": getattr(request.user, "perfil_crianca", None),
+        },
+    )
+
+
+@login_required(login_url="login")
+def configurar_senha_local(request):
+    """Permite definir senha em contas criadas via Google ou alterá-la de forma segura."""
+    if request.user.tipo != Usuario.Tipo.TUTOR:
+        return redirect("inicio")
+    sem_senha = not request.user.has_usable_password()
+    form_class = SetPasswordForm if sem_senha else PasswordChangeForm
+    if request.method == "POST":
+        form = form_class(user=request.user, data=request.POST)
+        if form.is_valid():
+            usuario = form.save()
+            update_session_auth_hash(request, usuario)
+            messages.success(request, "Senha local configurada. Você também pode entrar com Google.")
+            return redirect("inicio")
+    else:
+        form = form_class(user=request.user)
+    return render(request, "usuarios/configurar_senha.html", {
+        "form": form, "sem_senha": sem_senha,
+    })
 
 
 def cadastro_tutor_view(request):
@@ -319,13 +359,13 @@ def privacidade_exportar(request):
     if request.user.tipo != Usuario.Tipo.TUTOR:
         return redirect("inicio")
 
-    from tarefas.models import InstanciaTarefa, MoldeTarefa
+    from tarefas.models import TarefaAgendada, RotinaPlanejada
     from gamificacao.models import (
-        ConquistaCrianca,
-        MovimentoPontos,
-        MovimentoSkill,
-        ProgressoSkill,
-        ResgateRecompensa,
+        ConquistaInfantil,
+        MovimentacaoPontos,
+        MovimentacaoHabilidade,
+        ProgressoHabilidade,
+        SolicitacaoResgate,
     )
 
     familia = obter_familia_tutor(request.user)
@@ -376,8 +416,8 @@ def privacidade_exportar(request):
             }
             for item in criancas
         ],
-        "moldes_tarefas": list(
-            MoldeTarefa.objects
+        "rotinas_planejadas": list(
+            RotinaPlanejada.objects
             .filter(familia=familia)
             .values(
                 "id",
@@ -396,7 +436,7 @@ def privacidade_exportar(request):
             )
         ),
         "tarefas": list(
-            InstanciaTarefa.objects
+            TarefaAgendada.objects
             .filter(familia=familia)
             .values(
                 "id",
@@ -414,38 +454,38 @@ def privacidade_exportar(request):
             )
         ),
         "progresso_skills": list(
-            ProgressoSkill.objects
+            ProgressoHabilidade.objects
             .filter(crianca_id__in=crianca_ids)
             .values(
                 "crianca_id",
-                "skill__slug",
-                "skill__nome",
-                "xp_total",
+                "habilidade__slug",
+                "habilidade__nome",
+                "experiencia_acumulada",
             )
         ),
-        "movimentos_skills": list(
-            MovimentoSkill.objects
+        "movimentos_habilidades": list(
+            MovimentacaoHabilidade.objects
             .filter(crianca_id__in=crianca_ids)
             .values(
                 "crianca_id",
-                "skill__slug",
+                "habilidade__slug",
                 "xp",
                 "criado_em",
             )
         ),
         "movimentos_pontos": list(
-            MovimentoPontos.objects
+            MovimentacaoPontos.objects
             .filter(crianca_id__in=crianca_ids)
             .values(
                 "crianca_id",
                 "tipo",
                 "pontos",
-                "saldo_apos",
+                "saldo_resultante",
                 "criado_em",
             )
         ),
         "resgates": list(
-            ResgateRecompensa.objects
+            SolicitacaoResgate.objects
             .filter(crianca_id__in=crianca_ids)
             .values(
                 "crianca_id",
@@ -457,7 +497,7 @@ def privacidade_exportar(request):
             )
         ),
         "conquistas": list(
-            ConquistaCrianca.objects
+            ConquistaInfantil.objects
             .filter(crianca_id__in=crianca_ids)
             .values(
                 "crianca_id",
@@ -490,11 +530,11 @@ def privacidade_apagar_evidencias(request):
     if request.user.tipo != Usuario.Tipo.TUTOR:
         return redirect("inicio")
 
-    from tarefas.models import InstanciaTarefa
+    from tarefas.models import TarefaAgendada
 
     familia = obter_familia_tutor(request.user)
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(familia=familia)
         .exclude(foto="")
         .exclude(foto__isnull=True)
@@ -537,7 +577,7 @@ def privacidade_excluir_conta(request):
 
     from allauth.account.models import EmailAddress
     from allauth.socialaccount.models import SocialAccount
-    from tarefas.models import InstanciaTarefa
+    from tarefas.models import TarefaAgendada
 
     usuario = request.user
     familias = list(usuario.familias_como_tutor.all())
@@ -559,7 +599,7 @@ def privacidade_excluir_conta(request):
         )
 
         for tarefa in (
-            InstanciaTarefa.objects
+            TarefaAgendada.objects
             .filter(familia=familia)
             .exclude(foto="")
             .exclude(foto__isnull=True)
@@ -611,7 +651,7 @@ def logout_view(request):
 
 @login_required(login_url="login")
 def inicio_view(request):
-    from tarefas.models import InstanciaTarefa
+    from tarefas.models import TarefaAgendada
     from tarefas.services import (
         calcular_indicadores_periodo,
         processar_rotinas,
@@ -636,7 +676,7 @@ def inicio_view(request):
             )
 
             tarefas = (
-                InstanciaTarefa.objects
+                TarefaAgendada.objects
                 .filter(
                     crianca=perfil,
                     data_referencia=hoje,
@@ -680,21 +720,21 @@ def inicio_view(request):
                 "tarefas": tarefas[:4],
                 "total_pendentes": tarefas.filter(
                     status=(
-                        InstanciaTarefa
+                        TarefaAgendada
                         .Status
                         .PENDENTE
                     )
                 ).count(),
                 "total_revisao": tarefas.filter(
                     status=(
-                        InstanciaTarefa
+                        TarefaAgendada
                         .Status
                         .REVISAO
                     )
                 ).count(),
                 "total_concluidas": tarefas.filter(
                     status=(
-                        InstanciaTarefa
+                        TarefaAgendada
                         .Status
                         .APROVADA
                     )
@@ -742,7 +782,7 @@ def inicio_view(request):
     )
 
     criancas = list(
-        PerfilCrianca.objects
+        PerfilInfantil.objects
         .filter(familia=familia)
         .select_related("usuario")
         .order_by("nome")
@@ -766,7 +806,7 @@ def inicio_view(request):
             )
         )
 
-    tarefas_hoje = InstanciaTarefa.objects.filter(
+    tarefas_hoje = TarefaAgendada.objects.filter(
         familia=familia,
         data_referencia=hoje,
     )
@@ -784,10 +824,10 @@ def inicio_view(request):
         "total_criancas": len(criancas),
         "total_tarefas_hoje": tarefas_hoje.count(),
         "total_revisoes": tarefas_hoje.filter(
-            status=InstanciaTarefa.Status.REVISAO
+            status=TarefaAgendada.Status.REVISAO
         ).count(),
         "total_pendentes": tarefas_hoje.filter(
-            status=InstanciaTarefa.Status.PENDENTE
+            status=TarefaAgendada.Status.PENDENTE
         ).count(),
         "indicadores_semana": indicadores_semana,
         "celebracao_evento": celebracao_evento,
@@ -810,7 +850,7 @@ def criancas_listar(request):
     )
 
     criancas = (
-        PerfilCrianca.objects
+        PerfilInfantil.objects
         .filter(familia=familia)
         .select_related("usuario")
         .order_by("nome")
@@ -877,7 +917,7 @@ def crianca_editar(
     )
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -926,7 +966,7 @@ def _gerar_codigo_convite():
             + 100000
         )
 
-        if not ConviteTutor.objects.filter(
+        if not ConviteResponsavel.objects.filter(
             codigo=codigo
         ).exists():
             return codigo
@@ -946,7 +986,7 @@ def familia_configuracao(
     )
 
     convites = (
-        ConviteTutor.objects
+        ConviteResponsavel.objects
         .filter(
             familia=familia,
             ativo=True,
@@ -974,7 +1014,7 @@ def familia_configuracao(
             ),
             "convites": convites,
             "form_codigo": (
-                CodigoConviteTutorForm()
+                CodigoConviteResponsavelForm()
             ),
         },
     )
@@ -997,7 +1037,7 @@ def convite_tutor_criar(
         request.user
     )
 
-    ConviteTutor.objects.filter(
+    ConviteResponsavel.objects.filter(
         familia=familia,
         ativo=True,
         usado_por__isnull=True,
@@ -1006,7 +1046,7 @@ def convite_tutor_criar(
     )
 
     convite = (
-        ConviteTutor.objects.create(
+        ConviteResponsavel.objects.create(
             familia=familia,
             codigo=(
                 _gerar_codigo_convite()
@@ -1047,7 +1087,7 @@ def familia_entrar_codigo(
             "familia_configuracao"
         )
 
-    form = CodigoConviteTutorForm(
+    form = CodigoConviteResponsavelForm(
         request.POST
     )
 
@@ -1065,7 +1105,7 @@ def familia_entrar_codigo(
     ]
 
     convite = (
-        ConviteTutor.objects
+        ConviteResponsavel.objects
         .filter(
             codigo=codigo,
             ativo=True,
@@ -1155,17 +1195,7 @@ def familia_entrar_codigo(
         request.user
     )
 
-    convite.usado_por = request.user
-    convite.utilizado_em = timezone.now()
-    convite.ativo = False
-
-    convite.save(
-        update_fields=[
-            "usado_por",
-            "utilizado_em",
-            "ativo",
-        ]
-    )
+    convite.utilizar(request.user)
 
     messages.success(
         request,
@@ -1199,7 +1229,7 @@ def convite_tutor_cancelar(
     )
 
     convite = get_object_or_404(
-        ConviteTutor,
+        ConviteResponsavel,
         id=convite_id,
         familia=familia,
         ativo=True,

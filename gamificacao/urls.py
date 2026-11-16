@@ -10,7 +10,7 @@ urlpatterns = [
         name="minhas_habilidades",
     ),
     path(
-        "criancas/<int:perfil_id>/habilidades/",
+        "criancas/<uuid:perfil_id>/habilidades/",
         views.habilidades_crianca_tutor,
         name="habilidades_crianca_tutor",
     ),
@@ -21,7 +21,7 @@ urlpatterns = [
         name="minhas_conquistas",
     ),
     path(
-        "criancas/<int:perfil_id>/conquistas/",
+        "criancas/<uuid:perfil_id>/conquistas/",
         views.conquistas_crianca_tutor,
         name="conquistas_crianca_tutor",
     ),
@@ -37,17 +37,17 @@ urlpatterns = [
         name="recompensa_criar",
     ),
     path(
-        "recompensas/<int:recompensa_id>/editar/",
+        "recompensas/<uuid:recompensa_id>/editar/",
         views.recompensa_editar,
         name="recompensa_editar",
     ),
     path(
-        "recompensas/<int:recompensa_id>/alternar/",
+        "recompensas/<uuid:recompensa_id>/alternar/",
         views.recompensa_alternar,
         name="recompensa_alternar",
     ),
     path(
-        "recompensas/<int:recompensa_id>/resgatar/",
+        "recompensas/<uuid:recompensa_id>/resgatar/",
         views.recompensa_resgatar,
         name="recompensa_resgatar",
     ),
@@ -57,12 +57,12 @@ urlpatterns = [
         name="resgates_recompensas",
     ),
     path(
-        "recompensas/resgates/<int:resgate_id>/entregar/",
+        "recompensas/resgates/<uuid:resgate_id>/entregar/",
         views.resgate_entregar,
         name="resgate_entregar",
     ),
     path(
-        "recompensas/resgates/<int:resgate_id>/cancelar/",
+        "recompensas/resgates/<uuid:resgate_id>/cancelar/",
         views.resgate_cancelar,
         name="resgate_cancelar",
     ),
@@ -73,7 +73,7 @@ urlpatterns = [
         name="notificacoes_central",
     ),
     path(
-        "notificacoes/<int:notificacao_id>/abrir/",
+        "notificacoes/<uuid:notificacao_id>/abrir/",
         views.notificacao_abrir,
         name="notificacao_abrir",
     ),

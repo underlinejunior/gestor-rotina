@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from tarefas.models import InstanciaTarefa
+from tarefas.models import TarefaAgendada
 
 
 class Command(BaseCommand):
@@ -30,13 +30,13 @@ class Command(BaseCommand):
         limite = timezone.now() - timedelta(days=dias)
 
         tarefas = (
-            InstanciaTarefa.objects
+            TarefaAgendada.objects
             .filter(
                 enviada_em__lt=limite,
                 status__in=[
-                    InstanciaTarefa.Status.APROVADA,
-                    InstanciaTarefa.Status.REJEITADA,
-                    InstanciaTarefa.Status.NAO_REALIZADA,
+                    TarefaAgendada.Status.APROVADA,
+                    TarefaAgendada.Status.REJEITADA,
+                    TarefaAgendada.Status.NAO_REALIZADA,
                 ],
             )
             .exclude(foto="")

@@ -1,11 +1,11 @@
 from django.db import transaction
 
-from tarefas.models import SugestaoTarefa
+from tarefas.models import SugestaoAtividade
 
 from .models import (
     Conquista,
-    Skill,
-    SugestaoTarefaSkill,
+    Habilidade,
+    SugestaoHabilidade,
 )
 
 
@@ -563,7 +563,7 @@ def carregar_catalogo_padrao(
         descricao,
         ordem,
     ) in SKILLS_PADRAO:
-        skill, _ = Skill.objects.update_or_create(
+        habilidade, _ = Habilidade.objects.update_or_create(
             slug=slug,
             defaults={
                 "nome": nome,
@@ -573,10 +573,10 @@ def carregar_catalogo_padrao(
                 "ativa": True,
             },
         )
-        skills[slug] = skill
+        skills[slug] = habilidade
 
     for item in SUGESTOES_PADRAO:
-        sugestao, _ = SugestaoTarefa.objects.update_or_create(
+        sugestao, _ = SugestaoAtividade.objects.update_or_create(
             titulo=item["titulo"],
             defaults={
                 "icone": item.get(
@@ -595,13 +595,13 @@ def carregar_catalogo_padrao(
             },
         )
 
-        SugestaoTarefaSkill.objects.filter(
+        SugestaoHabilidade.objects.filter(
             sugestao=sugestao
         ).delete()
 
-        for slug, impacto in item["skills"].items():
-            SugestaoTarefaSkill.objects.create(
+        for slug, intensidade in item["skills"].items():
+            SugestaoHabilidade.objects.create(
                 sugestao=sugestao,
-                skill=skills[slug],
-                impacto=impacto,
+                habilidade=skills[slug],
+                intensidade=intensidade,
             )

@@ -8,13 +8,13 @@ from django.urls import reverse
 from django.utils import timezone
 
 from gamificacao.models import (
-    MoldeTarefaSkill,
-    MovimentoPontos,
+    RotinaHabilidade,
+    MovimentacaoPontos,
     NotificacaoSistema,
-    Skill,
+    Habilidade,
 )
 from tarefas.forms import EnvioComprovanteForm
-from tarefas.models import InstanciaTarefa, MoldeTarefa, PeriodoTarefa
+from tarefas.models import TarefaAgendada, RotinaPlanejada, PeriodoTarefa
 from tarefas.services import (
     ConfiguracaoIAAusente,
     _extrair_json_ia,
@@ -26,7 +26,7 @@ from tarefas.services import (
     processar_lembretes,
     rejeitar_tarefa,
 )
-from usuarios.models import Familia, PerfilCrianca, Usuario
+from usuarios.models import Familia, PerfilInfantil, Usuario
 
 
 GIF_1X1 = (
@@ -54,8 +54,8 @@ class SugestoesIATests(SimpleTestCase):
                     "descricao": "Organizar a cama.",
                     "pontos": 12,
                     "skills": [
-                        {"slug": "organizacao", "impacto": 3},
-                        {"slug": "inexistente", "impacto": 3},
+                        {"slug": "organizacao", "intensidade": 3},
+                        {"slug": "inexistente", "intensidade": 3},
                     ],
                 }
             ],
@@ -70,7 +70,7 @@ class SugestoesIATests(SimpleTestCase):
         self.assertEqual(len(sugestoes), 1)
         self.assertEqual(
             sugestoes[0]["skills"],
-            [{"slug": "organizacao", "impacto": 3}],
+            [{"slug": "organizacao", "intensidade": 3}],
         )
 
     @patch.dict("os.environ", {"GEMINI_API_KEY": ""})
@@ -105,72 +105,72 @@ class BaseTarefasTestCase(TestCase):
         )
         self.familia = Familia.objects.create(nome="Família Teste")
         self.familia.tutores.add(self.tutor)
-        self.crianca = PerfilCrianca.objects.create(
+        self.crianca = PerfilInfantil.objects.create(
             familia=self.familia,
             nome="Filho",
             usuario=self.usuario_crianca,
             acesso_proprio=True,
         )
 
-    def criar_molde(self, **kwargs):
+    def criar_rotina(self, **kwargs):
         dados = {
             "familia": self.familia,
             "crianca": self.crianca,
             "titulo": "Arrumar a cama",
             "descricao": "Organizar a cama ao acordar.",
             "pontos_base": 10,
-            "frequencia": MoldeTarefa.Frequencia.DIARIA,
+            "frequencia": RotinaPlanejada.Frequencia.DIARIA,
             "periodo": PeriodoTarefa.MANHA,
             "lembrete_ativo": False,
             "criado_por": self.tutor,
         }
         dados.update(kwargs)
-        return MoldeTarefa.objects.create(**dados)
+        return RotinaPlanejada.objects.create(**dados)
 
     def criar_tarefa(self, **kwargs):
         dados = {
             "familia": self.familia,
             "crianca": self.crianca,
             "criada_por": self.tutor,
-            "origem": InstanciaTarefa.Origem.BONUS,
+            "origem": TarefaAgendada.Origem.BONUS,
             "titulo": "Guardar brinquedos",
             "descricao": "",
             "pontos_base": 10,
             "data_referencia": timezone.localdate(),
         }
         dados.update(kwargs)
-        return InstanciaTarefa.objects.create(**dados)
+        return TarefaAgendada.objects.create(**dados)
 
 
 class RF03RotinasTests(BaseTarefasTestCase):
-    """RF03 — moldes, recorrência, horários e lembretes."""
+    """RF03 — rotinas, recorrência, horários e lembretes."""
 
-    def test_rf03_molde_diario_gera_em_qualquer_dia(self):
-        molde = self.criar_molde(
-            frequencia=MoldeTarefa.Frequencia.DIARIA
+    def test_rf03_rotina_diario_gera_em_qualquer_dia(self):
+        rotina = self.criar_rotina(
+            frequencia=RotinaPlanejada.Frequencia.DIARIA
         )
 
-        self.assertTrue(molde.deve_gerar_em(date(2026, 8, 24)))
-        self.assertTrue(molde.deve_gerar_em(date(2026, 8, 25)))
+        self.assertTrue(rotina.deve_gerar_em(date(2026, 8, 24)))
+        self.assertTrue(rotina.deve_gerar_em(date(2026, 8, 25)))
 
-    def test_rf03_molde_semanal_respeita_dias_configurados(self):
+    def test_rf03_rotina_semanal_respeita_dias_configurados(self):
 
-        molde = self.criar_molde(
-            frequencia=MoldeTarefa.Frequencia.SEMANAL,
+        rotina = self.criar_rotina(
+            frequencia=RotinaPlanejada.Frequencia.SEMANAL,
             dias_semana="0,2",
         )
 
-        self.assertTrue(molde.deve_gerar_em(date(2026, 8, 24)))
-        self.assertFalse(molde.deve_gerar_em(date(2026, 8, 25)))
-        self.assertTrue(molde.deve_gerar_em(date(2026, 8, 26)))
+        self.assertTrue(rotina.deve_gerar_em(date(2026, 8, 24)))
+        self.assertFalse(rotina.deve_gerar_em(date(2026, 8, 25)))
+        self.assertTrue(rotina.deve_gerar_em(date(2026, 8, 26)))
 
     def test_rf03_lembrete_respeita_periodo_ou_horario_especifico(self):
-        manha = self.criar_molde(
+        manha = self.criar_rotina(
             titulo="Café",
             periodo=PeriodoTarefa.MANHA,
             lembrete_ativo=True,
         )
-        horario = self.criar_molde(
+        horario = self.criar_rotina(
             titulo="Estudo",
             periodo=PeriodoTarefa.HORARIO,
             horario=time(17, 30),
@@ -198,15 +198,15 @@ class RF04RF06GeracaoESnapshotTests(BaseTarefasTestCase):
         )
 
         self.assertRedirects(resposta, reverse("inicio"))
-        tarefa = InstanciaTarefa.objects.get(
+        tarefa = TarefaAgendada.objects.get(
             titulo="Ajudar na cozinha"
         )
-        self.assertEqual(tarefa.origem, InstanciaTarefa.Origem.BONUS)
+        self.assertEqual(tarefa.origem, TarefaAgendada.Origem.BONUS)
         self.assertEqual(tarefa.pontos_base, 12)
 
 
     def test_rotina_pode_ser_replicada_para_todas_as_criancas_da_familia(self):
-        outra = PerfilCrianca.objects.create(
+        outra = PerfilInfantil.objects.create(
             familia=self.familia,
             nome="Irmã",
         )
@@ -219,7 +219,7 @@ class RF04RF06GeracaoESnapshotTests(BaseTarefasTestCase):
                 "titulo": "Organizar mochila",
                 "descricao": "Separar materiais.",
                 "pontos_base": 10,
-                "frequencia": MoldeTarefa.Frequencia.DIARIA,
+                "frequencia": RotinaPlanejada.Frequencia.DIARIA,
                 "periodo": PeriodoTarefa.QUALQUER,
                 "ativa": "on",
                 "replicar_todas": "on",
@@ -227,36 +227,36 @@ class RF04RF06GeracaoESnapshotTests(BaseTarefasTestCase):
         )
 
         self.assertRedirects(resposta, reverse("rotinas_listar"))
-        moldes = MoldeTarefa.objects.filter(
+        rotinas = RotinaPlanejada.objects.filter(
             familia=self.familia,
             titulo="Organizar mochila",
         )
 
-        self.assertEqual(moldes.count(), 2)
+        self.assertEqual(rotinas.count(), 2)
         self.assertSetEqual(
-            set(moldes.values_list("crianca_id", flat=True)),
+            set(rotinas.values_list("crianca_id", flat=True)),
             {self.crianca.id, outra.id},
         )
 
     def test_rf06_geracao_diaria_e_idempotente_e_copia_snapshot(self):
-        skill, _ = Skill.objects.get_or_create(
+        habilidade, _ = Habilidade.objects.get_or_create(
             slug="organizacao",
             defaults={
                 "nome": "Organização",
                 "icone": "📋",
             },
         )
-        molde = self.criar_molde(
+        rotina = self.criar_rotina(
             titulo="Organizar mochila",
             descricao="Separar o material escolar.",
             pontos_base=15,
             periodo=PeriodoTarefa.NOITE,
             lembrete_ativo=True,
         )
-        MoldeTarefaSkill.objects.create(
-            molde=molde,
-            skill=skill,
-            impacto=Skill.Impacto.FORTE,
+        RotinaHabilidade.objects.create(
+            rotina=rotina,
+            habilidade=habilidade,
+            intensidade=Habilidade.Intensidade.ALTA,
         )
 
         dia = date(2026, 8, 25)
@@ -272,8 +272,8 @@ class RF04RF06GeracaoESnapshotTests(BaseTarefasTestCase):
         self.assertEqual(primeira, 1)
         self.assertEqual(segunda, 0)
 
-        tarefa = InstanciaTarefa.objects.get(
-            molde=molde,
+        tarefa = TarefaAgendada.objects.get(
+            rotina=rotina,
             data_referencia=dia,
         )
         self.assertEqual(tarefa.titulo, "Organizar mochila")
@@ -281,47 +281,47 @@ class RF04RF06GeracaoESnapshotTests(BaseTarefasTestCase):
         self.assertEqual(tarefa.periodo, PeriodoTarefa.NOITE)
         self.assertTrue(tarefa.lembrete_ativo)
 
-        snapshot = tarefa.skills_snapshot.get()
+        snapshot = tarefa.habilidades_tarefa.get()
         self.assertEqual(snapshot.nome_snapshot, "Organização")
-        self.assertEqual(snapshot.impacto, Skill.Impacto.FORTE)
-        self.assertEqual(snapshot.xp_planejado, 10)
+        self.assertEqual(snapshot.intensidade, Habilidade.Intensidade.ALTA)
+        self.assertEqual(snapshot.experiencia_prevista, 10)
 
-    def test_rn01_edicao_do_molde_nao_altera_tarefa_historica(self):
-        molde = self.criar_molde(
+    def test_rn01_edicao_da_rotina_nao_altera_tarefa_historica(self):
+        rotina = self.criar_rotina(
             titulo="Título original",
             descricao="Descrição original",
             pontos_base=10,
         )
         dia = date(2026, 8, 25)
         gerar_tarefas_do_dia(familia=self.familia, data=dia)
-        tarefa = InstanciaTarefa.objects.get(
-            molde=molde,
+        tarefa = TarefaAgendada.objects.get(
+            rotina=rotina,
             data_referencia=dia,
         )
 
-        molde.titulo = "Título alterado"
-        molde.descricao = "Descrição alterada"
-        molde.pontos_base = 99
-        molde.save()
+        rotina.titulo = "Título alterado"
+        rotina.descricao = "Descrição alterada"
+        rotina.pontos_base = 99
+        rotina.save()
 
         tarefa.refresh_from_db()
         self.assertEqual(tarefa.titulo, "Título original")
         self.assertEqual(tarefa.descricao, "Descrição original")
         self.assertEqual(tarefa.pontos_base, 10)
 
-    def test_rn01_exclusao_do_molde_preserva_instancia_historica(self):
-        molde = self.criar_molde()
+    def test_rn01_exclusao_da_rotina_preserva_instancia_historica(self):
+        rotina = self.criar_rotina()
         dia = date(2026, 8, 25)
         gerar_tarefas_do_dia(familia=self.familia, data=dia)
-        tarefa = InstanciaTarefa.objects.get(
-            molde=molde,
+        tarefa = TarefaAgendada.objects.get(
+            rotina=rotina,
             data_referencia=dia,
         )
 
-        molde.delete()
+        rotina.delete()
 
         tarefa.refresh_from_db()
-        self.assertIsNone(tarefa.molde)
+        self.assertIsNone(tarefa.rotina)
         self.assertEqual(tarefa.titulo, "Arrumar a cama")
 
 
@@ -329,16 +329,16 @@ class RF07RF08RF09FluxoTarefaTests(BaseTarefasTestCase):
     """RF07, RF08 e RF09 — visão da criança, evidência e revisão do Tutor."""
 
     def test_rf07_crianca_visualiza_somente_as_proprias_tarefas(self):
-        outra = PerfilCrianca.objects.create(
+        outra = PerfilInfantil.objects.create(
             familia=self.familia,
             nome="Irmã",
         )
         minha = self.criar_tarefa(titulo="Minha tarefa")
-        InstanciaTarefa.objects.create(
+        TarefaAgendada.objects.create(
             familia=self.familia,
             crianca=outra,
             criada_por=self.tutor,
-            origem=InstanciaTarefa.Origem.BONUS,
+            origem=TarefaAgendada.Origem.BONUS,
             titulo="Tarefa da irmã",
             pontos_base=10,
             data_referencia=timezone.localdate(),
@@ -369,14 +369,14 @@ class RF07RF08RF09FluxoTarefaTests(BaseTarefasTestCase):
         enviar_comprovante(tarefa, foto)
         tarefa.refresh_from_db()
 
-        self.assertEqual(tarefa.status, InstanciaTarefa.Status.REVISAO)
+        self.assertEqual(tarefa.status, TarefaAgendada.Status.REVISAO)
         self.assertTrue(bool(tarefa.foto))
         self.assertIsNotNone(tarefa.enviada_em)
         self.assertIsNone(tarefa.pontos_concedidos)
 
     def test_rf09_aprovacao_concede_pontos_e_registra_revisor(self):
         tarefa = self.criar_tarefa(
-            status=InstanciaTarefa.Status.REVISAO,
+            status=TarefaAgendada.Status.REVISAO,
         )
 
         aprovar_tarefa(
@@ -389,20 +389,20 @@ class RF07RF08RF09FluxoTarefaTests(BaseTarefasTestCase):
         tarefa.refresh_from_db()
         self.crianca.refresh_from_db()
 
-        self.assertEqual(tarefa.status, InstanciaTarefa.Status.APROVADA)
+        self.assertEqual(tarefa.status, TarefaAgendada.Status.APROVADA)
         self.assertEqual(tarefa.pontos_concedidos, 12)
         self.assertEqual(tarefa.revisada_por, self.tutor)
         self.assertEqual(tarefa.feedback_tutor, "Muito bem!")
         self.assertEqual(self.crianca.saldo_pontos, 12)
         self.assertEqual(self.crianca.pontos_experiencia, 12)
         self.assertEqual(
-            MovimentoPontos.objects.get(tarefa=tarefa).tipo,
-            MovimentoPontos.Tipo.APROVACAO,
+            MovimentacaoPontos.objects.get(tarefa=tarefa).tipo,
+            MovimentacaoPontos.Tipo.APROVACAO,
         )
 
     def test_rf09_rejeicao_nao_concede_pontos_e_permite_novo_envio(self):
         tarefa = self.criar_tarefa(
-            status=InstanciaTarefa.Status.REVISAO,
+            status=TarefaAgendada.Status.REVISAO,
         )
 
         rejeitar_tarefa(
@@ -413,7 +413,7 @@ class RF07RF08RF09FluxoTarefaTests(BaseTarefasTestCase):
         tarefa.refresh_from_db()
         self.crianca.refresh_from_db()
 
-        self.assertEqual(tarefa.status, InstanciaTarefa.Status.REJEITADA)
+        self.assertEqual(tarefa.status, TarefaAgendada.Status.REJEITADA)
         self.assertEqual(tarefa.pontos_concedidos, 0)
         self.assertEqual(self.crianca.saldo_pontos, 0)
         self.assertTrue(tarefa.pode_enviar_comprovante)
@@ -422,7 +422,7 @@ class RF07RF08RF09FluxoTarefaTests(BaseTarefasTestCase):
         tarefa = self.criar_tarefa()
         criada_em = timezone.now() - timedelta(hours=9)
 
-        InstanciaTarefa.objects.filter(pk=tarefa.pk).update(
+        TarefaAgendada.objects.filter(pk=tarefa.pk).update(
             criada_em=criada_em,
             enviada_em=timezone.now(),
         )
@@ -472,7 +472,7 @@ class RF10NotificacoesEPenalidadeTests(BaseTarefasTestCase):
         tarefa = self.criar_tarefa(
             pontos_base=5,
             data_referencia=timezone.localdate() - timedelta(days=1),
-            status=InstanciaTarefa.Status.PENDENTE,
+            status=TarefaAgendada.Status.PENDENTE,
         )
 
         encerradas = encerrar_tarefas_antigas(
@@ -482,12 +482,12 @@ class RF10NotificacoesEPenalidadeTests(BaseTarefasTestCase):
 
         tarefa.refresh_from_db()
         self.crianca.refresh_from_db()
-        movimento = MovimentoPontos.objects.get(tarefa=tarefa)
+        movimento = MovimentacaoPontos.objects.get(tarefa=tarefa)
 
         self.assertEqual(encerradas, 1)
         self.assertEqual(
             tarefa.status,
-            InstanciaTarefa.Status.NAO_REALIZADA,
+            TarefaAgendada.Status.NAO_REALIZADA,
         )
         self.assertEqual(movimento.pontos, -3)
         self.assertEqual(self.crianca.saldo_pontos, 17)
@@ -514,7 +514,7 @@ class RF10NotificacoesEPenalidadeTests(BaseTarefasTestCase):
             familia=self.familia,
             hoje=timezone.localdate(),
         )
-        primeira = MovimentoPontos.objects.get(tarefa=tarefa)
+        primeira = MovimentacaoPontos.objects.get(tarefa=tarefa)
 
 
         encerrar_tarefas_antigas(
@@ -523,7 +523,7 @@ class RF10NotificacoesEPenalidadeTests(BaseTarefasTestCase):
         )
 
         self.crianca.refresh_from_db()
-        self.assertEqual(MovimentoPontos.objects.filter(tarefa=tarefa).count(), 1)
+        self.assertEqual(MovimentacaoPontos.objects.filter(tarefa=tarefa).count(), 1)
         self.assertEqual(primeira.pontos, -5)
         self.assertEqual(self.crianca.saldo_pontos, 5)
 
@@ -538,13 +538,13 @@ class RelatorioEPermissoesTests(BaseTarefasTestCase):
         self.criar_tarefa(
             titulo="Aprovada",
             data_referencia=inicio,
-            status=InstanciaTarefa.Status.APROVADA,
+            status=TarefaAgendada.Status.APROVADA,
             pontos_concedidos=10,
         )
         self.criar_tarefa(
             titulo="Não realizada",
             data_referencia=inicio + timedelta(days=1),
-            status=InstanciaTarefa.Status.NAO_REALIZADA,
+            status=TarefaAgendada.Status.NAO_REALIZADA,
         )
 
         self.client.force_login(self.tutor)
@@ -579,3 +579,35 @@ class RelatorioEPermissoesTests(BaseTarefasTestCase):
         )
 
         self.assertEqual(resposta.status_code, 404)
+
+
+class AutorizacaoServicosTarefaTests(BaseTarefasTestCase):
+    """Uma chamada direta aos serviços não pode contornar a família."""
+
+    def test_tutor_de_outra_familia_nao_aprova(self):
+        estranho = Usuario.objects.create_user(
+            username="outro_tutor_aprovar", password="Senha12345",
+            tipo=Usuario.Tipo.TUTOR,
+        )
+        outra_familia = Familia.objects.create(nome="Outra família")
+        outra_familia.tutores.add(estranho)
+        tarefa = self.criar_tarefa(status=TarefaAgendada.Status.REVISAO)
+        with self.assertRaisesMessage(ValueError, "não pertence à família"):
+            aprovar_tarefa(tarefa=tarefa, tutor=estranho, pontos=10)
+        tarefa.refresh_from_db()
+        self.crianca.refresh_from_db()
+        self.assertEqual(tarefa.status, TarefaAgendada.Status.REVISAO)
+        self.assertEqual(self.crianca.saldo_pontos, 0)
+        self.assertFalse(MovimentacaoPontos.objects.filter(tarefa=tarefa).exists())
+
+    def test_tutor_de_outra_familia_nao_rejeita(self):
+        estranho = Usuario.objects.create_user(
+            username="outro_tutor_rejeitar", password="Senha12345",
+            tipo=Usuario.Tipo.TUTOR,
+        )
+        tarefa = self.criar_tarefa(status=TarefaAgendada.Status.REVISAO)
+        with self.assertRaisesMessage(ValueError, "não pertence à família"):
+            rejeitar_tarefa(tarefa=tarefa, tutor=estranho, feedback="Invasão")
+        tarefa.refresh_from_db()
+        self.assertEqual(tarefa.status, TarefaAgendada.Status.REVISAO)
+        self.assertEqual(tarefa.feedback_tutor, "")

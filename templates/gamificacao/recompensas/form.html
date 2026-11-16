@@ -27,6 +27,7 @@
         <form method="post">
             {% csrf_token %}
 
+            <p class="text-muted small">Selecione a categoria para atribuir o ícone automaticamente. Não é necessário escolher emoji.</p>
             {% for field in form %}
                 <div class="mb-3">
                     {% if field.field.widget.input_type == "checkbox" %}

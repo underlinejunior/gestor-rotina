@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import ConviteTutor, Familia, PerfilCrianca, Usuario
+from .models import ConviteResponsavel, Familia, PerfilInfantil, Usuario
 
 
 @admin.register(Usuario)
@@ -48,8 +48,8 @@ class FamiliaAdmin(admin.ModelAdmin):
     search_fields = ("nome",)
 
 
-@admin.register(PerfilCrianca)
-class PerfilCriancaAdmin(admin.ModelAdmin):
+@admin.register(PerfilInfantil)
+class PerfilInfantilAdmin(admin.ModelAdmin):
     list_display = (
         "nome",
         "familia",
@@ -71,8 +71,8 @@ class PerfilCriancaAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(ConviteTutor)
-class ConviteTutorAdmin(admin.ModelAdmin):
+@admin.register(ConviteResponsavel)
+class ConviteResponsavelAdmin(admin.ModelAdmin):
     list_display = (
         "codigo",
         "familia",

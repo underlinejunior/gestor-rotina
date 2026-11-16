@@ -8,7 +8,6 @@ class RecompensaForm(forms.ModelForm):
         model = Recompensa
 
         fields = (
-            "icone",
             "titulo",
             "descricao",
             "custo_pontos",
@@ -17,7 +16,6 @@ class RecompensaForm(forms.ModelForm):
         )
 
         labels = {
-            "icone": "Ícone",
             "titulo": "Recompensa",
             "descricao": "Descrição",
             "custo_pontos": "Custo em pontos",
@@ -70,9 +68,6 @@ class RecompensaForm(forms.ModelForm):
                     "class"
                 ] = "form-control"
 
-        self.fields["icone"].widget.attrs.update(
-            {
-                "maxlength": 8,
-                "placeholder": "🎁",
-            }
+        self.fields["categoria"].help_text = (
+            "O ícone será atribuído automaticamente conforme a categoria."
         )

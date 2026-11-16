@@ -86,25 +86,25 @@ def _normalizar_sugestoes_ia(dados, skills_validas):
         skills = []
         vistos = set()
 
-        for skill in item.get("skills", []) or []:
-            if not isinstance(skill, dict):
+        for habilidade in item.get("skills", []) or []:
+            if not isinstance(habilidade, dict):
                 continue
 
-            slug = str(skill.get("slug", "")).strip()
+            slug = str(habilidade.get("slug", "")).strip()
             if slug not in slugs_validos or slug in vistos:
                 continue
 
             try:
-                impacto = int(skill.get("impacto", 0) or 0)
+                intensidade = int(habilidade.get("intensidade", 0) or 0)
             except (TypeError, ValueError):
-                impacto = 0
+                intensidade = 0
 
-            if impacto not in {1, 2, 3}:
+            if intensidade not in {1, 2, 3}:
                 continue
 
             skills.append({
                 "slug": slug,
-                "impacto": impacto,
+                "intensidade": intensidade,
             })
             vistos.add(slug)
 
@@ -114,7 +114,23 @@ def _normalizar_sugestoes_ia(dados, skills_validas):
         if not skills:
             continue
 
+        frequencia_sugerida = str(item.get("frequencia", "DIARIA")).upper()
+        if frequencia_sugerida not in {"DIARIA", "SEMANAL"}:
+            frequencia_sugerida = "DIARIA"
+        periodo_sugerido = str(item.get("periodo", "QUALQUER")).upper()
+        if periodo_sugerido not in {"QUALQUER", "MANHA", "TARDE", "NOITE"}:
+            periodo_sugerido = "QUALQUER"
+        dias = item.get("dias_semana", [])
+        if not isinstance(dias, list):
+            dias = []
+        dias = [str(dia) for dia in dias if str(dia) in {"0", "1", "2", "3", "4", "5", "6"}]
+        if frequencia_sugerida == "SEMANAL" and not dias:
+            frequencia_sugerida = "DIARIA"
+
         sugestoes.append({
+            "frequencia": frequencia_sugerida,
+            "periodo": periodo_sugerido,
+            "dias_semana": dias,
             "icone": icone,
             "titulo": titulo,
             "descricao": descricao,
@@ -200,7 +216,7 @@ def gerar_sugestao_rotina(
             + ", ".join(skills_enfase)
             + ". A escolha manual da família tem prioridade sobre o equilíbrio automático. "
               "Pelo menos 4 das 6 opções devem praticar diretamente uma dessas Skills, "
-              "mas só associe a Skill quando houver relação real com a tarefa. As outras "
+              "mas só associe a Habilidade quando houver relação real com a tarefa. As outras "
               "opções podem ajudar a equilibrar lacunas importantes."
         )
     else:
@@ -242,9 +258,9 @@ Skills disponíveis. Use SOMENTE estes slugs:
 Para cada tarefa:
 - escolha um único emoji realmente representativo em "icone";
 - associe de 1 a 3 Skills que a tarefa realmente pratica;
-- impacto 1 = relação leve/secundária;
-- impacto 2 = relação clara/importante;
-- impacto 3 = habilidade central diretamente praticada;
+- intensidade 1 = relação leve/secundária;
+- intensidade 2 = relação clara/importante;
+- intensidade 3 = habilidade central diretamente praticada;
 - não marque Skills apenas para cumprir a ênfase;
 - não concentre todas as opções na mesma combinação de Skills;
 - escolha pontos entre 5 e 30, proporcionais ao esforço e à idade;
@@ -259,11 +275,14 @@ Retorne EXCLUSIVAMENTE um array JSON válido neste formato:
   {{
     "icone": "🛏️",
     "titulo": "Arrumar a cama",
+    "frequencia": "DIARIA",
+    "periodo": "MANHA",
+    "dias_semana": [],
     "descricao": "Organizar a cama ao levantar.",
     "pontos": 10,
     "skills": [
-      {{"slug": "autonomia", "impacto": 3}},
-      {{"slug": "organizacao", "impacto": 2}}
+      {{"slug": "autonomia", "intensidade": 3}},
+      {{"slug": "organizacao", "intensidade": 2}}
     ]
   }}
 ]
@@ -305,25 +324,26 @@ Retorne EXCLUSIVAMENTE um array JSON válido neste formato:
 
 from gamificacao.services import (
     avaliar_conquistas,
-    copiar_skills_molde_para_tarefa,
+    copiar_habilidades_rotina_para_tarefa,
     criar_alertas_tarefa_nao_realizada,
     gerar_resumos_familia,
     registrar_penalidade_tarefa_nao_realizada,
     registrar_pontos_aprovacao,
-    registrar_xp_skills_aprovacao,
+    registrar_xp_habilidades_aprovacao,
 )
 
-from .models import InstanciaTarefa, MoldeTarefa
+from .models import TarefaAgendada, RotinaPlanejada
 
 
 def gerar_tarefas_do_dia(
     familia=None,
     data=None,
+    rotina=None,
 ):
     data = data or timezone.localdate()
 
-    moldes = (
-        MoldeTarefa.objects
+    rotinas = (
+        RotinaPlanejada.objects
         .filter(ativa=True)
         .select_related(
             "familia",
@@ -332,39 +352,39 @@ def gerar_tarefas_do_dia(
     )
 
     if familia is not None:
-        moldes = moldes.filter(
-            familia=familia
-        )
+        rotinas = rotinas.filter(familia=familia)
+    if rotina is not None:
+        rotinas = rotinas.filter(pk=rotina.pk)
 
     criadas = 0
 
-    for molde in moldes:
-        if not molde.deve_gerar_em(data):
+    for rotina in rotinas:
+        if not rotina.deve_gerar_em(data):
             continue
 
         tarefa, criada = (
-            InstanciaTarefa.objects
+            TarefaAgendada.objects
             .get_or_create(
-                molde=molde,
+                rotina=rotina,
                 data_referencia=data,
                 defaults={
-                    "familia": molde.familia,
-                    "crianca": molde.crianca,
-                    "criada_por": molde.criado_por,
-                    "origem": InstanciaTarefa.Origem.MOLDE,
-                    "titulo": molde.titulo,
-                    "descricao": molde.descricao,
-                    "pontos_base": molde.pontos_base,
-                    "periodo": molde.periodo,
-                    "horario": molde.horario,
-                    "lembrete_ativo": molde.lembrete_ativo,
+                    "familia": rotina.familia,
+                    "crianca": rotina.crianca,
+                    "criada_por": rotina.criado_por,
+                    "origem": TarefaAgendada.Origem.ROTINA,
+                    "titulo": rotina.titulo,
+                    "descricao": rotina.descricao,
+                    "pontos_base": rotina.pontos_base,
+                    "periodo": rotina.periodo,
+                    "horario": rotina.horario,
+                    "lembrete_ativo": rotina.lembrete_ativo,
                 },
             )
         )
 
         if criada:
-            copiar_skills_molde_para_tarefa(
-                molde,
+            copiar_habilidades_rotina_para_tarefa(
+                rotina,
                 tarefa,
             )
             criadas += 1
@@ -375,16 +395,17 @@ def gerar_tarefas_do_dia(
 def encerrar_tarefas_antigas(
     familia=None,
     hoje=None,
+    tarefa=None,
 ):
     hoje = hoje or timezone.localdate()
 
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             data_referencia__lt=hoje,
             status__in=[
-                InstanciaTarefa.Status.PENDENTE,
-                InstanciaTarefa.Status.REJEITADA,
+                TarefaAgendada.Status.PENDENTE,
+                TarefaAgendada.Status.REJEITADA,
             ],
         )
         .select_related(
@@ -397,12 +418,14 @@ def encerrar_tarefas_antigas(
         tarefas = tarefas.filter(
             familia=familia
         )
+    if tarefa is not None:
+        tarefas = tarefas.filter(pk=tarefa.pk)
 
     quantidade = 0
 
     for tarefa in tarefas:
         tarefa.status = (
-            InstanciaTarefa.Status.NAO_REALIZADA
+            TarefaAgendada.Status.NAO_REALIZADA
         )
         tarefa.save(
             update_fields=[
@@ -442,15 +465,15 @@ def processar_lembretes(
     )
 
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             data_referencia=hoje,
             lembrete_ativo=True,
             status__in=[
-                InstanciaTarefa
+                TarefaAgendada
                 .Status
                 .PENDENTE,
-                InstanciaTarefa
+                TarefaAgendada
                 .Status
                 .REJEITADA,
             ],
@@ -592,7 +615,7 @@ def calcular_indicadores_periodo(
         days=dias - 1
     )
 
-    tarefas = InstanciaTarefa.objects.filter(
+    tarefas = TarefaAgendada.objects.filter(
         data_referencia__gte=inicio,
         data_referencia__lte=hoje,
     )
@@ -608,19 +631,19 @@ def calcular_indicadores_periodo(
         )
 
     aprovadas = tarefas.filter(
-        status=InstanciaTarefa.Status.APROVADA
+        status=TarefaAgendada.Status.APROVADA
     ).count()
 
     nao_realizadas = tarefas.filter(
-        status=InstanciaTarefa.Status.NAO_REALIZADA
+        status=TarefaAgendada.Status.NAO_REALIZADA
     ).count()
 
     pendentes = tarefas.filter(
-        status=InstanciaTarefa.Status.PENDENTE
+        status=TarefaAgendada.Status.PENDENTE
     ).count()
 
     revisao = tarefas.filter(
-        status=InstanciaTarefa.Status.REVISAO
+        status=TarefaAgendada.Status.REVISAO
     ).count()
 
     finalizadas = aprovadas + nao_realizadas
@@ -664,6 +687,9 @@ def enviar_comprovante(
     tarefa,
     foto,
 ):
+    # Neste projeto a evidência fotográfica é obrigatória para validação.
+    if not foto:
+        raise ValueError("É necessário anexar uma fotografia da tarefa.")
     if not tarefa.pode_enviar_comprovante:
         raise ValueError(
             "Esta tarefa não aceita um novo comprovante."
@@ -671,7 +697,7 @@ def enviar_comprovante(
 
     tarefa.foto = foto
     tarefa.enviada_em = timezone.now()
-    tarefa.status = InstanciaTarefa.Status.REVISAO
+    tarefa.status = TarefaAgendada.Status.REVISAO
     tarefa.feedback_tutor = ""
     tarefa.pontos_concedidos = None
     tarefa.revisada_por = None
@@ -701,12 +727,24 @@ def aprovar_tarefa(
     feedback="",
 ):
     tarefa = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .select_for_update()
         .get(pk=tarefa.pk)
     )
 
-    if tarefa.status != InstanciaTarefa.Status.REVISAO:
+    # A autorização deve valer também para chamadas diretas ao serviço,
+    # independentemente das verificações realizadas pelas views.
+    from usuarios.models import Familia, Usuario
+    if (
+        not getattr(tutor, "is_authenticated", False)
+        or tutor.tipo != Usuario.Tipo.TUTOR
+        or not Familia.objects.filter(
+            pk=tarefa.familia_id, tutores=tutor
+        ).exists()
+    ):
+        raise ValueError("O tutor não pertence à família desta tarefa.")
+
+    if tarefa.status != TarefaAgendada.Status.REVISAO:
         raise ValueError(
             "A tarefa não está aguardando revisão."
         )
@@ -720,12 +758,12 @@ def aprovar_tarefa(
     )
 
     evolucoes_skills = (
-        registrar_xp_skills_aprovacao(
+        registrar_xp_habilidades_aprovacao(
             tarefa
         )
     )
 
-    tarefa.status = InstanciaTarefa.Status.APROVADA
+    tarefa.status = TarefaAgendada.Status.APROVADA
     tarefa.feedback_tutor = feedback or ""
     tarefa.pontos_concedidos = pontos
     tarefa.revisada_por = tutor
@@ -764,17 +802,29 @@ def rejeitar_tarefa(
     feedback="",
 ):
     tarefa = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .select_for_update()
         .get(pk=tarefa.pk)
     )
 
-    if tarefa.status != InstanciaTarefa.Status.REVISAO:
+    # A autorização deve valer também para chamadas diretas ao serviço,
+    # independentemente das verificações realizadas pelas views.
+    from usuarios.models import Familia, Usuario
+    if (
+        not getattr(tutor, "is_authenticated", False)
+        or tutor.tipo != Usuario.Tipo.TUTOR
+        or not Familia.objects.filter(
+            pk=tarefa.familia_id, tutores=tutor
+        ).exists()
+    ):
+        raise ValueError("O tutor não pertence à família desta tarefa.")
+
+    if tarefa.status != TarefaAgendada.Status.REVISAO:
         raise ValueError(
             "A tarefa não está aguardando revisão."
         )
 
-    tarefa.status = InstanciaTarefa.Status.REJEITADA
+    tarefa.status = TarefaAgendada.Status.REJEITADA
     tarefa.feedback_tutor = feedback or ""
     tarefa.pontos_concedidos = 0
     tarefa.revisada_por = tutor
@@ -792,3 +842,17 @@ def rejeitar_tarefa(
     )
 
     return tarefa
+
+
+class GeradorSugestoesIA:
+    """Adaptador de domínio: solicita e valida sugestões sem criar tarefas automaticamente."""
+
+    def __init__(self, modelo=None, limite_sugestoes=6):
+        self.modelo = modelo
+        self.limite_sugestoes = max(1, min(int(limite_sugestoes), 6))
+
+    def gerar_sugestoes(self, idade, contexto="rotina diária", **opcoes):
+        return gerar_sugestao_rotina(idade, contexto, **opcoes)[:self.limite_sugestoes]
+
+    def validar_sugestoes(self, dados, habilidades_validas):
+        return _normalizar_sugestoes_ia(dados, habilidades_validas)[:self.limite_sugestoes]

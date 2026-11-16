@@ -9,6 +9,23 @@
     rel="stylesheet"
     href="{% static 'css/child_summary_card.css' %}?v=20260924-delivery"
 >
+<style>
+.dashboard-metrics-grid .dashboard-metric { display:flex; flex-direction:row; align-items:center; text-align:left; gap:15px; height:100%; min-height:132px; padding:20px 17px; border:1px solid #e5e7f0; border-radius:21px; background:#fff; color:#202838; text-decoration:none; position:relative; box-shadow:0 5px 20px rgba(37,41,72,.045); transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
+.dashboard-metrics-grid .dashboard-metric:hover,.dashboard-metrics-grid .dashboard-metric:focus-visible { transform:translateY(-3px); box-shadow:0 12px 30px rgba(64,55,145,.13); border-color:#a7a0f7; color:#202838; }
+.dashboard-metric:focus-visible { outline:3px solid #8278ff; outline-offset:3px; }
+.dashboard-metrics-grid .dashboard-metric-icon { display:grid; flex:none; place-items:center; width:65px; height:65px; border-radius:19px; color:#5147d9; background:#efedff; }
+.dashboard-metrics-grid .dashboard-metric-icon i { font-size:31px; line-height:1; }
+.dashboard-metrics-grid .dashboard-metric-content { display:flex; min-width:0; flex:1; flex-direction:column; align-items:flex-start; gap:0; }
+.dashboard-metrics-grid .dashboard-metric-number { font-size:clamp(1.75rem,2.3vw,2.25rem); font-weight:850; line-height:1.12; color:#1f2937; }
+.dashboard-metrics-grid .dashboard-metric-title { font-size:.94rem; font-weight:800; line-height:1.4; }
+.dashboard-metrics-grid .dashboard-metric-description { color:#687385; font-size:.72rem; line-height:1.35; margin-top:3px; }
+.dashboard-metric-arrow { position:absolute; right:13px; top:11px; color:#9093aa; font-size:13px; }
+.dashboard-metric-tasks .dashboard-metric-icon { background:#e8f4ff; color:#2769b0; }
+.dashboard-metric-reviews .dashboard-metric-icon { background:#fff1e8; color:#b96728; }
+.dashboard-metric-pending .dashboard-metric-icon { background:#fff5d8; color:#a97608; }
+@media (max-width:575px) { .dashboard-metrics-grid .dashboard-metric { min-height:112px; padding:15px; gap:12px; } .dashboard-metrics-grid .dashboard-metric-icon { width:56px; height:56px; } .dashboard-metrics-grid .dashboard-metric-icon i {font-size:27px;} }
+@media (prefers-reduced-motion:reduce) { .dashboard-metrics-grid .dashboard-metric { transition:none; } }
+</style>
 {% endblock %}
 
 {% block app_content %}
@@ -36,80 +53,52 @@
 </section>
 
 
-<div class="row g-3 mb-4">
-
-    <div class="col-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-icon">
-                <i class="bi bi-people"></i>
-            </div>
-
-            <div class="metric-value">
-                {{ total_criancas }}
-            </div>
-
-            <div class="metric-label">
-                Crianças
-            </div>
-        </div>
-    </div>
-
-
-    <div class="col-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-icon">
-                <i class="bi bi-list-check"></i>
-            </div>
-
-            <div class="metric-value">
-                {{ total_tarefas_hoje }}
-            </div>
-
-            <div class="metric-label">
-                Tarefas hoje
-            </div>
-        </div>
-    </div>
-
-
-    <div class="col-6 col-xl-3">
-        <a
-            href="{% url 'revisoes_listar' %}"
-            class="metric-card metric-card-link"
-        >
-            <div class="metric-icon">
-                <i class="bi bi-camera"></i>
-            </div>
-
-            <div class="metric-value">
-                {{ total_revisoes }}
-            </div>
-
-            <div class="metric-label">
-                Para revisar
-            </div>
+<div class="row g-3 mb-4 dashboard-metrics-grid">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'criancas_listar' %}" class="metric-card metric-card-link dashboard-metric dashboard-metric-children" aria-label="Crianças: {{ total_criancas }}. Gerenciar perfis infantis">
+            <span class="dashboard-metric-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+            <span class="dashboard-metric-content">
+                <strong class="dashboard-metric-number">{{ total_criancas }}</strong>
+                <span class="dashboard-metric-title">Crianças</span>
+                <small class="dashboard-metric-description">Gerenciar perfis infantis</small>
+            </span>
+            <i class="bi bi-arrow-up-right dashboard-metric-arrow" aria-hidden="true"></i>
         </a>
     </div>
-
-
-    <div class="col-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-icon">
-                <i class="bi bi-hourglass-split"></i>
-            </div>
-
-            <div class="metric-value">
-                {{ total_pendentes }}
-            </div>
-
-            <div class="metric-label">
-                Pendentes hoje
-            </div>
-        </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'tarefas_familia' %}" class="metric-card metric-card-link dashboard-metric dashboard-metric-tasks" aria-label="Tarefas hoje: {{ total_tarefas_hoje }}. Ver tarefas da família">
+            <span class="dashboard-metric-icon"><i class="bi bi-list-check" aria-hidden="true"></i></span>
+            <span class="dashboard-metric-content">
+                <strong class="dashboard-metric-number">{{ total_tarefas_hoje }}</strong>
+                <span class="dashboard-metric-title">Tarefas hoje</span>
+                <small class="dashboard-metric-description">Ver tarefas da família</small>
+            </span>
+            <i class="bi bi-arrow-up-right dashboard-metric-arrow" aria-hidden="true"></i>
+        </a>
     </div>
-
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'revisoes_listar' %}" class="metric-card metric-card-link dashboard-metric dashboard-metric-reviews" aria-label="Para revisar: {{ total_revisoes }}. Analisar evidências">
+            <span class="dashboard-metric-icon"><i class="bi bi-camera" aria-hidden="true"></i></span>
+            <span class="dashboard-metric-content">
+                <strong class="dashboard-metric-number">{{ total_revisoes }}</strong>
+                <span class="dashboard-metric-title">Para revisar</span>
+                <small class="dashboard-metric-description">Analisar evidências</small>
+            </span>
+            <i class="bi bi-arrow-up-right dashboard-metric-arrow" aria-hidden="true"></i>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <a href="{% url 'tarefas_familia' %}?status=pendentes" class="metric-card metric-card-link dashboard-metric dashboard-metric-pending" aria-label="Pendentes hoje: {{ total_pendentes }}. Ver tarefas em aberto">
+            <span class="dashboard-metric-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+            <span class="dashboard-metric-content">
+                <strong class="dashboard-metric-number">{{ total_pendentes }}</strong>
+                <span class="dashboard-metric-title">Pendentes hoje</span>
+                <small class="dashboard-metric-description">Ver tarefas em aberto</small>
+            </span>
+            <i class="bi bi-arrow-up-right dashboard-metric-arrow" aria-hidden="true"></i>
+        </a>
+    </div>
 </div>
-
 
 {% if indicadores_semana %}
 <section class="weekly-summary mb-4">

@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import timedelta
 import math
 
@@ -6,21 +7,21 @@ from django.db.models import Sum
 from django.urls import reverse
 from django.utils import timezone
 
-from usuarios.models import PerfilCrianca, Usuario
+from usuarios.models import PerfilInfantil, Usuario
 
 from .models import (
     Conquista,
-    ConquistaCrianca,
-    InstanciaTarefaSkill,
-    MoldeTarefaSkill,
-    MovimentoPontos,
-    MovimentoSkill,
+    ConquistaInfantil,
+    TarefaHabilidade,
+    RotinaHabilidade,
+    MovimentacaoPontos,
+    MovimentacaoHabilidade,
     NotificacaoSistema,
-    ProgressoSkill,
+    ProgressoHabilidade,
     Recompensa,
-    ResgateRecompensa,
-    Skill,
-    dados_nivel_skill,
+    SolicitacaoResgate,
+    Habilidade,
+    dados_nivel_habilidade,
 )
 
 
@@ -30,7 +31,7 @@ def registrar_pontos_aprovacao(
     tutor,
     pontos,
 ):
-    if MovimentoPontos.objects.filter(
+    if MovimentacaoPontos.objects.filter(
         tarefa=tarefa
     ).exists():
         raise ValueError(
@@ -38,7 +39,7 @@ def registrar_pontos_aprovacao(
         )
 
     perfil = (
-        PerfilCrianca.objects
+        PerfilInfantil.objects
         .select_for_update()
         .get(pk=tarefa.crianca_id)
     )
@@ -68,12 +69,12 @@ def registrar_pontos_aprovacao(
 
     nivel_depois = perfil.avatar_nivel
 
-    movimento = MovimentoPontos.objects.create(
+    movimento = MovimentacaoPontos.objects.create(
         crianca=perfil,
         tarefa=tarefa,
-        tipo=MovimentoPontos.Tipo.APROVACAO,
+        tipo=MovimentacaoPontos.Tipo.APROVACAO,
         pontos=pontos,
-        saldo_apos=perfil.saldo_pontos,
+        saldo_resultante=perfil.saldo_pontos,
         nivel_antes=nivel_antes,
         nivel_depois=nivel_depois,
         registrado_por=tutor,
@@ -156,166 +157,230 @@ def criar_notificacoes_evolucao(
         )
 
 
-def salvar_skills_molde(
-    molde,
-    impactos,
+def salvar_habilidades_rotina(
+    rotina,
+    intensidades,
 ):
-    MoldeTarefaSkill.objects.filter(
-        molde=molde
+    RotinaHabilidade.objects.filter(
+        rotina=rotina
     ).delete()
 
     novos = []
 
-    for skill_id, impacto in impactos.items():
-        if impacto not in {
-            Skill.Impacto.LEVE,
-            Skill.Impacto.MEDIO,
-            Skill.Impacto.FORTE,
+    for habilidade_id, intensidade in intensidades.items():
+        if intensidade not in {
+            Habilidade.Intensidade.BAIXA,
+            Habilidade.Intensidade.MEDIA,
+            Habilidade.Intensidade.ALTA,
         }:
             continue
 
         novos.append(
-            MoldeTarefaSkill(
-                molde=molde,
-                skill_id=skill_id,
-                impacto=impacto,
+            RotinaHabilidade(
+                rotina=rotina,
+                habilidade_id=habilidade_id,
+                intensidade=intensidade,
             )
         )
 
     if novos:
-        MoldeTarefaSkill.objects.bulk_create(
+        RotinaHabilidade.objects.bulk_create(
             novos
         )
 
 
-def copiar_skills_molde_para_tarefa(
-    molde,
+def copiar_habilidades_rotina_para_tarefa(
+    rotina,
     tarefa,
 ):
-    if tarefa.skills_snapshot.exists():
+    if tarefa.habilidades_tarefa.exists():
         return
 
     associacoes = (
-        MoldeTarefaSkill.objects
-        .filter(molde=molde)
-        .select_related("skill")
+        RotinaHabilidade.objects
+        .filter(rotina=rotina)
+        .select_related("habilidade")
     )
 
     snapshots = []
 
     for associacao in associacoes:
         snapshots.append(
-            InstanciaTarefaSkill(
+            TarefaHabilidade(
                 tarefa=tarefa,
-                skill=associacao.skill,
-                nome_snapshot=associacao.skill.nome,
-                icone_snapshot=associacao.skill.icone,
-                impacto=associacao.impacto,
-                xp_planejado=Skill.xp_por_impacto(
-                    associacao.impacto
+                habilidade=associacao.habilidade,
+                nome_snapshot=associacao.habilidade.nome,
+                icone_snapshot=associacao.habilidade.icone,
+                intensidade=associacao.intensidade,
+                experiencia_prevista=Habilidade.calcular_experiencia(
+                    associacao.intensidade
                 ),
             )
         )
 
     if snapshots:
-        InstanciaTarefaSkill.objects.bulk_create(
+        TarefaHabilidade.objects.bulk_create(
             snapshots
         )
 
 
-def salvar_skills_tarefa_bonus(
+def salvar_habilidades_tarefa_bonus(
     tarefa,
-    impactos,
+    intensidades,
 ):
     snapshots = []
 
     skills = {
-        skill.id: skill
-        for skill in Skill.objects.filter(
-            id__in=impactos.keys(),
+        habilidade.id: habilidade
+        for habilidade in Habilidade.objects.filter(
+            id__in=intensidades.keys(),
             ativa=True,
         )
     }
 
-    for skill_id, impacto in impactos.items():
-        skill = skills.get(int(skill_id))
+    for habilidade_id, intensidade in intensidades.items():
+        try:
+            identificador = UUID(str(habilidade_id))
+        except (TypeError, ValueError, AttributeError):
+            continue
+        habilidade = skills.get(identificador)
 
-        if not skill:
+        if not habilidade:
             continue
 
-        if impacto not in {
-            Skill.Impacto.LEVE,
-            Skill.Impacto.MEDIO,
-            Skill.Impacto.FORTE,
+        if intensidade not in {
+            Habilidade.Intensidade.BAIXA,
+            Habilidade.Intensidade.MEDIA,
+            Habilidade.Intensidade.ALTA,
         }:
             continue
 
         snapshots.append(
-            InstanciaTarefaSkill(
+            TarefaHabilidade(
                 tarefa=tarefa,
-                skill=skill,
-                nome_snapshot=skill.nome,
-                icone_snapshot=skill.icone,
-                impacto=impacto,
-                xp_planejado=Skill.xp_por_impacto(
-                    impacto
+                habilidade=habilidade,
+                nome_snapshot=habilidade.nome,
+                icone_snapshot=habilidade.icone,
+                intensidade=intensidade,
+                experiencia_prevista=Habilidade.calcular_experiencia(
+                    intensidade
                 ),
             )
         )
 
     if snapshots:
-        InstanciaTarefaSkill.objects.bulk_create(
+        TarefaHabilidade.objects.bulk_create(
             snapshots
         )
 
 
+def calcular_sequencia_constancia(perfil, hoje=None):
+    """Sequência atual da habilidade Constância, por rotina diária repetida.
+
+    Conta apenas datas com tarefas APROVADAS, relacionadas à mesma
+    RotinaPlanejada e com a habilidade `constancia` associada à tarefa.
+    Uma ou mais tarefas aprovadas no mesmo dia contam como um único dia.
+    A sequência pode terminar hoje ou ontem; um dia ainda em andamento
+    não apaga a sequência. Um dia inteiro sem aprovação interrompe-a.
+    A consulta deriva o contador das aprovações, sem duplicar estado no banco.
+    """
+    from tarefas.models import TarefaAgendada
+
+    hoje = hoje or timezone.localdate()
+    datas_por_rotina = {}
+    linhas = (
+        TarefaAgendada.objects.filter(
+            crianca=perfil,
+            status=TarefaAgendada.Status.APROVADA,
+            rotina__isnull=False,
+            rotina__frequencia="DIARIA",
+            data_referencia__lte=hoje,
+            habilidades_tarefa__habilidade__slug="constancia",
+        )
+        .values_list("rotina_id", "data_referencia")
+        .distinct()
+    )
+    for rotina_id, dia in linhas:
+        datas_por_rotina.setdefault(rotina_id, set()).add(dia)
+
+    melhor_atual = 0
+    for dias in datas_por_rotina.values():
+        if hoje in dias:
+            cursor = hoje
+        elif (hoje - timedelta(days=1)) in dias:
+            cursor = hoje - timedelta(days=1)
+        else:
+            continue
+        contador = 0
+        while cursor in dias:
+            contador += 1
+            cursor -= timedelta(days=1)
+        melhor_atual = max(melhor_atual, contador)
+
+    return melhor_atual
+
+
 @transaction.atomic
-def registrar_xp_skills_aprovacao(
+def registrar_xp_habilidades_aprovacao(
     tarefa,
 ):
     snapshots = list(
         tarefa
-        .skills_snapshot
-        .select_related("skill")
+        .habilidades_tarefa
+        .select_related("habilidade")
         .all()
     )
 
     evolucoes = []
 
     for snapshot in snapshots:
-        if MovimentoSkill.objects.filter(
+        if MovimentacaoHabilidade.objects.filter(
             tarefa=tarefa,
-            skill=snapshot.skill,
+            habilidade=snapshot.habilidade,
         ).exists():
             continue
 
         progresso, _ = (
-            ProgressoSkill.objects
+            ProgressoHabilidade.objects
             .select_for_update()
             .get_or_create(
                 crianca=tarefa.crianca,
-                skill=snapshot.skill,
-                defaults={"xp_total": 0},
+                habilidade=snapshot.habilidade,
+                defaults={"experiencia_acumulada": 0},
             )
         )
 
+        # Constância é contada por dias consecutivos da mesma rotina,
+        # e não por XP ou intensidade. O contador é calculado a partir
+        # das tarefas aprovadas, evitando duplicações ou estado obsoleto.
+        if snapshot.habilidade.slug == "constancia":
+            MovimentacaoHabilidade.objects.create(
+                crianca=tarefa.crianca,
+                habilidade=snapshot.habilidade,
+                tarefa=tarefa,
+                xp=0,
+                nivel_antes=progresso.nivel_atual,
+                nivel_depois=progresso.nivel_atual,
+            )
+            continue
+
         nivel_antes = progresso.nivel_atual
 
-        progresso.xp_total += snapshot.xp_planejado
+        progresso.experiencia_acumulada += snapshot.experiencia_prevista
         progresso.save(
             update_fields=[
-                "xp_total",
+                "experiencia_acumulada",
                 "atualizado_em",
             ]
         )
 
         nivel_depois = progresso.nivel_atual
 
-        movimento = MovimentoSkill.objects.create(
+        movimento = MovimentacaoHabilidade.objects.create(
             crianca=tarefa.crianca,
-            skill=snapshot.skill,
+            habilidade=snapshot.habilidade,
             tarefa=tarefa,
-            xp=snapshot.xp_planejado,
+            xp=snapshot.experiencia_prevista,
             nivel_antes=nivel_antes,
             nivel_depois=nivel_depois,
         )
@@ -323,19 +388,19 @@ def registrar_xp_skills_aprovacao(
         if nivel_depois > nivel_antes:
             evolucoes.append(
                 {
-                    "skill": snapshot.skill,
+                    "habilidade": snapshot.habilidade,
                     "movimento": movimento,
                     "nivel_antes": nivel_antes,
                     "nivel_depois": nivel_depois,
-                    "titulo_novo": dados_nivel_skill(
-                        progresso.xp_total
+                    "titulo_novo": dados_nivel_habilidade(
+                        progresso.experiencia_acumulada
                     )["titulo"],
                 }
             )
 
-            criar_notificacoes_evolucao_skill(
+            criar_notificacoes_evolucao_habilidade(
                 perfil=tarefa.crianca,
-                skill=snapshot.skill,
+                habilidade=snapshot.habilidade,
                 movimento=movimento,
                 nivel_antes=nivel_antes,
                 nivel_depois=nivel_depois,
@@ -344,10 +409,10 @@ def registrar_xp_skills_aprovacao(
     return evolucoes
 
 
-def criar_notificacoes_evolucao_skill(
+def criar_notificacoes_evolucao_habilidade(
     *,
     perfil,
-    skill,
+    habilidade,
     movimento,
     nivel_antes,
     nivel_depois,
@@ -371,10 +436,10 @@ def criar_notificacoes_evolucao_skill(
 
         if usuario.tipo == Usuario.Tipo.CRIANCA:
             titulo = (
-                f"{skill.icone} {skill.nome} evoluiu!"
+                f"{habilidade.icone} {habilidade.nome} evoluiu!"
             )
             mensagem = (
-                f"Sua habilidade {skill.nome} avançou do nível "
+                f"Sua habilidade {habilidade.nome} avançou do nível "
                 f"{nivel_antes} para o nível {nivel_depois}."
             )
             url_destino = reverse(
@@ -382,11 +447,11 @@ def criar_notificacoes_evolucao_skill(
             )
         else:
             titulo = (
-                f"{skill.icone} {skill.nome} de "
+                f"{habilidade.icone} {habilidade.nome} de "
                 f"{perfil.nome_exibicao} evoluiu"
             )
             mensagem = (
-                f"A prática de atividades ligadas a {skill.nome} "
+                f"A prática de atividades ligadas a {habilidade.nome} "
                 f"avançou do nível {nivel_antes} para "
                 f"o nível {nivel_depois}."
             )
@@ -397,10 +462,10 @@ def criar_notificacoes_evolucao_skill(
 
         NotificacaoSistema.objects.get_or_create(
             usuario_destino=usuario,
-            chave=f"skill:{movimento.id}:{usuario.id}",
+            chave=f"habilidade:{movimento.id}:{usuario.id}",
             defaults={
                 "crianca": perfil,
-                "skill": skill,
+                "habilidade": habilidade,
                 "tipo": NotificacaoSistema.Tipo.NIVEL_HABILIDADE,
                 "titulo": titulo,
                 "mensagem": mensagem,
@@ -415,20 +480,20 @@ def montar_painel_habilidades(
     perfil,
 ):
     skills = list(
-        Skill.objects
+        Habilidade.objects
         .filter(ativa=True)
         .order_by("ordem", "nome")
     )
 
     progressos = {
-        item.skill_id: item
+        item.habilidade_id: item
         for item in (
-            ProgressoSkill.objects
+            ProgressoHabilidade.objects
             .filter(
                 crianca=perfil,
-                skill__in=skills,
+                habilidade__in=skills,
             )
-            .select_related("skill")
+            .select_related("habilidade")
         )
     }
 
@@ -438,40 +503,40 @@ def montar_painel_habilidades(
     )
 
     recentes = {
-        item["skill_id"]: (
+        item["habilidade_id"]: (
             item["total"] or 0
         )
         for item in (
-            MovimentoSkill.objects
+            MovimentacaoHabilidade.objects
             .filter(
                 crianca=perfil,
-                skill__in=skills,
+                habilidade__in=skills,
                 criado_em__gte=inicio_recente,
             )
-            .values("skill_id")
+            .values("habilidade_id")
             .annotate(total=Sum("xp"))
         )
     }
 
     painel = []
 
-    for skill in skills:
+    for habilidade in skills:
         progresso = progressos.get(
-            skill.id
+            habilidade.id
         )
 
-        xp_total = (
-            progresso.xp_total
+        experiencia_acumulada = (
+            progresso.experiencia_acumulada
             if progresso
             else 0
         )
 
-        dados = dados_nivel_skill(
-            xp_total
+        dados = dados_nivel_habilidade(
+            experiencia_acumulada
         )
 
         xp_recente = recentes.get(
-            skill.id,
+            habilidade.id,
             0,
         )
 
@@ -492,10 +557,23 @@ def montar_painel_habilidades(
             )
         )
 
+        sequencia_constancia = (
+            calcular_sequencia_constancia(perfil)
+            if habilidade.slug == "constancia"
+            else None
+        )
+        if sequencia_constancia is not None:
+            # Escala visual de 1 a 5 para o radar; 7 dias representam
+            # a faixa máxima. O valor mostrado no card segue em dias.
+            valor_radar = 1 + (4 * min(sequencia_constancia, 7) / 7)
+            pratica_recente = f"{sequencia_constancia} dias em sequência"
+
         painel.append(
             {
-                "skill": skill,
-                "xp_total": xp_total,
+                "sequencia_constancia": sequencia_constancia,
+                "eh_constancia": habilidade.slug == "constancia",
+                "habilidade": habilidade,
+                "experiencia_acumulada": experiencia_acumulada,
                 "nivel": dados["nivel"],
                 "titulo_nivel": dados["titulo"],
                 "percentual": dados["percentual"],
@@ -527,7 +605,7 @@ def registrar_penalidade_tarefa_nao_realizada(
     """
 
     movimento_existente = (
-        MovimentoPontos.objects
+        MovimentacaoPontos.objects
         .filter(tarefa=tarefa)
         .first()
     )
@@ -536,7 +614,7 @@ def registrar_penalidade_tarefa_nao_realizada(
         return movimento_existente
 
     perfil = (
-        PerfilCrianca.objects
+        PerfilInfantil.objects
         .select_for_update()
         .get(pk=tarefa.crianca_id)
     )
@@ -569,12 +647,12 @@ def registrar_penalidade_tarefa_nao_realizada(
 
     nivel_depois = perfil.avatar_nivel
 
-    return MovimentoPontos.objects.create(
+    return MovimentacaoPontos.objects.create(
         crianca=perfil,
         tarefa=tarefa,
-        tipo=MovimentoPontos.Tipo.PENALIDADE,
+        tipo=MovimentacaoPontos.Tipo.PENALIDADE,
         pontos=-penalidade,
-        saldo_apos=perfil.saldo_pontos,
+        saldo_resultante=perfil.saldo_pontos,
         nivel_antes=nivel_antes,
         nivel_depois=nivel_depois,
         registrado_por=None,
@@ -633,26 +711,26 @@ def gerar_resumos_familia(
     familia,
     hoje,
 ):
-    from tarefas.models import InstanciaTarefa
+    from tarefas.models import TarefaAgendada
 
     ontem = hoje - timedelta(days=1)
 
-    tarefas_ontem = InstanciaTarefa.objects.filter(
+    tarefas_ontem = TarefaAgendada.objects.filter(
         familia=familia,
         data_referencia=ontem,
     )
 
     if tarefas_ontem.exists():
         aprovadas = tarefas_ontem.filter(
-            status=InstanciaTarefa.Status.APROVADA
+            status=TarefaAgendada.Status.APROVADA
         ).count()
 
         nao_realizadas = tarefas_ontem.filter(
-            status=InstanciaTarefa.Status.NAO_REALIZADA
+            status=TarefaAgendada.Status.NAO_REALIZADA
         ).count()
 
         revisao = tarefas_ontem.filter(
-            status=InstanciaTarefa.Status.REVISAO
+            status=TarefaAgendada.Status.REVISAO
         ).count()
 
         finalizadas = aprovadas + nao_realizadas
@@ -699,7 +777,7 @@ def gerar_resumos_familia(
     fim = hoje - timedelta(days=1)
     inicio = hoje - timedelta(days=7)
 
-    tarefas_semana = InstanciaTarefa.objects.filter(
+    tarefas_semana = TarefaAgendada.objects.filter(
         familia=familia,
         data_referencia__gte=inicio,
         data_referencia__lte=fim,
@@ -709,11 +787,11 @@ def gerar_resumos_familia(
         return
 
     aprovadas = tarefas_semana.filter(
-        status=InstanciaTarefa.Status.APROVADA
+        status=TarefaAgendada.Status.APROVADA
     ).count()
 
     nao_realizadas = tarefas_semana.filter(
-        status=InstanciaTarefa.Status.NAO_REALIZADA
+        status=TarefaAgendada.Status.NAO_REALIZADA
     ).count()
 
     finalizadas = aprovadas + nao_realizadas
@@ -816,12 +894,24 @@ def resgatar_recompensa(
     *,
     perfil,
     recompensa,
+    tutor_solicitante=None,
 ):
     perfil = (
-        PerfilCrianca.objects
+        PerfilInfantil.objects
         .select_for_update()
         .get(pk=perfil.pk)
     )
+    if tutor_solicitante is not None:
+        from usuarios.models import Usuario, Familia
+        if (not getattr(tutor_solicitante, "is_authenticated", False)
+            or tutor_solicitante.tipo != Usuario.Tipo.TUTOR
+            or not Familia.objects.filter(
+                pk=perfil.familia_id, tutores=tutor_solicitante
+            ).exists()):
+            raise ValueError("Somente um tutor desta família pode registrar o resgate.")
+        if perfil.acesso_proprio:
+            raise ValueError("Use a conta da criança para resgates com acesso próprio.")
+
 
     if not recompensa.ativa:
         raise ValueError(
@@ -859,25 +949,29 @@ def resgatar_recompensa(
         ]
     )
 
-    movimento = MovimentoPontos.objects.create(
+    movimento = MovimentacaoPontos.objects.create(
         crianca=perfil,
         tarefa=None,
-        tipo=MovimentoPontos.Tipo.RESGATE,
+        tipo=MovimentacaoPontos.Tipo.RESGATE,
         pontos=-recompensa.custo_pontos,
-        saldo_apos=perfil.saldo_pontos,
+        saldo_resultante=perfil.saldo_pontos,
         nivel_antes=perfil.avatar_nivel,
         nivel_depois=perfil.avatar_nivel,
-        registrado_por=None,
+        registrado_por=tutor_solicitante,
     )
 
-    resgate = ResgateRecompensa.objects.create(
+    resgate = SolicitacaoResgate.objects.create(
         crianca=perfil,
         recompensa=recompensa,
         titulo_snapshot=recompensa.titulo,
         icone_snapshot=recompensa.icone,
         custo_snapshot=recompensa.custo_pontos,
-        movimento_pontos=movimento,
+        movimentacao_pontos=movimento,
+        registrado_por=tutor_solicitante,
+        escolha_assistida=tutor_solicitante is not None,
     )
+    movimento.resgate = resgate
+    movimento.save(update_fields=["resgate"])
 
     for tutor in perfil.familia.tutores.all():
         NotificacaoSistema.objects.get_or_create(
@@ -914,14 +1008,59 @@ def resgatar_recompensa(
 
 
 @transaction.atomic
+def confirmar_entrega_resgate(*, resgate, tutor):
+    """Conclui o resgate com a mesma regra de autorização do cancelamento.
+
+    A trava e a condição de status impedem decisões simultâneas contraditórias.
+    """
+    from usuarios.models import Familia, Usuario
+
+    resgate = SolicitacaoResgate.objects.select_for_update().get(pk=resgate.pk)
+    if (
+        not getattr(tutor, "is_authenticated", False)
+        or tutor.tipo != Usuario.Tipo.TUTOR
+        or not Familia.objects.filter(
+            pk=resgate.crianca.familia_id, tutores=tutor
+        ).exists()
+    ):
+        raise ValueError("O tutor não pertence à família deste resgate.")
+    if resgate.status != SolicitacaoResgate.Status.SOLICITADO:
+        raise ValueError("Apenas resgates solicitados podem ser entregues.")
+
+    resgate.status = SolicitacaoResgate.Status.ENTREGUE
+    resgate.concluido_em = timezone.now()
+    resgate.save(update_fields=["status", "concluido_em"])
+    return resgate
+
+
+@transaction.atomic
 def cancelar_resgate(
     *,
     resgate,
     tutor,
 ):
+    # Trava o pedido antes de verificar seu status; evita duas restituições
+    # concorrentes ao mesmo resgate.
+    resgate = (
+        SolicitacaoResgate.objects
+        .select_for_update()
+        .get(pk=resgate.pk)
+    )
+
+    # Valida a autorização mesmo quando o serviço não é chamado por uma view.
+    from usuarios.models import Familia, Usuario
+    if (
+        not getattr(tutor, "is_authenticated", False)
+        or tutor.tipo != Usuario.Tipo.TUTOR
+        or not Familia.objects.filter(
+            pk=resgate.crianca.familia_id, tutores=tutor
+        ).exists()
+    ):
+        raise ValueError("O tutor não pertence à família deste resgate.")
+
     if (
         resgate.status
-        != ResgateRecompensa
+        != SolicitacaoResgate
         .Status
         .SOLICITADO
     ):
@@ -930,7 +1069,7 @@ def cancelar_resgate(
         )
 
     perfil = (
-        PerfilCrianca.objects
+        PerfilInfantil.objects
         .select_for_update()
         .get(pk=resgate.crianca_id)
     )
@@ -943,19 +1082,20 @@ def cancelar_resgate(
         ]
     )
 
-    MovimentoPontos.objects.create(
+    MovimentacaoPontos.objects.create(
         crianca=perfil,
         tarefa=None,
-        tipo=MovimentoPontos.Tipo.AJUSTE,
+        resgate=resgate,
+        tipo=MovimentacaoPontos.Tipo.AJUSTE,
         pontos=resgate.custo_snapshot,
-        saldo_apos=perfil.saldo_pontos,
+        saldo_resultante=perfil.saldo_pontos,
         nivel_antes=perfil.avatar_nivel,
         nivel_depois=perfil.avatar_nivel,
         registrado_por=tutor,
     )
 
     resgate.status = (
-        ResgateRecompensa
+        SolicitacaoResgate
         .Status
         .CANCELADO
     )
@@ -983,7 +1123,7 @@ def calcular_sequencia(
     quebra a sequência se já estiver totalmente encerrado; tarefas
     pendentes de hoje são ignoradas porque ainda podem ser feitas.
     """
-    from tarefas.models import InstanciaTarefa
+    from tarefas.models import TarefaAgendada
 
     hoje = timezone.localdate()
 
@@ -995,7 +1135,7 @@ def calcular_sequencia(
     )
 
     tarefas = list(
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             crianca=perfil,
             data_referencia__gte=inicio,
@@ -1060,7 +1200,7 @@ def melhor_sequencia(
     perfil,
     limite_dias=365,
 ):
-    from tarefas.models import InstanciaTarefa
+    from tarefas.models import TarefaAgendada
 
     hoje = timezone.localdate()
 
@@ -1072,7 +1212,7 @@ def melhor_sequencia(
     )
 
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             crianca=perfil,
             data_referencia__gte=inicio,
@@ -1141,7 +1281,7 @@ def _desbloquear_conquista(
         return None
 
     registro, criada = (
-        ConquistaCrianca.objects
+        ConquistaInfantil.objects
         .get_or_create(
             crianca=perfil,
             conquista=conquista,
@@ -1226,14 +1366,14 @@ def _desbloquear_conquista(
 def avaliar_conquistas(
     perfil,
 ):
-    from tarefas.models import InstanciaTarefa
+    from tarefas.models import TarefaAgendada
 
     aprovadas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             crianca=perfil,
             status=(
-                InstanciaTarefa
+                TarefaAgendada
                 .Status
                 .APROVADA
             ),
@@ -1266,18 +1406,18 @@ def avaliar_conquistas(
         )
 
     progressos = {
-        item.skill.slug: item
+        item.habilidade.slug: item
         for item in (
-            ProgressoSkill.objects
+            ProgressoHabilidade.objects
             .filter(
                 crianca=perfil,
-                skill__slug__in=[
+                habilidade__slug__in=[
                     "autonomia",
                     "organizacao",
                 ],
             )
             .select_related(
-                "skill"
+                "habilidade"
             )
         )
     }

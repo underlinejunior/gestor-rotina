@@ -2,22 +2,22 @@ from django.contrib import admin
 
 from .models import (
     Conquista,
-    ConquistaCrianca,
-    InstanciaTarefaSkill,
-    MoldeTarefaSkill,
-    MovimentoPontos,
-    MovimentoSkill,
+    ConquistaInfantil,
+    TarefaHabilidade,
+    RotinaHabilidade,
+    MovimentacaoPontos,
+    MovimentacaoHabilidade,
     NotificacaoSistema,
-    ProgressoSkill,
+    ProgressoHabilidade,
     Recompensa,
-    ResgateRecompensa,
-    Skill,
-    SugestaoTarefaSkill,
+    SolicitacaoResgate,
+    Habilidade,
+    SugestaoHabilidade,
 )
 
 
-@admin.register(Skill)
-class SkillAdmin(admin.ModelAdmin):
+@admin.register(Habilidade)
+class HabilidadeAdmin(admin.ModelAdmin):
     list_display = (
         "icone",
         "nome",
@@ -29,62 +29,62 @@ class SkillAdmin(admin.ModelAdmin):
     search_fields = ("nome", "slug")
 
 
-@admin.register(MoldeTarefaSkill)
-class MoldeTarefaSkillAdmin(admin.ModelAdmin):
+@admin.register(RotinaHabilidade)
+class RotinaHabilidadeAdmin(admin.ModelAdmin):
     list_display = (
-        "molde",
-        "skill",
-        "impacto",
+        "rotina",
+        "habilidade",
+        "intensidade",
     )
 
 
-@admin.register(InstanciaTarefaSkill)
-class InstanciaTarefaSkillAdmin(admin.ModelAdmin):
+@admin.register(TarefaHabilidade)
+class TarefaHabilidadeAdmin(admin.ModelAdmin):
     list_display = (
         "tarefa",
-        "skill",
-        "impacto",
-        "xp_planejado",
+        "habilidade",
+        "intensidade",
+        "experiencia_prevista",
     )
 
 
-@admin.register(SugestaoTarefaSkill)
-class SugestaoTarefaSkillAdmin(admin.ModelAdmin):
+@admin.register(SugestaoHabilidade)
+class SugestaoHabilidadeAdmin(admin.ModelAdmin):
     list_display = (
         "sugestao",
-        "skill",
-        "impacto",
+        "habilidade",
+        "intensidade",
     )
 
 
-@admin.register(ProgressoSkill)
-class ProgressoSkillAdmin(admin.ModelAdmin):
+@admin.register(ProgressoHabilidade)
+class ProgressoHabilidadeAdmin(admin.ModelAdmin):
     list_display = (
         "crianca",
-        "skill",
-        "xp_total",
+        "habilidade",
+        "experiencia_acumulada",
         "nivel_atual",
         "atualizado_em",
     )
-    list_filter = ("skill",)
+    list_filter = ("habilidade",)
     search_fields = (
         "crianca__nome",
-        "skill__nome",
+        "habilidade__nome",
     )
 
 
-@admin.register(MovimentoSkill)
-class MovimentoSkillAdmin(admin.ModelAdmin):
+@admin.register(MovimentacaoHabilidade)
+class MovimentacaoHabilidadeAdmin(admin.ModelAdmin):
     list_display = (
         "crianca",
-        "skill",
+        "habilidade",
         "xp",
         "nivel_antes",
         "nivel_depois",
         "criado_em",
     )
     list_filter = (
-        "skill",
+        "habilidade",
         "nivel_depois",
     )
     search_fields = (
@@ -93,13 +93,13 @@ class MovimentoSkillAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(MovimentoPontos)
-class MovimentoPontosAdmin(admin.ModelAdmin):
+@admin.register(MovimentacaoPontos)
+class MovimentacaoPontosAdmin(admin.ModelAdmin):
     list_display = (
         "crianca",
         "tipo",
         "pontos",
-        "saldo_apos",
+        "saldo_resultante",
         "nivel_antes",
         "nivel_depois",
         "criado_em",
@@ -138,7 +138,7 @@ class NotificacaoSistemaAdmin(admin.ModelAdmin):
         "usuario_destino__username",
         "crianca__nome",
         "tarefa__titulo",
-        "skill__nome",
+        "habilidade__nome",
         "chave",
     )
     readonly_fields = (
@@ -169,8 +169,8 @@ class RecompensaAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(ResgateRecompensa)
-class ResgateRecompensaAdmin(admin.ModelAdmin):
+@admin.register(SolicitacaoResgate)
+class SolicitacaoResgateAdmin(admin.ModelAdmin):
     list_display = (
         "titulo_snapshot",
         "crianca",
@@ -204,8 +204,8 @@ class ConquistaAdmin(admin.ModelAdmin):
     search_fields = ("nome", "slug")
 
 
-@admin.register(ConquistaCrianca)
-class ConquistaCriancaAdmin(admin.ModelAdmin):
+@admin.register(ConquistaInfantil)
+class ConquistaInfantilAdmin(admin.ModelAdmin):
     list_display = (
         "crianca",
         "conquista",

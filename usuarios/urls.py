@@ -51,6 +51,8 @@ urlpatterns = [
         views.login_view,
         name="login",
     ),
+    path("conta/senha/", views.configurar_senha_local, name="configurar_senha_local"),
+    path("conta/perfil/", views.perfil_view, name="perfil_usuario"),
     path(
         "cadastro/",
         views.cadastro_tutor_view,
@@ -85,7 +87,7 @@ urlpatterns = [
         name="familia_entrar_codigo",
     ),
     path(
-        "familia/convite/<int:convite_id>/cancelar/",
+        "familia/convite/<uuid:convite_id>/cancelar/",
         views.convite_tutor_cancelar,
         name="convite_tutor_cancelar",
     ),
@@ -101,7 +103,7 @@ urlpatterns = [
         name="crianca_criar",
     ),
     path(
-        "criancas/<int:perfil_id>/editar/",
+        "criancas/<uuid:perfil_id>/editar/",
         views.crianca_editar,
         name="crianca_editar",
     ),

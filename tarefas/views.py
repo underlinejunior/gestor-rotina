@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import timedelta
 import mimetypes
 
@@ -19,28 +20,28 @@ from django.views.decorators.http import (
 from gamificacao.catalogo import carregar_catalogo_padrao
 
 from gamificacao.models import (
-    MoldeTarefaSkill,
-    MovimentoPontos,
-    ProgressoSkill,
-    Skill,
+    RotinaHabilidade,
+    MovimentacaoPontos,
+    ProgressoHabilidade,
+    Habilidade,
 )
 from gamificacao.services import (
-    salvar_skills_molde,
-    salvar_skills_tarefa_bonus,
+    salvar_habilidades_rotina,
+    salvar_habilidades_tarefa_bonus,
 )
-from usuarios.models import PerfilCrianca, Usuario
+from usuarios.models import PerfilInfantil, Usuario
 from usuarios.views import obter_familia_tutor
 
 from .forms import (
     EnvioComprovanteForm,
-    MoldeTarefaForm,
+    RotinaPlanejadaForm,
     RevisaoTarefaForm,
     TarefaBonusForm,
 )
 from .models import (
-    InstanciaTarefa,
-    MoldeTarefa,
-    SugestaoTarefa,
+    TarefaAgendada,
+    RotinaPlanejada,
+    SugestaoAtividade,
 )
 from .services import (
     ConfiguracaoIAAusente,
@@ -53,6 +54,14 @@ from .services import (
     processar_rotinas,
     rejeitar_tarefa,
 )
+
+def _uuid_valido(valor):
+    try:
+        UUID(str(valor))
+        return True
+    except (ValueError, TypeError, AttributeError):
+        return False
+
 
 PERIODOS_HISTORICO = {
     7,
@@ -149,7 +158,7 @@ def _slugs_enfase_solicitados(request, skills_ativas):
     if not valor or valor == "auto":
         return []
 
-    validos = {skill.slug for skill in skills_ativas}
+    validos = {habilidade.slug for habilidade in skills_ativas}
     resultado = []
     for slug in valor.split(","):
         slug = slug.strip()
@@ -164,48 +173,48 @@ def _diagnostico_skills_crianca(perfil, skills_ativas=None):
     """Cruza evolução real e distribuição das Skills nas rotinas ativas."""
     skills_ativas = list(
         skills_ativas
-        or Skill.objects.filter(ativa=True).order_by("ordem", "nome")
+        or Habilidade.objects.filter(ativa=True).order_by("ordem", "nome")
     )
 
     progressos = {
-        item.skill_id: item
-        for item in ProgressoSkill.objects.filter(
+        item.habilidade_id: item
+        for item in ProgressoHabilidade.objects.filter(
             crianca=perfil,
-            skill__in=skills_ativas,
-        ).select_related("skill")
+            habilidade__in=skills_ativas,
+        ).select_related("habilidade")
     }
 
     cobertura = {
-        skill.id: {"rotinas": set(), "carga": 0}
-        for skill in skills_ativas
+        habilidade.id: {"rotinas": set(), "carga": 0}
+        for habilidade in skills_ativas
     }
 
     associacoes = (
-        MoldeTarefaSkill.objects
+        RotinaHabilidade.objects
         .filter(
-            molde__crianca=perfil,
-            molde__ativa=True,
-            skill__in=skills_ativas,
+            rotina__crianca=perfil,
+            rotina__ativa=True,
+            habilidade__in=skills_ativas,
         )
-        .select_related("skill", "molde")
+        .select_related("habilidade", "rotina")
     )
 
     for associacao in associacoes:
         item = cobertura.setdefault(
-            associacao.skill_id,
+            associacao.habilidade_id,
             {"rotinas": set(), "carga": 0},
         )
-        item["rotinas"].add(associacao.molde_id)
-        item["carga"] += int(associacao.impacto or 0)
+        item["rotinas"].add(associacao.rotina_id)
+        item["carga"] += int(associacao.intensidade or 0)
 
     valores_xp = [
-        int(progressos.get(skill.id).xp_total)
-        if progressos.get(skill.id) else 0
-        for skill in skills_ativas
+        int(progressos.get(habilidade.id).experiencia_acumulada)
+        if progressos.get(habilidade.id) else 0
+        for habilidade in skills_ativas
     ]
     valores_carga = [
-        int(cobertura.get(skill.id, {}).get("carga", 0))
-        for skill in skills_ativas
+        int(cobertura.get(habilidade.id, {}).get("carga", 0))
+        for habilidade in skills_ativas
     ]
 
     max_xp = max(valores_xp, default=0)
@@ -220,16 +229,16 @@ def _diagnostico_skills_crianca(perfil, skills_ativas=None):
     if media_carga > 0:
         limite_repeticao = max(4.0, media_carga * 1.65)
         repetidas_ids = {
-            skill.id
-            for skill in skills_ativas
-            if cobertura.get(skill.id, {}).get("carga", 0) >= limite_repeticao
+            habilidade.id
+            for habilidade in skills_ativas
+            if cobertura.get(habilidade.id, {}).get("carga", 0) >= limite_repeticao
         }
 
     itens = []
-    for skill in skills_ativas:
-        progresso = progressos.get(skill.id)
-        xp = int(progresso.xp_total) if progresso else 0
-        info_cobertura = cobertura.get(skill.id, {"rotinas": set(), "carga": 0})
+    for habilidade in skills_ativas:
+        progresso = progressos.get(habilidade.id)
+        xp = int(progresso.experiencia_acumulada) if progresso else 0
+        info_cobertura = cobertura.get(habilidade.id, {"rotinas": set(), "carga": 0})
         rotinas_ativas = len(info_cobertura["rotinas"])
         carga = int(info_cobertura["carga"])
 
@@ -242,22 +251,22 @@ def _diagnostico_skills_crianca(perfil, skills_ativas=None):
             motivo = "Ainda não aparece nas rotinas ativas"
         elif max_xp > min_xp and xp == min_xp:
             motivo = "Está entre as habilidades menos desenvolvidas"
-        elif skill.id in repetidas_ids:
+        elif habilidade.id in repetidas_ids:
             motivo = "Já aparece com muita frequência nas rotinas"
         else:
             motivo = "Participação equilibrada nas rotinas"
 
         itens.append({
-            "id": skill.id,
-            "slug": skill.slug,
-            "nome": skill.nome,
-            "icone": skill.icone,
+            "id": habilidade.id,
+            "slug": habilidade.slug,
+            "nome": habilidade.nome,
+            "icone": habilidade.icone,
             "xp": xp,
             "nivel": progresso.nivel_atual if progresso else 1,
             "rotinas_ativas": rotinas_ativas,
             "carga": carga,
             "prioridade": prioridade,
-            "repetida": skill.id in repetidas_ids,
+            "repetida": habilidade.id in repetidas_ids,
             "motivo": motivo,
         })
 
@@ -306,23 +315,23 @@ def _diagnostico_skills_crianca(perfil, skills_ativas=None):
 
 
 def _pontuar_sugestao_por_skills(sugestao, slugs_alvo, slugs_repetidas):
-    impactos = {
-        item.skill.slug: int(item.impacto or 0)
-        for item in sugestao.skills_associadas.all()
+    intensidades = {
+        item.habilidade.slug: int(item.intensidade or 0)
+        for item in sugestao.habilidades_associadas.all()
     }
 
     pontos = 0
     for indice, slug in enumerate(slugs_alvo):
-        impacto = impactos.get(slug, 0)
-        if impacto:
-            pontos += impacto * max(18, 54 - indice * 12)
+        intensidade = intensidades.get(slug, 0)
+        if intensidade:
+            pontos += intensidade * max(18, 54 - indice * 12)
 
     for slug in slugs_repetidas:
         if slug in slugs_alvo:
             continue
-        impacto = impactos.get(slug, 0)
-        if impacto:
-            pontos -= impacto * 12
+        intensidade = intensidades.get(slug, 0)
+        if intensidade:
+            pontos -= intensidade * 12
 
     return pontos
 
@@ -340,7 +349,9 @@ def api_sugerir_rotina(request):
     familia = _familia_do_tutor(request)
 
     try:
-        perfil_id = int(request.GET.get("crianca_id", 0))
+        perfil_id = request.GET.get("crianca_id") or None
+        if perfil_id is not None:
+            perfil_id = UUID(str(perfil_id))
     except (TypeError, ValueError):
         perfil_id = 0
 
@@ -351,7 +362,7 @@ def api_sugerir_rotina(request):
         )
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -365,7 +376,7 @@ def api_sugerir_rotina(request):
     ).strip()[:120]
 
     skills_ativas = list(
-        Skill.objects
+        Habilidade.objects
         .filter(ativa=True)
         .order_by("ordem", "nome")
     )
@@ -377,15 +388,15 @@ def api_sugerir_rotina(request):
 
     skills_prompt = [
         {
-            "slug": skill.slug,
-            "nome": skill.nome,
-            "descricao": skill.descricao,
+            "slug": habilidade.slug,
+            "nome": habilidade.nome,
+            "descricao": habilidade.descricao,
         }
-        for skill in skills_ativas
+        for habilidade in skills_ativas
     ]
 
     titulos_existentes = list(
-        MoldeTarefa.objects
+        RotinaPlanejada.objects
         .filter(crianca=perfil, ativa=True)
         .values_list("titulo", flat=True)
     )
@@ -419,8 +430,8 @@ def api_sugerir_rotina(request):
         )
 
     skills_por_slug = {
-        skill.slug: skill
-        for skill in skills_ativas
+        habilidade.slug: habilidade
+        for habilidade in skills_ativas
     }
 
     sugestoes = []
@@ -429,18 +440,18 @@ def api_sugerir_rotina(request):
         skills = []
 
         for associacao in item.get("skills", []):
-            skill = skills_por_slug.get(associacao.get("slug"))
-            if skill is None:
+            habilidade = skills_por_slug.get(associacao.get("slug"))
+            if habilidade is None:
                 continue
 
             skills.append({
-                "id": skill.id,
-                "slug": skill.slug,
-                "nome": skill.nome,
-                "icone": skill.icone,
-                "impacto": associacao.get("impacto", 0),
-                "simbolo": Skill.simbolo_impacto(
-                    associacao.get("impacto", 0)
+                "id": habilidade.id,
+                "slug": habilidade.slug,
+                "nome": habilidade.nome,
+                "icone": habilidade.icone,
+                "intensidade": associacao.get("intensidade", 0),
+                "simbolo": Habilidade.simbolo_intensidade(
+                    associacao.get("intensidade", 0)
                 ),
             })
 
@@ -454,6 +465,9 @@ def api_sugerir_rotina(request):
             "titulo": item.get("titulo", ""),
             "descricao": item.get("descricao", ""),
             "pontos": item.get("pontos", 10),
+            "frequencia": item.get("frequencia", "DIARIA"),
+            "periodo": item.get("periodo", "QUALQUER"),
+            "dias_semana": item.get("dias_semana", []),
             "skills": skills,
         })
 
@@ -477,17 +491,17 @@ def api_sugerir_rotina(request):
 
 def _skills_para_formulario(
     request,
-    molde=None,
+    rotina=None,
 ):
-    impactos = {}
+    intensidades = {}
 
     if request.method == "POST":
-        for skill in Skill.objects.filter(
+        for habilidade in Habilidade.objects.filter(
             ativa=True
         ):
             chave = (
-                f"skill_impact_"
-                f"{skill.id}"
+                f"habilidade_intensidade_"
+                f"{habilidade.id}"
             )
 
             try:
@@ -503,31 +517,31 @@ def _skills_para_formulario(
             ):
                 valor = 0
 
-            impactos[
-                skill.id
+            intensidades[
+                habilidade.id
             ] = valor
 
-    elif molde is not None:
-        impactos = {
-            item.skill_id: item.impacto
+    elif rotina is not None:
+        intensidades = {
+            item.habilidade_id: item.intensidade
             for item in (
-                MoldeTarefaSkill.objects
+                RotinaHabilidade.objects
                 .filter(
-                    molde=molde
+                    rotina=rotina
                 )
             )
         }
 
     return [
         {
-            "skill": skill,
-            "impacto": impactos.get(
-                skill.id,
+            "habilidade": habilidade,
+            "intensidade": intensidades.get(
+                habilidade.id,
                 0,
             ),
         }
-        for skill in (
-            Skill.objects
+        for habilidade in (
+            Habilidade.objects
             .filter(ativa=True)
             .order_by(
                 "ordem",
@@ -543,10 +557,10 @@ def _garantir_catalogo_sugestoes():
     aplicou arquivos novos sem executar novamente o post_migrate.
     """
     if (
-        not SugestaoTarefa.objects.filter(
+        not SugestaoAtividade.objects.filter(
             ativa=True
         ).exists()
-        or not Skill.objects.filter(
+        or not Habilidade.objects.filter(
             ativa=True
         ).exists()
     ):
@@ -568,23 +582,24 @@ def _serializar_sugestao(
         ),
         "pontos": sugestao.pontos_sugeridos,
         "frequencia": sugestao.frequencia_sugerida,
+        "periodo": "QUALQUER",
         "dias_semana": sugestao.dias_semana_lista,
         "skills": [
             {
-                "id": item.skill.id,
-                "slug": item.skill.slug,
-                "nome": item.skill.nome,
-                "icone": item.skill.icone,
-                "impacto": item.impacto,
+                "id": item.habilidade.id,
+                "slug": item.habilidade.slug,
+                "nome": item.habilidade.nome,
+                "icone": item.habilidade.icone,
+                "intensidade": item.intensidade,
                 "simbolo": (
-                    Skill.simbolo_impacto(
-                        item.impacto
+                    Habilidade.simbolo_intensidade(
+                        item.intensidade
                     )
                 ),
             }
             for item in (
                 sugestao
-                .skills_associadas
+                .habilidades_associadas
                 .all()
             )
         ],
@@ -597,14 +612,14 @@ def _sugestoes_basicas(
     _garantir_catalogo_sugestoes()
 
     sugestoes = (
-        SugestaoTarefa.objects
+        SugestaoAtividade.objects
         .filter(ativa=True)
         .filter(
             idade_minima__lte=8,
             idade_maxima__gte=8,
         )
         .prefetch_related(
-            "skills_associadas__skill"
+            "habilidades_associadas__habilidade"
         )
         .order_by(
             "ordem",
@@ -643,14 +658,14 @@ def _render_historico(
     )
 
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             crianca=perfil,
             data_referencia__gte=inicio,
             data_referencia__lte=hoje,
         )
         .prefetch_related(
-            "skills_snapshot"
+            "habilidades_tarefa"
         )
         .order_by(
             "-data_referencia",
@@ -666,7 +681,7 @@ def _render_historico(
     )
 
     movimentos = (
-        MovimentoPontos.objects
+        MovimentacaoPontos.objects
         .filter(
             crianca=perfil,
             criado_em__date__gte=inicio,
@@ -706,12 +721,12 @@ def rotinas_listar(request):
         request
     )
 
-    moldes = (
-        MoldeTarefa.objects
+    rotinas = (
+        RotinaPlanejada.objects
         .filter(familia=familia)
         .select_related("crianca")
         .prefetch_related(
-            "skills_associadas__skill"
+            "habilidades_associadas__habilidade"
         )
         .order_by(
             "crianca__nome",
@@ -719,13 +734,26 @@ def rotinas_listar(request):
         )
     )
 
-    return render(
-        request,
-        "tarefas/rotinas/lista.html",
-        {
-            "moldes": moldes,
-        },
-    )
+    criancas = PerfilInfantil.objects.filter(familia=familia).order_by("nome")
+    habilidades_filtro = Habilidade.objects.filter(ativa=True).order_by("ordem", "nome")
+    crianca_id = request.GET.get("crianca", "").strip()
+    habilidade_id = request.GET.get("habilidade", "").strip()
+    if crianca_id:
+        if criancas.filter(pk=crianca_id).exists() if _uuid_valido(crianca_id) else False:
+            rotinas = rotinas.filter(crianca_id=crianca_id)
+        else:
+            crianca_id = ""
+    if habilidade_id:
+        if habilidades_filtro.filter(pk=habilidade_id).exists() if _uuid_valido(habilidade_id) else False:
+            rotinas = rotinas.filter(habilidades_associadas__habilidade_id=habilidade_id).distinct()
+        else:
+            habilidade_id = ""
+    return render(request, "tarefas/rotinas/lista.html", {
+        "rotinas": rotinas, "criancas": criancas,
+        "habilidades_filtro": habilidades_filtro,
+        "crianca_selecionada": crianca_id,
+        "habilidade_selecionada": habilidade_id,
+    })
 
 
 @login_required(login_url="login")
@@ -740,31 +768,36 @@ def rotina_criar(request):
     )
 
     if request.method == "POST":
-        form = MoldeTarefaForm(
+        form = RotinaPlanejadaForm(
             request.POST,
             familia=familia,
         )
 
         if form.is_valid():
-            molde_base = form.save(
+            rotina_base = form.save(
                 commit=False
             )
 
-            molde_base.familia = familia
-            molde_base.criado_por = request.user
-            molde_base.save()
+            rotina_base.familia = familia
+            rotina_base.criado_por = request.user
+            origem_id = form.cleaned_data.get("sugestao_origem_id")
+            if origem_id:
+                rotina_base.sugestao_origem = get_object_or_404(
+                    SugestaoAtividade, pk=origem_id, ativa=True,
+                )
+            rotina_base.save()
 
-            impactos = (
-                form.obter_impactos_skills()
+            intensidades = (
+                form.obter_intensidades_habilidades()
             )
 
-            salvar_skills_molde(
-                molde_base,
-                impactos,
+            salvar_habilidades_rotina(
+                rotina_base,
+                intensidades,
             )
 
-            moldes_criados = [
-                molde_base
+            rotinas_criadas = [
+                rotina_base
             ]
 
             if form.cleaned_data.get(
@@ -772,62 +805,63 @@ def rotina_criar(request):
                 False,
             ):
                 outras_criancas = (
-                    PerfilCrianca.objects
+                    PerfilInfantil.objects
                     .filter(
                         familia=familia
                     )
                     .exclude(
-                        pk=molde_base.crianca_id
+                        pk=rotina_base.crianca_id
                     )
                     .order_by("nome")
                 )
 
                 for crianca in outras_criancas:
-                    molde = (
-                        MoldeTarefa.objects
+                    rotina = (
+                        RotinaPlanejada.objects
                         .create(
                             familia=familia,
                             crianca=crianca,
-                            titulo=molde_base.titulo,
-                            descricao=molde_base.descricao,
+                            titulo=rotina_base.titulo,
+                            descricao=rotina_base.descricao,
                             pontos_base=(
-                                molde_base.pontos_base
+                                rotina_base.pontos_base
                             ),
                             frequencia=(
-                                molde_base.frequencia
+                                rotina_base.frequencia
                             ),
                             dias_semana=(
-                                molde_base.dias_semana
+                                rotina_base.dias_semana
                             ),
                             periodo=(
-                                molde_base.periodo
+                                rotina_base.periodo
                             ),
                             horario=(
-                                molde_base.horario
+                                rotina_base.horario
                             ),
                             lembrete_ativo=(
-                                molde_base.lembrete_ativo
+                                rotina_base.lembrete_ativo
                             ),
-                            ativa=molde_base.ativa,
+                            ativa=rotina_base.ativa,
                             criado_por=request.user,
+                            sugestao_origem=rotina_base.sugestao_origem,
                         )
                     )
 
-                    salvar_skills_molde(
-                        molde,
-                        impactos,
+                    salvar_habilidades_rotina(
+                        rotina,
+                        intensidades,
                     )
 
-                    moldes_criados.append(
-                        molde
+                    rotinas_criadas.append(
+                        rotina
                     )
 
-            if len(moldes_criados) > 1:
+            if len(rotinas_criadas) > 1:
                 messages.success(
                     request,
                     (
                         "Rotina criada e replicada para "
-                        f"{len(moldes_criados)} crianças!"
+                        f"{len(rotinas_criadas)} crianças!"
                     ),
                 )
             else:
@@ -844,7 +878,7 @@ def rotina_criar(request):
                 "rotinas_listar"
             )
     else:
-        form = MoldeTarefaForm(
+        form = RotinaPlanejadaForm(
             familia=familia
         )
 
@@ -872,7 +906,7 @@ def rotina_criar(request):
 @login_required(login_url="login")
 def rotina_editar(
     request,
-    molde_id,
+    rotina_id,
 ):
     if request.user.tipo != Usuario.Tipo.TUTOR:
         return redirect("inicio")
@@ -881,16 +915,16 @@ def rotina_editar(
         request
     )
 
-    molde = get_object_or_404(
-        MoldeTarefa,
-        id=molde_id,
+    rotina = get_object_or_404(
+        RotinaPlanejada,
+        id=rotina_id,
         familia=familia,
     )
 
     if request.method == "POST":
-        form = MoldeTarefaForm(
+        form = RotinaPlanejadaForm(
             request.POST,
-            instance=molde,
+            instance=rotina,
             familia=familia,
             permitir_replicacao=False,
         )
@@ -898,9 +932,9 @@ def rotina_editar(
         if form.is_valid():
             form.save()
 
-            salvar_skills_molde(
-                molde,
-                form.obter_impactos_skills(),
+            salvar_habilidades_rotina(
+                rotina,
+                form.obter_intensidades_habilidades(),
             )
 
             messages.success(
@@ -920,8 +954,8 @@ def rotina_editar(
                 "rotinas_listar"
             )
     else:
-        form = MoldeTarefaForm(
-            instance=molde,
+        form = RotinaPlanejadaForm(
+            instance=rotina,
             familia=familia,
             permitir_replicacao=False,
         )
@@ -936,7 +970,7 @@ def rotina_editar(
             "skills_disponiveis": (
                 _skills_para_formulario(
                     request,
-                    molde=molde,
+                    rotina=rotina,
                 )
             ),
         },
@@ -958,12 +992,14 @@ def sugestoes_tarefas(request):
     familia = _familia_do_tutor(request)
 
     try:
-        perfil_id = int(request.GET.get("crianca_id", 0))
+        perfil_id = request.GET.get("crianca_id") or None
+        if perfil_id is not None:
+            perfil_id = UUID(str(perfil_id))
     except (TypeError, ValueError):
         perfil_id = 0
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -977,7 +1013,7 @@ def sugestoes_tarefas(request):
     limite = min(18, max(1, limite))
 
     skills_ativas = list(
-        Skill.objects.filter(ativa=True).order_by("ordem", "nome")
+        Habilidade.objects.filter(ativa=True).order_by("ordem", "nome")
     )
     diagnostico = _diagnostico_skills_crianca(
         perfil,
@@ -999,9 +1035,9 @@ def sugestoes_tarefas(request):
     }
 
     sugestoes_qs = (
-        SugestaoTarefa.objects
+        SugestaoAtividade.objects
         .filter(ativa=True)
-        .prefetch_related("skills_associadas__skill")
+        .prefetch_related("habilidades_associadas__habilidade")
     )
 
     if idade is not None:
@@ -1016,7 +1052,7 @@ def sugestoes_tarefas(request):
         )
 
     titulos_existentes = set(
-        MoldeTarefa.objects
+        RotinaPlanejada.objects
         .filter(crianca=perfil, ativa=True)
         .values_list("titulo", flat=True)
     )
@@ -1042,7 +1078,7 @@ def sugestoes_tarefas(request):
     dados = []
     for sugestao in candidatas[:limite]:
         item = _serializar_sugestao(sugestao)
-        slugs_item = {skill["slug"] for skill in item["skills"]}
+        slugs_item = {habilidade["slug"] for habilidade in item["skills"]}
         item["skills_enfase"] = [
             slug for slug in slugs_alvo if slug in slugs_item
         ]
@@ -1054,7 +1090,7 @@ def sugestoes_tarefas(request):
         )
     elif slugs_enfase:
         nomes = [
-            skill.nome for skill in skills_ativas if skill.slug in slugs_enfase
+            habilidade.nome for habilidade in skills_ativas if habilidade.slug in slugs_enfase
         ]
         subtitulo = "Priorizando " + ", ".join(nomes) + "."
     else:
@@ -1077,7 +1113,7 @@ def sugestoes_tarefas(request):
 @require_POST
 def rotina_alternar(
     request,
-    molde_id,
+    rotina_id,
 ):
     if request.user.tipo != Usuario.Tipo.TUTOR:
         return redirect("inicio")
@@ -1086,14 +1122,14 @@ def rotina_alternar(
         request
     )
 
-    molde = get_object_or_404(
-        MoldeTarefa,
-        id=molde_id,
+    rotina = get_object_or_404(
+        RotinaPlanejada,
+        id=rotina_id,
         familia=familia,
     )
 
-    molde.ativa = not molde.ativa
-    molde.save(
+    rotina.ativa = not rotina.ativa
+    rotina.save(
         update_fields=[
             "ativa",
             "atualizado_em",
@@ -1102,7 +1138,7 @@ def rotina_alternar(
 
     estado = (
         "ativada"
-        if molde.ativa
+        if rotina.ativa
         else "desativada"
     )
 
@@ -1120,7 +1156,7 @@ def rotina_alternar(
 @require_POST
 def rotina_excluir(
     request,
-    molde_id,
+    rotina_id,
 ):
     if request.user.tipo != Usuario.Tipo.TUTOR:
         return redirect("inicio")
@@ -1129,14 +1165,14 @@ def rotina_excluir(
         request
     )
 
-    molde = get_object_or_404(
-        MoldeTarefa,
-        id=molde_id,
+    rotina = get_object_or_404(
+        RotinaPlanejada,
+        id=rotina_id,
         familia=familia,
     )
 
-    titulo = molde.titulo
-    molde.delete()
+    titulo = rotina.titulo
+    rotina.delete()
 
     messages.success(
         request,
@@ -1171,20 +1207,15 @@ def tarefa_bonus_criar(
         if form.is_valid():
             dados = form.cleaned_data
 
-            tarefa = InstanciaTarefa.objects.create(
-                familia=familia,
-                crianca=dados["crianca"],
-                criada_por=request.user,
-                origem=InstanciaTarefa.Origem.BONUS,
-                titulo=dados["titulo"],
-                descricao=dados["descricao"],
+            tarefa = TarefaAgendada.criar_tarefa_bonus(
+                tutor=request.user, crianca=dados["crianca"],
+                titulo=dados["titulo"], descricao=dados["descricao"],
                 pontos_base=dados["pontos_base"],
-                data_referencia=timezone.localdate(),
             )
 
-            salvar_skills_tarefa_bonus(
+            salvar_habilidades_tarefa_bonus(
                 tarefa,
-                form.obter_impactos_skills(),
+                form.obter_intensidades_habilidades(),
             )
 
             messages.success(
@@ -1243,13 +1274,13 @@ def minhas_tarefas(request):
     )
 
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             crianca=perfil,
             data_referencia=hoje,
         )
         .prefetch_related(
-            "skills_snapshot"
+            "habilidades_tarefa"
         )
         .order_by(
             "status",
@@ -1269,6 +1300,32 @@ def minhas_tarefas(request):
 
 
 @login_required(login_url="login")
+def tarefas_familia(request):
+    """Tarefas de hoje dos perfis vinculados ao tutor autenticado."""
+    if request.user.tipo != Usuario.Tipo.TUTOR:
+        return redirect("inicio")
+
+    familia = _familia_do_tutor(request)
+    hoje = timezone.localdate()
+    processar_rotinas(familia=familia, data=hoje)
+    filtro_pendentes = request.GET.get("status") == "pendentes"
+
+    tarefas = TarefaAgendada.objects.filter(
+        familia=familia,
+        data_referencia=hoje,
+    )
+    if filtro_pendentes:
+        tarefas = tarefas.filter(status=TarefaAgendada.Status.PENDENTE)
+
+    tarefas = tarefas.select_related("crianca").order_by("crianca__nome", "criada_em")
+    return render(request, "tarefas/tarefas_familia.html", {
+        "tarefas": tarefas,
+        "hoje": hoje,
+        "filtro_pendentes": filtro_pendentes,
+    })
+
+
+@login_required(login_url="login")
 def tarefas_crianca_tutor(
     request,
     perfil_id,
@@ -1281,7 +1338,7 @@ def tarefas_crianca_tutor(
     )
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -1294,13 +1351,13 @@ def tarefas_crianca_tutor(
     )
 
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             crianca=perfil,
             data_referencia=hoje,
         )
         .prefetch_related(
-            "skills_snapshot"
+            "habilidades_tarefa"
         )
         .order_by(
             "status",
@@ -1332,7 +1389,7 @@ def historico_crianca_tutor(
     )
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -1375,7 +1432,7 @@ def foto_tarefa_privada(request, tarefa_id):
     if request.user.tipo == Usuario.Tipo.TUTOR:
         familia = _familia_do_tutor(request)
         tarefa = get_object_or_404(
-            InstanciaTarefa.objects.select_related("crianca"),
+            TarefaAgendada.objects.select_related("crianca"),
             id=tarefa_id,
             familia=familia,
         )
@@ -1387,7 +1444,7 @@ def foto_tarefa_privada(request, tarefa_id):
         )
 
         tarefa = get_object_or_404(
-            InstanciaTarefa.objects.select_related("crianca"),
+            TarefaAgendada.objects.select_related("crianca"),
             id=tarefa_id,
             crianca=perfil,
         )
@@ -1430,7 +1487,7 @@ def enviar_foto(
     tarefa_id,
 ):
     tarefa = get_object_or_404(
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .select_related(
             "crianca",
             "familia",
@@ -1511,14 +1568,14 @@ def revisoes_listar(request):
     )
 
     tarefas = (
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             familia=familia,
-            status=InstanciaTarefa.Status.REVISAO,
+            status=TarefaAgendada.Status.REVISAO,
         )
         .select_related("crianca")
         .prefetch_related(
-            "skills_snapshot"
+            "habilidades_tarefa"
         )
         .order_by("enviada_em")
     )
@@ -1545,14 +1602,14 @@ def revisao_detalhe(
     )
 
     tarefa = get_object_or_404(
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .select_related("crianca")
         .prefetch_related(
-            "skills_snapshot"
+            "habilidades_tarefa"
         ),
         id=tarefa_id,
         familia=familia,
-        status=InstanciaTarefa.Status.REVISAO,
+        status=TarefaAgendada.Status.REVISAO,
     )
 
     if request.method == "POST":
@@ -1621,8 +1678,8 @@ def revisao_detalhe(
                     if evolucoes:
                         resumo = ", ".join(
                             (
-                                f"{item['skill'].icone} "
-                                f"{item['skill'].nome} "
+                                f"{item['habilidade'].icone} "
+                                f"{item['habilidade'].nome} "
                                 f"→ nível "
                                 f"{item['nivel_depois']}"
                             )

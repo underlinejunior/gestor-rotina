@@ -6,15 +6,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from gamificacao.models import (
-    ConquistaCrianca,
-    MovimentoPontos,
-    MovimentoSkill,
+    ConquistaInfantil,
+    MovimentacaoPontos,
+    MovimentacaoHabilidade,
 )
 from gamificacao.services import calcular_sequencia
-from usuarios.models import PerfilCrianca, Usuario
+from usuarios.models import PerfilInfantil, Usuario
 from usuarios.views import obter_familia_tutor
 
-from .models import InstanciaTarefa, MoldeTarefa
+from .models import TarefaAgendada, RotinaPlanejada
 
 
 def _familia_do_tutor(request):
@@ -91,29 +91,29 @@ def _celula_programada():
     }
 
 
-def _celula_instancia(tarefa):
+def _celula_tarefa(tarefa):
     mapa = {
-        InstanciaTarefa.Status.APROVADA: {
+        TarefaAgendada.Status.APROVADA: {
             "simbolo": "✓",
             "label": "Concluída",
             "classe": "approved",
         },
-        InstanciaTarefa.Status.REVISAO: {
+        TarefaAgendada.Status.REVISAO: {
             "simbolo": "⏳",
             "label": "Em revisão",
             "classe": "review",
         },
-        InstanciaTarefa.Status.NAO_REALIZADA: {
+        TarefaAgendada.Status.NAO_REALIZADA: {
             "simbolo": "✕",
             "label": "Não realizada",
             "classe": "missed",
         },
-        InstanciaTarefa.Status.REJEITADA: {
+        TarefaAgendada.Status.REJEITADA: {
             "simbolo": "□",
             "label": "Refazer",
             "classe": "pending",
         },
-        InstanciaTarefa.Status.PENDENTE: {
+        TarefaAgendada.Status.PENDENTE: {
             "simbolo": "□",
             "label": "A fazer",
             "classe": "pending",
@@ -135,11 +135,11 @@ def _celula_instancia(tarefa):
     }
 
 
-def _chave_instancia(tarefa):
-    if tarefa.molde_id:
-        return ("molde", tarefa.molde_id)
+def _chave_tarefa(tarefa):
+    if tarefa.rotina_id:
+        return ("rotina", tarefa.rotina_id)
 
-    if tarefa.origem == InstanciaTarefa.Origem.BONUS:
+    if tarefa.origem == TarefaAgendada.Origem.BONUS:
         return ("bonus", tarefa.id)
 
     return (
@@ -153,23 +153,23 @@ def _chave_instancia(tarefa):
 
 def _montar_quadro_semanal(
     *,
-    moldes,
+    rotinas,
     instancias,
     dias_datas,
 ):
     linhas = {}
 
-    for molde in moldes:
+    for rotina in rotinas:
         dias_programados = [
             indice
             for indice, data in enumerate(dias_datas)
-            if molde.deve_gerar_em(data)
+            if rotina.deve_gerar_em(data)
         ]
 
         if not dias_programados:
             continue
 
-        chave = ("molde", molde.id)
+        chave = ("rotina", rotina.id)
         celulas = [
             _celula_vazia()
             for _ in dias_datas
@@ -179,11 +179,11 @@ def _montar_quadro_semanal(
             celulas[indice] = _celula_programada()
 
         linhas[chave] = {
-            "titulo": molde.titulo,
-            "momento": molde.momento_resumo,
-            "periodo": molde.periodo,
-            "horario": molde.horario,
-            "pontos": molde.pontos_base,
+            "titulo": rotina.titulo,
+            "momento": rotina.momento_resumo,
+            "periodo": rotina.periodo,
+            "horario": rotina.horario,
+            "pontos": rotina.pontos_base,
             "bonus": False,
             "dias": celulas,
         }
@@ -201,7 +201,7 @@ def _montar_quadro_semanal(
         if indice_dia is None:
             continue
 
-        chave = _chave_instancia(tarefa)
+        chave = _chave_tarefa(tarefa)
 
         if chave not in linhas:
             linhas[chave] = {
@@ -212,7 +212,7 @@ def _montar_quadro_semanal(
                 "pontos": tarefa.pontos_base,
                 "bonus": (
                     tarefa.origem
-                    == InstanciaTarefa.Origem.BONUS
+                    == TarefaAgendada.Origem.BONUS
                 ),
                 "dias": [
                     _celula_vazia()
@@ -221,7 +221,7 @@ def _montar_quadro_semanal(
             }
 
         linhas[chave]["dias"][indice_dia] = (
-            _celula_instancia(tarefa)
+            _celula_tarefa(tarefa)
         )
 
     resultado = list(linhas.values())
@@ -267,7 +267,7 @@ def _saldo_anterior(
     inicio_dt,
 ):
     ultimo_antes = (
-        MovimentoPontos.objects
+        MovimentacaoPontos.objects
         .filter(
             crianca=perfil,
             criado_em__lt=inicio_dt,
@@ -280,10 +280,10 @@ def _saldo_anterior(
     )
 
     if ultimo_antes:
-        return int(ultimo_antes.saldo_apos)
+        return int(ultimo_antes.saldo_resultante)
 
     primeiro_depois = (
-        MovimentoPontos.objects
+        MovimentacaoPontos.objects
         .filter(
             crianca=perfil,
             criado_em__gte=inicio_dt,
@@ -297,7 +297,7 @@ def _saldo_anterior(
 
     if primeiro_depois:
         return int(
-            primeiro_depois.saldo_apos
+            primeiro_depois.saldo_resultante
             - primeiro_depois.pontos
         )
 
@@ -315,7 +315,7 @@ def relatorio_semanal_crianca(
     familia = _familia_do_tutor(request)
 
     perfil = get_object_or_404(
-        PerfilCrianca,
+        PerfilInfantil,
         id=perfil_id,
         familia=familia,
     )
@@ -348,8 +348,8 @@ def relatorio_semanal_crianca(
         for indice, data in enumerate(dias_datas)
     ]
 
-    moldes = list(
-        MoldeTarefa.objects
+    rotinas = list(
+        RotinaPlanejada.objects
         .filter(
             crianca=perfil,
             ativa=True,
@@ -360,14 +360,14 @@ def relatorio_semanal_crianca(
     )
 
     instancias = list(
-        InstanciaTarefa.objects
+        TarefaAgendada.objects
         .filter(
             crianca=perfil,
             data_referencia__gte=inicio,
             data_referencia__lte=fim,
         )
         .select_related(
-            "molde"
+            "rotina"
         )
         .order_by(
             "data_referencia",
@@ -376,7 +376,7 @@ def relatorio_semanal_crianca(
     )
 
     linhas_quadro = _montar_quadro_semanal(
-        moldes=moldes,
+        rotinas=rotinas,
         instancias=instancias,
         dias_datas=dias_datas,
     )
@@ -392,29 +392,29 @@ def relatorio_semanal_crianca(
         1
         for tarefa in instancias
         if tarefa.status
-        == InstanciaTarefa.Status.APROVADA
+        == TarefaAgendada.Status.APROVADA
     )
 
     nao_realizadas = sum(
         1
         for tarefa in instancias
         if tarefa.status
-        == InstanciaTarefa.Status.NAO_REALIZADA
+        == TarefaAgendada.Status.NAO_REALIZADA
     )
 
     em_revisao = sum(
         1
         for tarefa in instancias
         if tarefa.status
-        == InstanciaTarefa.Status.REVISAO
+        == TarefaAgendada.Status.REVISAO
     )
 
     pendentes = sum(
         1
         for tarefa in instancias
         if tarefa.status in {
-            InstanciaTarefa.Status.PENDENTE,
-            InstanciaTarefa.Status.REJEITADA,
+            TarefaAgendada.Status.PENDENTE,
+            TarefaAgendada.Status.REJEITADA,
         }
     )
 
@@ -438,7 +438,7 @@ def relatorio_semanal_crianca(
     )
 
     movimentos_semana = list(
-        MovimentoPontos.objects
+        MovimentacaoPontos.objects
         .filter(
             crianca=perfil,
             criado_em__gte=inicio_dt,
@@ -462,7 +462,7 @@ def relatorio_semanal_crianca(
         max(0, int(movimento.pontos))
         for movimento in movimentos_semana
         if movimento.tipo
-        == MovimentoPontos.Tipo.APROVACAO
+        == MovimentacaoPontos.Tipo.APROVACAO
     )
 
     penalidades = abs(
@@ -470,7 +470,7 @@ def relatorio_semanal_crianca(
             min(0, int(movimento.pontos))
             for movimento in movimentos_semana
             if movimento.tipo
-            == MovimentoPontos.Tipo.PENALIDADE
+            == MovimentacaoPontos.Tipo.PENALIDADE
         )
     )
 
@@ -479,7 +479,7 @@ def relatorio_semanal_crianca(
             min(0, int(movimento.pontos))
             for movimento in movimentos_semana
             if movimento.tipo
-            == MovimentoPontos.Tipo.RESGATE
+            == MovimentacaoPontos.Tipo.RESGATE
         )
     )
 
@@ -487,37 +487,37 @@ def relatorio_semanal_crianca(
         int(movimento.pontos)
         for movimento in movimentos_semana
         if movimento.tipo
-        == MovimentoPontos.Tipo.AJUSTE
+        == MovimentacaoPontos.Tipo.AJUSTE
     )
 
     saldo_final = (
-        int(movimentos_semana[-1].saldo_apos)
+        int(movimentos_semana[-1].saldo_resultante)
         if movimentos_semana
         else saldo_anterior
     )
 
     skills_semana = list(
-        MovimentoSkill.objects
+        MovimentacaoHabilidade.objects
         .filter(
             crianca=perfil,
             tarefa__data_referencia__gte=inicio,
             tarefa__data_referencia__lte=fim,
         )
         .values(
-            "skill__nome",
-            "skill__icone",
+            "habilidade__nome",
+            "habilidade__icone",
         )
         .annotate(
             xp=Sum("xp")
         )
         .order_by(
             "-xp",
-            "skill__nome",
+            "habilidade__nome",
         )[:8]
     )
 
     conquistas_ate_agora = (
-        ConquistaCrianca.objects
+        ConquistaInfantil.objects
         .filter(
             crianca=perfil,
             desbloqueada_em__lt=fim_exclusivo_dt,
@@ -532,10 +532,10 @@ def relatorio_semanal_crianca(
     )
 
     ultimas_penalidades = (
-        MovimentoPontos.objects
+        MovimentacaoPontos.objects
         .filter(
             crianca=perfil,
-            tipo=MovimentoPontos.Tipo.PENALIDADE,
+            tipo=MovimentacaoPontos.Tipo.PENALIDADE,
             tarefa__isnull=False,
             criado_em__lt=fim_exclusivo_dt,
         )

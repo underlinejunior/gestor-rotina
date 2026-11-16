@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.db import models
@@ -5,6 +6,7 @@ from django.utils import timezone
 
 
 class Usuario(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class Tipo(models.TextChoices):
         TUTOR = "TUTOR", "Tutor"
         CRIANCA = "CRIANCA", "Criança"
@@ -50,11 +52,28 @@ class Usuario(AbstractUser):
             or self.privacidade_versao != versao_atual
         )
 
+    def definir_senha(self, senha):
+        """Atualiza a senha usando o hash oficial do Django."""
+        self.set_password(senha)
+        self.save(update_fields=["password"])
+
+    def verificar_senha(self, senha):
+        return self.check_password(senha)
+
+    def registrar_aceite_privacidade(self, versao):
+        self.privacidade_aceita_em = timezone.now()
+        self.privacidade_versao = versao
+        self.save(update_fields=["privacidade_aceita_em", "privacidade_versao"])
+
+    def pode_administrar_familia(self, familia):
+        return self.tipo == self.Tipo.TUTOR and familia.tutores.filter(pk=self.pk).exists()
+
     def __str__(self):
         return self.get_full_name() or self.username
 
 
 class Familia(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nome = models.CharField(
         max_length=100,
         verbose_name="Nome da família",
@@ -68,11 +87,26 @@ class Familia(models.Model):
 
     criada_em = models.DateTimeField(auto_now_add=True)
 
+    def alterar_nome(self, nome):
+        self.nome = nome.strip()
+        self.save(update_fields=["nome"])
+
+    def adicionar_responsavel(self, usuario):
+        if usuario.tipo != Usuario.Tipo.TUTOR:
+            raise ValueError("Somente tutores podem administrar uma família.")
+        self.tutores.add(usuario)
+
+    def remover_responsavel(self, usuario):
+        if self.tutores.filter(pk=usuario.pk).exists() and self.tutores.count() <= 1:
+            raise ValueError("A família precisa manter pelo menos um responsável.")
+        self.tutores.remove(usuario)
+
     def __str__(self):
         return self.nome
 
 
-class PerfilCrianca(models.Model):
+class PerfilInfantil(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     class AvatarTipo(models.TextChoices):
         ROBO = "ROBO", "🤖 Robô"
         RAPOSA = "RAPOSA", "🦊 Raposa"
@@ -135,6 +169,18 @@ class PerfilCrianca(models.Model):
 
     def __str__(self):
         return self.nome_exibicao
+
+    def consultar_saldo(self):
+        return self.saldo_pontos
+
+    def consultar_nivel(self):
+        return self.avatar_nivel
+
+    def habilitar_acesso_proprio(self):
+        if self.usuario_id is None:
+            raise ValueError("Vincule uma conta de criança antes de habilitar o acesso.")
+        self.acesso_proprio = True
+        self.save(update_fields=["acesso_proprio"])
 
     @property
     def nome_exibicao(self):
@@ -244,7 +290,8 @@ class PerfilCrianca(models.Model):
         )
 
 
-class ConviteTutor(models.Model):
+class ConviteResponsavel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     familia = models.ForeignKey(
         Familia,
         on_delete=models.CASCADE,
@@ -294,6 +341,33 @@ class ConviteTutor(models.Model):
 
     def __str__(self):
         return f"{self.familia} — {self.codigo}"
+
+    def esta_disponivel(self):
+        return self.disponivel
+
+    def cancelar(self):
+        if self.utilizado_em:
+            raise ValueError("Um convite utilizado não pode ser cancelado.")
+        self.ativo = False
+        self.save(update_fields=["ativo"])
+
+    def utilizar(self, usuario):
+        """Marca convite como utilizado após validar disponibilidade e perfil.
+
+        O vínculo familiar e a conferência de famílias pré-existentes são
+        responsabilidades do fluxo de ingresso em usuarios.views.
+        """
+        if usuario.tipo != Usuario.Tipo.TUTOR:
+            raise ValueError("Somente tutores podem utilizar convites.")
+        if not self.disponivel:
+            raise ValueError("Convite indisponível ou expirado.")
+        if not self.familia.tutores.filter(pk=usuario.pk).exists():
+            raise ValueError("O responsável ainda não foi vinculado à família.")
+        self.usado_por = usuario
+        self.utilizado_em = timezone.now()
+        self.ativo = False
+        self.save(update_fields=["usado_por", "utilizado_em", "ativo"])
+        return self
 
     @property
     def expirado(self):

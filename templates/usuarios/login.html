@@ -267,6 +267,7 @@
             {% endif %}
 
 
+            <p class="small text-muted">Se você criou a conta pelo Google e quer usar senha, entre pelo Google e escolha <strong>Senha de acesso</strong> no menu. Seu cadastro será mantido.</p>
             <form method="post">
                 {% csrf_token %}
 
@@ -275,7 +276,7 @@
                         for="username"
                         class="form-label fw-semibold"
                     >
-                        Usuário
+                        Usuário ou e-mail
                     </label>
 
                     <input
@@ -284,7 +285,7 @@
                         id="username"
                         name="username"
                         autocomplete="username"
-                        placeholder="Digite seu usuário"
+                        placeholder="Usuário ou e-mail"
                         required
                         autofocus
                     >
